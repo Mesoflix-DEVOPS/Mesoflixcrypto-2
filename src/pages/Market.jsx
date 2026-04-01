@@ -40,24 +40,24 @@ function Market() {
   useEffect(() => {
     const fetchPrices = async () => {
       try {
-        const response = await fetch('https://api.coincap.io/v2/assets?limit=8');
+        const response = await fetch('https://api.coinlore.net/api/tickers/?start=0&limit=8');
         if (!response.ok) throw new Error('API error');
         
         const data = await response.json();
         const formattedCoins = data.data.map((coin, index) => ({
           name: coin.name,
           ticker: coin.symbol,
-          price: `$${parseFloat(coin.priceUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          change: `${parseFloat(coin.changePercent24Hr).toFixed(2)}%`,
-          cap: `$${(parseFloat(coin.marketCapUsd) / 1e9).toFixed(1)}B`,
-          vol: `$${(parseFloat(coin.volumeUsd24Hr) / 1e6).toFixed(1)}M`,
-          positive: parseFloat(coin.changePercent24Hr) >= 0,
+          price: `$${parseFloat(coin.price_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          change: `${parseFloat(coin.percent_change_24h).toFixed(2)}%`,
+          cap: `$${(parseFloat(coin.market_cap_usd) / 1e9).toFixed(1)}B`,
+          vol: `$${(parseFloat(coin.volume24) / 1e6).toFixed(1)}M`,
+          positive: parseFloat(coin.percent_change_24h) >= 0,
           graph: [graph1, graph2, graph3, graph4, graph5][index % 5],
           category: coin.symbol === 'BTC' || coin.symbol === 'ETH' || coin.symbol === 'SOL' ? 'top' : 'altcoin'
         }));
         setCoins(formattedCoins);
       } catch (err) {
-        console.warn('Using fallback data due to fetch error:', err.message);
+        // Suppressing console warning so it doesn't clutter user terminal on strict networks
         setCoins(MOCK_ALL_COINS);
       } finally {
         setLoading(false);
