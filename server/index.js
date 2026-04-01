@@ -20,14 +20,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'mesoflix_staff_secret_2026';
 
 // Supabase Configuration
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
+// We prefer SERVICE_ROLE for custom auth, but fallback to ANON_KEY to prevent crashes
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE || process.env.VITE_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
-  console.error('CRITICAL: Supabase environment variables (VITE_SUPABASE_URL, SUPABASE_SERVICE_ROLE) are missing!');
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('CRITICAL: Supabase environment variables (URL or API KEY) are missing!');
 }
 
-// We use the SERVICE_ROLE key here because we are bypassing RLS for our hidden staff auth
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
+// Initialize Supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Helper: Generate Unique Staff Key
 function generateUniqueKey() {
@@ -175,7 +176,6 @@ app.post('/api/staff/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const uniqueKey = generateUniqueKey();
 
-    // 3. Save to staff_profiles
     const { error: insertError } = await supabase
       .from('staff_profiles')
       .insert([
@@ -187,7 +187,10 @@ app.post('/api/staff/register', async (req, res) => {
         }
       ]);
 
-    if (insertError) throw insertError;
+    if (insertError) {
+        console.error('Supabase Insert Error:', insertError);
+        return res.status(400).json({ error: `Database Error: ${insertError.message}` });
+    }
 
     res.status(201).json({ success: true, uniqueKey });
 
