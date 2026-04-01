@@ -38,6 +38,7 @@ function Market() {
   const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
+    // Initial fetch to get baseline data (caps, volumes, names)
     const fetchPrices = async () => {
       try {
         const response = await fetch('https://api.coinlore.net/api/tickers/?start=0&limit=8');
@@ -47,26 +48,66 @@ function Market() {
         const formattedCoins = data.data.map((coin, index) => ({
           name: coin.name,
           ticker: coin.symbol,
-          price: `$${parseFloat(coin.price_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          price: parseFloat(coin.price_usd),
+          displayPrice: `$${parseFloat(coin.price_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           change: `${parseFloat(coin.percent_change_24h).toFixed(2)}%`,
           cap: `$${(parseFloat(coin.market_cap_usd) / 1e9).toFixed(1)}B`,
           vol: `$${(parseFloat(coin.volume24) / 1e6).toFixed(1)}M`,
           positive: parseFloat(coin.percent_change_24h) >= 0,
           graph: [graph1, graph2, graph3, graph4, graph5][index % 5],
-          category: coin.symbol === 'BTC' || coin.symbol === 'ETH' || coin.symbol === 'SOL' ? 'top' : 'altcoin'
+          category: coin.symbol === 'BTC' || coin.symbol === 'ETH' || coin.symbol === 'SOL' ? 'top' : 'altcoin',
+          flash: null
         }));
         setCoins(formattedCoins);
       } catch (err) {
-        // Suppressing console warning so it doesn't clutter user terminal on strict networks
-        setCoins(MOCK_ALL_COINS);
+        // Fallback
+        setCoins(MOCK_ALL_COINS.map(c => ({...c, displayPrice: c.price, price: parseFloat(c.price.replace(/[^0-9.-]+/g,""))})));
       } finally {
         setLoading(false);
       }
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, 60000); // Update every minute
-    return () => clearInterval(interval);
+
+    // Connect to live Binance WebSocket for real-time tick data
+    const ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setCoins(prevCoins => {
+        let updated = false;
+        const newCoins = prevCoins.map(coin => {
+          const tickerMatch = data.find(t => t.s === `${coin.ticker}USDT`);
+          if (tickerMatch) {
+            const newPrice = parseFloat(tickerMatch.c);
+            const oldPrice = coin.price;
+            
+            if (newPrice !== oldPrice && !isNaN(newPrice)) {
+              updated = true;
+              return {
+                ...coin,
+                price: newPrice,
+                displayPrice: `$${newPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: typeof newPrice === 'number' && newPrice < 1 ? 4 : 2 })}`,
+                change: `${parseFloat(tickerMatch.P).toFixed(2)}%`,
+                positive: parseFloat(tickerMatch.P) >= 0,
+                flash: newPrice > oldPrice ? 'flash-up' : 'flash-down'
+              };
+            }
+          }
+          // Clear flash after 1 tick
+          if (coin.flash) {
+            updated = true;
+            return { ...coin, flash: null };
+          }
+          return coin;
+        });
+        return updated ? newCoins : prevCoins;
+      });
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   const filteredCoins = coins.filter((coin) => {
@@ -79,12 +120,30 @@ function Market() {
 
   return (
     <div className="inner-page market-page">
+      <style>
+        {`
+          @keyframes flashGreen {
+            0% { background-color: rgba(56, 204, 141, 0.3); color: #fff; transform: scale(1.05); }
+            100% { background-color: transparent; transform: scale(1); }
+          }
+          @keyframes flashRed {
+            0% { background-color: rgba(255, 107, 107, 0.3); color: #fff; transform: scale(1.05); }
+            100% { background-color: transparent; transform: scale(1); }
+          }
+          .flash-up { animation: flashGreen 0.8s ease-out; border-radius: 6px; }
+          .flash-down { animation: flashRed 0.8s ease-out; border-radius: 6px; }
+          .price-cell { transition: color 0.2s ease, transform 0.2s ease; display: inline-block; padding: 4px 8px; }
+        `}
+      </style>
+      
       {/* Hero */}
       <section className="page-hero-inner flex items-center justify-center text-center">
         <div className="container">
-          <div className="inner-hero-badge">Live Markets</div>
+          <div className="inner-hero-badge relative overflow-hidden">
+             Live Markets <div className="absolute top-0 left-0 w-full h-full bg-blue-500 opacity-20 animate-pulse"></div>
+          </div>
           <h1 className="inner-hero-title">Crypto Market<br /><span className="gradient-text">At a Glance</span></h1>
-          <p className="text text-base inner-hero-desc">Real-time prices, market cap, and volume data for top cryptocurrencies — all in one place.</p>
+          <p className="text text-base inner-hero-desc">Real-time prices, market cap, and volume data for top cryptocurrencies — fully live feed.</p>
         </div>
       </section>
 
@@ -109,7 +168,13 @@ function Market() {
       <section className="section-padded section-dark-alt">
         <div className="container">
           <div className="section-header flex flex-wrap items-center justify-between gap-4">
-            <h2 className="large-title">All Assets</h2>
+            <h2 className="large-title flex items-center gap-3">
+              All Assets
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+            </h2>
             <div className="market-category-tabs flex overflow-x-auto">
               {categories.map(c => (
                 <button
@@ -127,7 +192,7 @@ function Market() {
               {loading && coins.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-20">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-                  <p className="text-gray text-base">Updating global markets...</p>
+                  <p className="text-gray text-base">Connecting to live feed...</p>
                 </div>
               ) : (
                 <table className="table market-table">
@@ -150,7 +215,7 @@ function Market() {
                         <td className="text-lg no-wrap">
                           {coin.name} <span className="text-lavender text-base" style={{ marginLeft: '8px' }}>{coin.ticker}</span>
                         </td>
-                        <td className="text-lg text-center">{coin.price}</td>
+                        <td className="text-lg text-center"><span className={`price-cell ${coin.flash || ''}`}>{coin.displayPrice}</span></td>
                         <td className={`text-lg text-center ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
                         <td className="text-base text-center no-wrap">{coin.cap}</td>
                         <td className="text-base text-center no-wrap">{coin.vol}</td>
@@ -191,7 +256,7 @@ function Market() {
                   <span className="trending-name font-bold text-lg">{coin.name}</span>
                   <span className="text-lavender text-base">{coin.ticker}</span>
                 </div>
-                <div className="trending-price text-2xl font-bold mb-2">{coin.price}</div>
+                <div className="trending-price text-2xl font-bold mb-2"><span className={`price-cell ${coin.flash || ''}`}>{coin.displayPrice}</span></div>
                 <div className={`trending-change text-base font-semibold ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change} (24h)</div>
                 <div className="mt-6">
                   <img src={coin.graph} className="trending-graph w-full opacity-60" alt="chart" />
