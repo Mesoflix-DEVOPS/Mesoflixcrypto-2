@@ -161,20 +161,33 @@ function Support() {
               </p>
               <div className="support-info-list" style={{ marginTop: '0' }}>
                 {[
-                  { icon: '📧', label: 'Email', value: 'support@mesoflixlabs.com' },
-                  { icon: '⏰', label: 'Response Time', value: '< 4 hours' },
-                  { icon: '🌍', label: 'Languages', value: 'English, Swahili, French' },
-                  { icon: '🔒', label: 'Secure', value: 'All conversations encrypted' },
+                  { 
+                    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>, 
+                    label: 'Email', value: 'support@mesoflixlabs.com' 
+                  },
+                  { 
+                    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>, 
+                    label: 'Response Time', value: '< 4 hours' 
+                  },
+                  { 
+                    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>, 
+                    label: 'Languages', value: 'English, Swahili, French' 
+                  },
+                  { 
+                    icon: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>, 
+                    label: 'Secure', value: 'All conversations encrypted' 
+                  },
                 ].map((item, i) => (
-                  <div key={i} className="support-info-item flex">
-                    <span className="support-info-icon">{item.icon}</span>
-                    <div>
-                      <span className="text-gray text-base">{item.label}</span>
-                      <span className="text-white text-base" style={{ display: 'block' }}>{item.value}</span>
+                  <div key={i} className="support-info-item flex" style={{ alignItems: 'center' }}>
+                    <div className="support-info-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>{item.icon}</div>
+                    <div style={{ marginLeft: '16px' }}>
+                      <span className="text-gray text-base" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{item.label}</span>
+                      <span className="text-white text-base" style={{ display: 'block', fontSize: '16px', marginTop: '2px' }}>{item.value}</span>
                     </div>
                   </div>
                 ))}
               </div>
+
             </div>
             <div className="sc-two-right">
               {submitted ? (

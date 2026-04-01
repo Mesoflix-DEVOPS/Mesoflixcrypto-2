@@ -74,40 +74,8 @@ function Market() {
     return coin.category && coin.category.toLowerCase() === activeCategory.toLowerCase();
   });
 
-  const fetchMarketData = async () => {
-    try {
-      const response = await fetch('https://api.coincap.io/v2/assets?limit=20');
-      if (!response.ok) throw new Error('API unreachable');
-      const json = await response.json();
-      
-      const mappedCoins = json.data.map((item, index) => ({
-        name: item.name,
-        ticker: item.symbol,
-        price: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(item.priceUsd)),
-        change: parseFloat(item.changePercent24Hr).toFixed(2) + '%',
-        cap: '$' + (parseFloat(item.marketCapUsd) / 1e9).toFixed(2) + 'B',
-        vol: '$' + (parseFloat(item.volumeUsd24Hr) / 1e6).toFixed(2) + 'M',
-        positive: parseFloat(item.changePercent24Hr) >= 0,
-        graph: [graph1, graph2, graph3, graph4, graph5][index % 5],
-        category: parseFloat(item.marketCapUsd) > 10e9 ? 'top' : 'altcoin'
-      }));
-      
-      setAllCoins(mappedCoins);
-    } catch (error) {
-      console.warn('Market API fetch failed, using mock data:', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
   const categories = ['All', 'Top', 'Altcoin'];
-  const filtered = allCoins.filter(c => activeCategory === 'All' || c.category === activeCategory.toLowerCase());
+  const filtered = coins.filter(c => activeCategory === 'All' || c.category === activeCategory.toLowerCase());
 
   return (
     <div className="inner-page market-page">
@@ -156,7 +124,7 @@ function Market() {
           </div>
           <div className="data-table-wrapper">
             <div className="data-table">
-              {loading && allCoins.length === 0 ? (
+              {loading && coins.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-20">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
                   <p className="text-gray text-base">Updating global markets...</p>
@@ -217,7 +185,7 @@ function Market() {
             <p className="text text-base">Most watched assets in the last 24 hours</p>
           </div>
           <div className="trending-grid grid gap-8 mt-12">
-            {!loading && allCoins.slice(0, 4).map((coin, i) => (
+            {!loading && coins.slice(0, 4).map((coin, i) => (
               <div key={i} className="trending-card">
                 <div className="trending-header flex items-center justify-between mb-4">
                   <span className="trending-name font-bold text-lg">{coin.name}</span>

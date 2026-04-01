@@ -3,12 +3,22 @@ import { Link } from 'react-router-dom';
 
 export function NotFound() {
   return (
-    <div className="inner-page text-center" style={{ padding: '160px 0' }}>
-      <div className="container">
-        <div className="not-found-code gradient-text" style={{ fontSize: '120px', fontWeight: '900', lineHeight: '1' }}>404</div>
-        <h2 className="large-title" style={{ marginTop: '24px' }}>Page not found</h2>
-        <p className="text text-base" style={{ marginTop: '16px', marginBottom: '40px' }}>The page you're looking for doesn't exist or has been moved.</p>
-        <Link to="/" className="btn btn-g-blue-veronica btn-base text-base">Back to Home</Link>
+    <div className="inner-page flex items-center justify-center" style={{ minHeight: '80vh', padding: '60px 0' }}>
+      <div className="container text-center" style={{ maxWidth: '600px' }}>
+        <img 
+          src="https://illustrations.popsy.co/amber/page-not-found.svg" 
+          alt="Page Not Found" 
+          style={{ width: '100%', maxWidth: '350px', margin: '0 auto 32px' }} 
+        />
+        <h1 className="large-title" style={{ fontSize: '42px', fontWeight: '900', marginBottom: '16px' }}>
+          <span className="gradient-text">Oops!</span> Page Not Found
+        </h1>
+        <p className="text text-base" style={{ fontSize: '18px', color: '#94a3b8', marginBottom: '40px' }}>
+          We can't seem to find the page you're looking for. It might have been removed, renamed, or didn't exist in the first place.
+        </p>
+        <Link to="/" className="btn btn-g-blue-veronica btn-base text-base" style={{ padding: '16px 32px' }}>
+          Return to Dashboard
+        </Link>
       </div>
     </div>
   );

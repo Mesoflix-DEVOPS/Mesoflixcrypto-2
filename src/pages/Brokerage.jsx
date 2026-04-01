@@ -72,39 +72,39 @@ function Brokerage() {
       {/* Institutional Focus */}
       <section className="section-padded section-dark-alt">
         <div className="container">
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="md:w-1/2">
+          <div className="sc-two-content" style={{ gap: '48px', alignItems: 'center' }}>
+            <div className="sc-two-left">
               <h2 className="large-title">Designed for <br /><span className="gradient-text">Institutional Grade</span></h2>
-              <p className="text text-base mb-8">As an authorized broker, we specialize in providing professional traders with the tools they need to scale. Our infrastructure is built to handle the highest demands of modern trading without compromising on safety or transparency.</p>
+              <p className="text text-base" style={{ marginBottom: '32px' }}>As an authorized broker, we specialize in providing professional traders with the tools they need to scale. Our infrastructure is built to handle the highest demands of modern trading without compromising on safety or transparency.</p>
               <ul className="check-list">
-                <li className="flex items-start gap-3 mb-4">
-                  <div className="check-icon">✓</div>
-                  <p className="text text-sm">Direct market access to Bitget spot and futures liquidity.</p>
+                <li className="flex items-start" style={{ gap: '12px', marginBottom: '16px' }}>
+                  <div className="check-icon" style={{ color: '#38bdf8', fontWeight: 'bold' }}>✓</div>
+                  <p className="text text-base">Direct market access to Bitget spot and futures liquidity.</p>
                 </li>
-                <li className="flex items-start gap-3 mb-4">
-                  <div className="check-icon">✓</div>
-                  <p className="text text-sm">Zero-fund custody risk — your funds stay in your exchange wallet.</p>
+                <li className="flex items-start" style={{ gap: '12px', marginBottom: '16px' }}>
+                  <div className="check-icon" style={{ color: '#38bdf8', fontWeight: 'bold' }}>✓</div>
+                  <p className="text text-base">Zero-fund custody risk — your funds stay in your exchange wallet.</p>
                 </li>
-                <li className="flex items-start gap-3 mb-4">
-                  <div className="check-icon">✓</div>
-                  <p className="text text-sm">Dedicated institutional support for high-volume brokerage clients.</p>
+                <li className="flex items-start" style={{ gap: '12px', marginBottom: '16px' }}>
+                  <div className="check-icon" style={{ color: '#38bdf8', fontWeight: 'bold' }}>✓</div>
+                  <p className="text text-base">Dedicated institutional support for high-volume brokerage clients.</p>
                 </li>
               </ul>
             </div>
-            <div className="md:w-1/2 bg-slate-900 border border-slate-800 p-8 rounded-3xl">
-               <div className="text-center mb-6">
-                 <h3 className="text-xl font-bold">Partnership Verified</h3>
-                 <p className="text-xs text-slate-500 mt-1">Institutional Broker Program ID: MS-FLX-2026</p>
+            <div className="sc-two-right" style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', padding: '32px', borderRadius: '24px' }}>
+               <div className="text-center" style={{ marginBottom: '24px' }}>
+                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff' }}>Partnership Verified</h3>
+                 <p className="text" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>Institutional Broker Program ID: MS-FLX-2026</p>
                </div>
-               <div className="space-y-4">
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                  {tradingTiers.map((tier, i) => (
-                   <div key={i} className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                     <h4 className="text-blue-400 font-bold">{tier.tier}</h4>
-                     <p className="text-xs text-slate-400 mt-1 mb-3">{tier.volume}</p>
-                     <ul className="grid grid-cols-1 gap-2">
+                   <div key={i} style={{ padding: '16px', borderRadius: '16px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                     <h4 style={{ color: '#60a5fa', fontWeight: 'bold', marginBottom: '4px', fontSize: '16px' }}>{tier.tier}</h4>
+                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>{tier.volume}</p>
+                     <ul style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                        {tier.benefits.map((b, bi) => (
-                         <li key={bi} className="text-[10px] text-slate-300 flex items-center gap-2">
-                           <span className="w-1 h-1 bg-blue-500 rounded-full"></span> {b}
+                         <li key={bi} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                           <span style={{ width: '4px', height: '4px', background: '#3b82f6', borderRadius: '50%' }}></span> {b}
                          </li>
                        ))}
                      </ul>
