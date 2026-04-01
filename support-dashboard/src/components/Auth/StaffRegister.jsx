@@ -31,29 +31,31 @@ function StaffRegister() {
     const newKey = generateKey();
 
     try {
-      // 1. Sign up user in Supabase Auth
+      // 1. Sign up user in Supabase Auth (passing metadata for the trigger)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: { full_name: fullName }
+        }
       });
 
       if (authError) throw authError;
 
       if (authData.user) {
-        // 2. Create staff profile with generated key
-        const { error: profileError } = await supabase
+        // 2. Wait a brief moment for the trigger to finish, then fetch the key
+        // (Triggers are nearly instant, but a small delay ensures the record is readable)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const { data: profile, error: profileError } = await supabase
           .from('staff_profiles')
-          .insert([
-            { 
-              id: authData.user.id, 
-              full_name: fullName, 
-              unique_key: newKey 
-            }
-          ]);
+          .select('unique_key')
+          .eq('id', authData.user.id)
+          .single();
 
-        if (profileError) throw profileError;
+        if (profileError) throw new Error('Account created, but could not retrieve security key. Please contact admin.');
 
-        setGeneratedKey(newKey);
+        setGeneratedKey(profile.unique_key);
       }
     } catch (err) {
       setError(err.message);
