@@ -11,9 +11,29 @@
 @import 'components/table';
 @import 'components/form';
 // from layout folder
+// Pulse animation for live data
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+}
+
+.live-indicator-pulse {
+  width: 8px;
+  height: 8px;
+  background-color: #ff5252;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-red 2s infinite;
+}
+
+.hidden { display: none; }
+@media (min-width: 768px) {
+  .md\:flex { display: flex !important; }
+}
 @import 'layout/header';
 @import 'layout/navbar';
 @import 'layout/footer';
 // from pages folder
 @import "pages/index";
-@import "pages/inner-pages";
+@import "pages/inner-pages";

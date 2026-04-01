@@ -12,15 +12,51 @@ import graph3 from '../assets/images/small-graph3.png';
 import graph4 from '../assets/images/small-graph4.png';
 import graph5 from '../assets/images/small-graph5.png';
 
-const coins = [
-  { name: 'Bitcoin', ticker: 'BTC', price: '$56,290.30', change: '+1.68%', positive: true, graph: graph1 },
-  { name: 'Ethereum', ticker: 'ETH', price: '$7,290.30', change: '+4.25%', positive: true, graph: graph2 },
-  { name: 'Cardano', ticker: 'ADA', price: '$1.80', change: '+3.43%', positive: true, graph: graph3 },
-  { name: 'Wax', ticker: 'WAXP', price: '$0.97', change: '-2.62%', positive: false, graph: graph4 },
-  { name: 'Polkadot', ticker: 'DOT', price: '$42.22', change: '+7.56%', positive: true, graph: graph5 },
+const INITIAL_COINS = [
+  { name: 'Bitcoin', ticker: 'BTC', price: '$66,290.30', change: '+1.68%', positive: true, graph: graph1 },
+  { name: 'Ethereum', ticker: 'ETH', price: '$3,490.30', change: '+4.25%', positive: true, graph: graph2 },
+  { name: 'Cardano', ticker: 'ADA', price: '$0.58', change: '+3.43%', positive: true, graph: graph3 },
+  { name: 'Solana', ticker: 'SOL', price: '$188.20', change: '-2.62%', positive: false, graph: graph4 },
+  { name: 'Polkadot', ticker: 'DOT', price: '$9.22', change: '+7.56%', positive: true, graph: graph5 },
+  { name: 'Ripple', ticker: 'XRP', price: '$0.62', change: '+0.50%', positive: true, graph: graph1 },
+  { name: 'Dogecoin', ticker: 'DOGE', price: '$0.15', change: '-1.20%', positive: false, graph: graph2 },
+  { name: 'Avalanche', ticker: 'AVAX', price: '$54.30', change: '+2.30%', positive: true, graph: graph3 },
 ];
 
 function Home() {
+  const [coins, setCoins] = React.useState(INITIAL_COINS);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const response = await fetch('https://api.coincap.io/v2/assets?limit=8');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const json = await response.json();
+        
+        const mappedCoins = json.data.map((item, index) => ({
+          name: item.name,
+          ticker: item.symbol,
+          price: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(item.priceUsd)),
+          change: parseFloat(item.changePercent24Hr).toFixed(2) + '%',
+          positive: parseFloat(item.changePercent24Hr) >= 0,
+          graph: [graph1, graph2, graph3, graph4, graph5][index % 5]
+        }));
+        
+        setCoins(mappedCoins);
+      } catch (error) {
+        console.warn('Using fallback data due to fetch error:', error.message);
+        // coins is already initialized with INITIAL_COINS
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMarketData();
+    const interval = setInterval(fetchMarketData, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       {/* Hero Header */}
@@ -116,6 +152,10 @@ function Home() {
         <div className="container">
           <div className="sc-fees-content text-center">
             <div className="title-wrapper">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="live-indicator-pulse"></span>
+                <span className="text-gray text-xs uppercase tracking-widest font-bold">Live Market Data</span>
+              </div>
               <h2 className="large-title">Trade with the lowest fees in the industry</h2>
               <p className="text text-base">MesoflixLabs offers competitive fee structures and transparent pricing for all your cryptocurrency transactions.</p>
               <Link to="/buy-sell" className="flex-inline items-center btn-link">
@@ -125,32 +165,40 @@ function Home() {
             </div>
             <div className="data-table-wrapper">
               <div className="data-table">
-                <table className="table">
-                  <tbody>
-                    {coins.map((coin) => (
-                      <tr key={coin.ticker} className="grid">
-                        <td className="flex items-center justify-center text-lg">{coin.name}</td>
-                        <td className="flex items-center justify-center text-lavender text-lg">{coin.ticker}</td>
-                        <td className="flex items-center justify-center text-lg">{coin.price}</td>
-                        <td className={`flex items-center justify-center text-lg ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
-                        <td className="flex items-center justify-center">
-                          <img src={coin.graph} className="graph-img" alt="Graph" />
-                        </td>
-                        <td className="flex items-center justify-center">
-                          <Link to="/buy-sell" className="table-link flex items-center">
-                            <span className="link-text no-wrap text-base">Trade Now</span>
-                            <img src={arrowWhiteIcon} className="link-icon" alt="Arrow" />
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {loading && coins.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-20">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+                    <p className="text-gray text-base">Syncing live prices...</p>
+                  </div>
+                ) : (
+                  <table className="table">
+                    <tbody>
+                      {coins.map((coin) => (
+                        <tr key={coin.ticker}>
+                          <td className="text-lg">{coin.name}</td>
+                          <td className="text-lavender text-lg">{coin.ticker}</td>
+                          <td className="text-lg">{coin.price}</td>
+                          <td className={`text-lg ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
+                          <td className="hidden md:flex">
+                            <img src={coin.graph} className="graph-img" alt="Graph" />
+                          </td>
+                          <td>
+                            <Link to="/buy-sell" className="table-link">
+                              <span className="link-text no-wrap text-base">Trade Now</span>
+                              <img src={arrowWhiteIcon} className="link-icon" alt="Arrow" />
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       <section className="page-sc-invest flex items-center">
         <div className="container">

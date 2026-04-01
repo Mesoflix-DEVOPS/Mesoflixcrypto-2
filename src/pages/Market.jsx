@@ -33,10 +33,54 @@ const marketStats = [
   { label: 'Active Coins', value: '22,894', change: '+124', positive: true },
 ];
 
-function Market() {
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [sortField, setSortField] = useState('cap');
+const MOCK_ALL_COINS = [
+  { name: 'Bitcoin', ticker: 'BTC', price: '$66,290.30', change: '+1.68%', cap: '$1.3T', vol: '$48.2B', positive: true, graph: graph1, category: 'top' },
+  { name: 'Ethereum', ticker: 'ETH', price: '$3,490.30', change: '+4.25%', cap: '$419B', vol: '$21.1B', positive: true, graph: graph2, category: 'top' },
+  { name: 'Cardano', ticker: 'ADA', price: '$0.58', change: '+3.43%', cap: '$20B', vol: '$1.3B', positive: true, graph: graph3, category: 'altcoin' },
+  { name: 'Solana', ticker: 'SOL', price: '$188.20', change: '+9.21%', cap: '$83B', vol: '$7.9B', positive: true, graph: graph1, category: 'top' },
+  { name: 'Polkadot', ticker: 'DOT', price: '$9.22', change: '+7.56%', cap: '$13B', vol: '$1.8B', positive: true, graph: graph5, category: 'top' },
+  { name: 'Chainlink', ticker: 'LINK', price: '$18.86', change: '-1.34%', cap: '$11B', vol: '$920M', positive: false, graph: graph2, category: 'defi' },
+  { name: 'Uniswap', ticker: 'UNI', price: '$11.44', change: '+2.87%', cap: '$6.4B', vol: '$490M', positive: true, graph: graph3, category: 'defi' },
+];
 
+function Market() {
+  const [allCoins, setAllCoins] = useState(MOCK_ALL_COINS);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const fetchMarketData = async () => {
+    try {
+      const response = await fetch('https://api.coincap.io/v2/assets?limit=20');
+      if (!response.ok) throw new Error('API unreachable');
+      const json = await response.json();
+      
+      const mappedCoins = json.data.map((item, index) => ({
+        name: item.name,
+        ticker: item.symbol,
+        price: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(item.priceUsd)),
+        change: parseFloat(item.changePercent24Hr).toFixed(2) + '%',
+        cap: '$' + (parseFloat(item.marketCapUsd) / 1e9).toFixed(2) + 'B',
+        vol: '$' + (parseFloat(item.volumeUsd24Hr) / 1e6).toFixed(2) + 'M',
+        positive: parseFloat(item.changePercent24Hr) >= 0,
+        graph: [graph1, graph2, graph3, graph4, graph5][index % 5],
+        category: parseFloat(item.marketCapUsd) > 10e9 ? 'top' : 'altcoin'
+      }));
+      
+      setAllCoins(mappedCoins);
+    } catch (error) {
+      console.warn('Market API fetch failed, using mock data:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMarketData();
+    const interval = setInterval(fetchMarketData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const categories = ['All', 'Top', 'Altcoin'];
   const filtered = allCoins.filter(c => activeCategory === 'All' || c.category === activeCategory.toLowerCase());
 
   return (
@@ -46,16 +90,16 @@ function Market() {
         <div className="container">
           <div className="inner-hero-badge">Live Markets</div>
           <h1 className="inner-hero-title">Crypto Market<br /><span className="gradient-text">At a Glance</span></h1>
-          <p className="text text-base inner-hero-desc">Real-time prices, market cap, and volume data for 300+ cryptocurrencies — all in one place.</p>
+          <p className="text text-base inner-hero-desc">Real-time prices, market cap, and volume data for top cryptocurrencies — all in one place.</p>
         </div>
       </section>
 
       {/* Global Stats Bar */}
       <section className="market-stats-bar">
         <div className="container">
-          <div className="market-stats-row flex items-center justify-between">
+          <div className="market-stats-row flex items-center justify-between overflow-x-auto gap-8 py-4">
             {marketStats.map((s, i) => (
-              <div key={i} className="market-stat-item">
+              <div key={i} className="market-stat-item no-wrap">
                 <span className="market-stat-label text-gray text-base">{s.label}</span>
                 <div className="flex items-center" style={{ gap: '8px' }}>
                   <span className="market-stat-value">{s.value}</span>
@@ -67,38 +111,12 @@ function Market() {
         </div>
       </section>
 
-      {/* Market Sentiment */}
-      <section className="section-padded">
-        <div className="container">
-          <div className="market-sentiment-wrap">
-            <div className="market-sentiment-header flex items-center justify-between">
-              <h2 className="large-title">Market Sentiment</h2>
-              <div className="sentiment-indicator text-mint">🟢 Fear & Greed: 72 — Greed</div>
-            </div>
-            <div className="sentiment-bars">
-              {marketSentiment.map((s, i) => (
-                <div key={i} className="sentiment-row flex items-center">
-                  <span className="sentiment-label text text-base">{s.label}</span>
-                  <div className="sentiment-bar-track flex-1">
-                    <div
-                      className={`sentiment-bar-fill ${i === 0 ? 'fill-mint' : i === 1 ? 'fill-lavender' : 'fill-red'}`}
-                      style={{ width: `${s.pct}%` }}
-                    />
-                  </div>
-                  <span className="sentiment-pct text text-base">{s.pct}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Coins Table */}
       <section className="section-padded section-dark-alt">
         <div className="container">
-          <div className="section-header flex items-center justify-between">
+          <div className="section-header flex flex-wrap items-center justify-between gap-4">
             <h2 className="large-title">All Assets</h2>
-            <div className="market-category-tabs flex">
+            <div className="market-category-tabs flex overflow-x-auto">
               {categories.map(c => (
                 <button
                   key={c}
@@ -112,41 +130,54 @@ function Market() {
           </div>
           <div className="data-table-wrapper">
             <div className="data-table">
-              <table className="table market-table">
-                <thead>
-                  <tr className="table-head-row market-row grid">
-                    <th className="flex items-center text-gray text-base">#</th>
-                    <th className="flex items-center text-gray text-base">Asset</th>
-                    <th className="flex items-center text-gray text-base">Price</th>
-                    <th className="flex items-center text-gray text-base">24h %</th>
-                    <th className="flex items-center text-gray text-base">Market Cap</th>
-                    <th className="flex items-center text-gray text-base">Volume</th>
-                    <th className="flex items-center text-gray text-base">Chart</th>
-                    <th className="flex items-center text-gray text-base">Trade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((coin, idx) => (
-                    <tr key={coin.ticker} className="market-row grid">
-                      <td className="flex items-center justify-center text-gray text-base">{idx + 1}</td>
-                      <td className="flex items-center text-lg">{coin.name} <span className="text-lavender text-base" style={{ marginLeft: '8px' }}>{coin.ticker}</span></td>
-                      <td className="flex items-center justify-center text-lg">{coin.price}</td>
-                      <td className={`flex items-center justify-center text-lg ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
-                      <td className="flex items-center justify-center text-base">{coin.cap}</td>
-                      <td className="flex items-center justify-center text-base">{coin.vol}</td>
-                      <td className="flex items-center justify-center">
-                        <img src={coin.graph} className="graph-img" alt="chart" />
-                      </td>
-                      <td className="flex items-center justify-center">
-                        <Link to="/buy-sell" className="table-link flex items-center">
-                          <span className="link-text no-wrap text-base">Trade</span>
-                          <img src={arrowWhiteIcon} className="link-icon" alt="Go" />
-                        </Link>
-                      </td>
+              {loading && allCoins.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-20">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+                  <p className="text-gray text-base">Updating global markets...</p>
+                </div>
+              ) : (
+                <table className="table market-table">
+                  <thead>
+                    <tr className="table-head-row">
+                      <th className="text-gray text-base text-center">#</th>
+                      <th className="text-gray text-base">Asset</th>
+                      <th className="text-gray text-base text-center">Price</th>
+                      <th className="text-gray text-base text-center">24h %</th>
+                      <th className="text-gray text-base text-center">Market Cap</th>
+                      <th className="text-gray text-base text-center no-wrap">Volume (24h)</th>
+                      <th className="text-gray text-base text-center hidden md:table-cell">Chart</th>
+                      <th className="text-gray text-base text-center">Trade</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filtered.map((coin, idx) => (
+                      <tr key={coin.ticker}>
+                        <td className="text-gray text-base text-center">{idx + 1}</td>
+                        <td className="text-lg no-wrap">
+                          {coin.name} <span className="text-lavender text-base" style={{ marginLeft: '8px' }}>{coin.ticker}</span>
+                        </td>
+                        <td className="text-lg text-center">{coin.price}</td>
+                        <td className={`text-lg text-center ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
+                        <td className="text-base text-center no-wrap">{coin.cap}</td>
+                        <td className="text-base text-center no-wrap">{coin.vol}</td>
+                        <td className="hidden md:table-cell">
+                          <div className="flex justify-center">
+                            <img src={coin.graph} className="graph-img" alt="chart" style={{ maxWidth: '100px' }} />
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex justify-center">
+                            <Link to="/buy-sell" className="table-link">
+                              <span className="link-text no-wrap text-base">Trade</span>
+                              <img src={arrowWhiteIcon} className="link-icon" alt="Go" />
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
@@ -159,17 +190,19 @@ function Market() {
             <h2 className="large-title">🔥 Trending Now</h2>
             <p className="text text-base">Most watched assets in the last 24 hours</p>
           </div>
-          <div className="trending-grid">
-            {allCoins.filter(c => c.positive).slice(0, 4).map((coin, i) => (
+          <div className="trending-grid grid gap-8 mt-12">
+            {!loading && allCoins.slice(0, 4).map((coin, i) => (
               <div key={i} className="trending-card">
-                <div className="trending-header flex items-center justify-between">
-                  <span className="trending-name">{coin.name}</span>
+                <div className="trending-header flex items-center justify-between mb-4">
+                  <span className="trending-name font-bold text-lg">{coin.name}</span>
                   <span className="text-lavender text-base">{coin.ticker}</span>
                 </div>
-                <div className="trending-price">{coin.price}</div>
-                <div className={`trending-change text-base ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change} (24h)</div>
-                <img src={coin.graph} className="trending-graph" alt="chart" />
-                <Link to="/buy-sell" className="btn btn-g-blue-veronica text-base w-full" style={{ marginTop: '16px' }}>Trade Now</Link>
+                <div className="trending-price text-2xl font-bold mb-2">{coin.price}</div>
+                <div className={`trending-change text-base font-semibold ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change} (24h)</div>
+                <div className="mt-6">
+                  <img src={coin.graph} className="trending-graph w-full opacity-60" alt="chart" />
+                </div>
+                <Link to="/buy-sell" className="btn btn-g-blue-veronica text-base w-full" style={{ marginTop: '24px' }}>Trade Now</Link>
               </div>
             ))}
           </div>
