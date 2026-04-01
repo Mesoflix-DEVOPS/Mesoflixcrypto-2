@@ -57,17 +57,23 @@ async function sendBrevoEmail({ name, email, subject, message, accountEmail }) {
     to: [{ email: 'support@mesoflixlabs.com' }],
     subject: `[Support] ${subject}`,
     htmlContent: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-        <h2 style="color: #4a90e2; border-bottom: 2px solid #4a90e2; padding-bottom: 10px;">New Support Request</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Contact Email:</strong> ${email}</p>
-        <p><strong>Account Email:</strong> ${accountEmail || 'N/A'}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <h3 style="color: #555;">Message:</h3>
-        <p style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 4px;">${message}</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 0.85em; color: #999;"><em>Submitted on: ${new Date().toUTCString()}</em></p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="background: #0f172a; padding: 30px; text-align: center;">
+          <img src="https://mesoflixcrypto-2-n7su-git-master-mesoflix-devops-projects.vercel.app/site_icon.svg" alt="MesoflixLabs" style="width: 50px; height: 50px; margin-bottom: 10px;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">Mesoflix<span style="color: #38bdf8;">Labs</span></h1>
+        </div>
+        <div style="padding: 40px; background: #ffffff;">
+          <h2 style="color: #1e293b; margin-top: 0; font-size: 20px;">New Support Request</h2>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+            <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>From:</strong> ${name}</p>
+            <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 5px 0; color: #64748b; font-size: 14px;"><strong>Account:</strong> ${accountEmail || 'N/A'}</p>
+          </div>
+          <p style="color: #475569; font-size: 16px; line-height: 1.6;">${message}</p>
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">© 2026 MesoflixLabs. All rights reserved.</p>
+          </div>
+        </div>
       </div>
     `
   };
@@ -287,6 +293,7 @@ app.post('/api/staff/reply', async (req, res) => {
       htmlContent: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="background: #0f172a; padding: 30px; text-align: center;">
+            <img src="https://mesoflixcrypto-2-n7su-git-master-mesoflix-devops-projects.vercel.app/site_icon.svg" alt="MesoflixLabs" style="width: 50px; height: 50px; margin-bottom: 10px;">
             <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">Mesoflix<span style="color: #38bdf8;">Labs</span></h1>
           </div>
           <div style="padding: 40px; background: #ffffff;">
@@ -296,6 +303,9 @@ app.post('/api/staff/reply', async (req, res) => {
             </div>
             <p style="font-size: 14px; color: #94a3b8; margin-top: 30px; margin-bottom: 0;">Best regards,</p>
             <p style="font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 5px;">${staffName || 'The Support Team'}</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #f1f5f9;">
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">MesoflixLabs Institutional Brokerage Services</p>
           </div>
         </div>
       `

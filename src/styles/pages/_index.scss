@@ -1,8 +1,13 @@
 .page-wrapper{
-    background: url('/assets/images/bg-full.png') top/cover no-repeat;
+    background: url('/assets/images/bg-full.png') center top/cover no-repeat;
     background-color: $dark;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
+
+    @include breakpoints-down(md) {
+        background-attachment: scroll;
+        background-position: center top;
+    }
 }
 
 .page-sc-one{

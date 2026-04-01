@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import arrowWhiteIcon from '../assets/icons/arrow_white.svg';
-import graph1 from '../assets/images/small-graph1.png';
-import graph2 from '../assets/images/small-graph2.png';
-import graph3 from '../assets/images/small-graph3.png';
-import graph4 from '../assets/images/small-graph4.png';
-import graph5 from '../assets/images/small-graph5.png';
+import graph1 from '../assets/icons/small-graph1.svg';
+import graph2 from '../assets/icons/small-graph2.svg';
+import graph3 from '../assets/icons/small-graph3.svg';
+import graph4 from '../assets/icons/small-graph4.svg';
+import graph5 from '../assets/icons/small-graph5.svg';
 
-const allCoins = [
-  { name: 'Bitcoin', ticker: 'BTC', price: '$56,290.30', change: '+1.68%', cap: '$1.09T', vol: '$48.2B', positive: true, graph: graph1, category: 'top' },
-  { name: 'Ethereum', ticker: 'ETH', price: '$7,290.30', change: '+4.25%', cap: '$875B', vol: '$31.1B', positive: true, graph: graph2, category: 'top' },
-  { name: 'Cardano', ticker: 'ADA', price: '$1.80', change: '+3.43%', cap: '$63B', vol: '$4.3B', positive: true, graph: graph3, category: 'altcoin' },
-  { name: 'Wax', ticker: 'WAXP', price: '$0.97', change: '-2.62%', cap: '$2.1B', vol: '$320M', positive: false, graph: graph4, category: 'altcoin' },
-  { name: 'Polkadot', ticker: 'DOT', price: '$42.22', change: '+7.56%', cap: '$52B', vol: '$5.8B', positive: true, graph: graph5, category: 'top' },
-  { name: 'Solana', ticker: 'SOL', price: '$188.40', change: '+9.21%', cap: '$83B', vol: '$7.9B', positive: true, graph: graph1, category: 'top' },
-  { name: 'Chainlink', ticker: 'LINK', price: '$24.86', change: '-1.34%', cap: '$14B', vol: '$1.2B', positive: false, graph: graph2, category: 'defi' },
-  { name: 'Uniswap', ticker: 'UNI', price: '$12.44', change: '+2.87%', cap: '$9.4B', vol: '$890M', positive: true, graph: graph3, category: 'defi' },
+const MOCK_ALL_COINS = [
+  { name: 'Bitcoin', ticker: 'BTC', price: '$66,290.30', change: '+1.68%', cap: '$1.3T', vol: '$48.2B', positive: true, graph: graph1, category: 'top' },
+  { name: 'Ethereum', ticker: 'ETH', price: '$3,490.30', change: '+4.25%', cap: '$419B', vol: '$21.1B', positive: true, graph: graph2, category: 'top' },
+  { name: 'Cardano', ticker: 'ADA', price: '$0.58', change: '+3.43%', cap: '$20B', vol: '$1.3B', positive: true, graph: graph3, category: 'altcoin' },
+  { name: 'Solana', ticker: 'SOL', price: '$188.20', change: '+9.21%', cap: '$83B', vol: '$7.9B', positive: true, graph: graph1, category: 'top' },
+  { name: 'Polkadot', ticker: 'DOT', price: '$9.22', change: '+7.56%', cap: '$13B', vol: '$1.8B', positive: true, graph: graph5, category: 'top' },
+  { name: 'Chainlink', ticker: 'LINK', price: '$18.86', change: '-1.34%', cap: '$11B', vol: '$920M', positive: false, graph: graph2, category: 'defi' },
+  { name: 'Uniswap', ticker: 'UNI', price: '$11.44', change: '+2.87%', cap: '$6.4B', vol: '$490M', positive: true, graph: graph3, category: 'defi' },
 ];
 
 const categories = ['All', 'Top', 'DeFi', 'Altcoin'];
@@ -33,20 +32,47 @@ const marketStats = [
   { label: 'Active Coins', value: '22,894', change: '+124', positive: true },
 ];
 
-const MOCK_ALL_COINS = [
-  { name: 'Bitcoin', ticker: 'BTC', price: '$66,290.30', change: '+1.68%', cap: '$1.3T', vol: '$48.2B', positive: true, graph: graph1, category: 'top' },
-  { name: 'Ethereum', ticker: 'ETH', price: '$3,490.30', change: '+4.25%', cap: '$419B', vol: '$21.1B', positive: true, graph: graph2, category: 'top' },
-  { name: 'Cardano', ticker: 'ADA', price: '$0.58', change: '+3.43%', cap: '$20B', vol: '$1.3B', positive: true, graph: graph3, category: 'altcoin' },
-  { name: 'Solana', ticker: 'SOL', price: '$188.20', change: '+9.21%', cap: '$83B', vol: '$7.9B', positive: true, graph: graph1, category: 'top' },
-  { name: 'Polkadot', ticker: 'DOT', price: '$9.22', change: '+7.56%', cap: '$13B', vol: '$1.8B', positive: true, graph: graph5, category: 'top' },
-  { name: 'Chainlink', ticker: 'LINK', price: '$18.86', change: '-1.34%', cap: '$11B', vol: '$920M', positive: false, graph: graph2, category: 'defi' },
-  { name: 'Uniswap', ticker: 'UNI', price: '$11.44', change: '+2.87%', cap: '$6.4B', vol: '$490M', positive: true, graph: graph3, category: 'defi' },
-];
-
 function Market() {
-  const [allCoins, setAllCoins] = useState(MOCK_ALL_COINS);
+  const [coins, setCoins] = useState(MOCK_ALL_COINS);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const response = await fetch('https://api.coincap.io/v2/assets?limit=8');
+        if (!response.ok) throw new Error('API error');
+        
+        const data = await response.json();
+        const formattedCoins = data.data.map((coin, index) => ({
+          name: coin.name,
+          ticker: coin.symbol,
+          price: `$${parseFloat(coin.priceUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          change: `${parseFloat(coin.changePercent24Hr).toFixed(2)}%`,
+          cap: `$${(parseFloat(coin.marketCapUsd) / 1e9).toFixed(1)}B`,
+          vol: `$${(parseFloat(coin.volumeUsd24Hr) / 1e6).toFixed(1)}M`,
+          positive: parseFloat(coin.changePercent24Hr) >= 0,
+          graph: [graph1, graph2, graph3, graph4, graph5][index % 5],
+          category: coin.symbol === 'BTC' || coin.symbol === 'ETH' || coin.symbol === 'SOL' ? 'top' : 'altcoin'
+        }));
+        setCoins(formattedCoins);
+      } catch (err) {
+        console.warn('Using fallback data due to fetch error:', err.message);
+        setCoins(MOCK_ALL_COINS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const filteredCoins = coins.filter((coin) => {
+    if (activeCategory === 'All') return true;
+    return coin.category && coin.category.toLowerCase() === activeCategory.toLowerCase();
+  });
 
   const fetchMarketData = async () => {
     try {
