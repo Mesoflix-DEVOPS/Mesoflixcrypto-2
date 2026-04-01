@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import arrowWhiteIcon from '../assets/icons/arrow_white.svg';
-import graph1 from '../assets/icons/small-graph1.svg';
-import graph2 from '../assets/icons/small-graph2.svg';
-import graph3 from '../assets/icons/small-graph3.svg';
-import graph4 from '../assets/icons/small-graph4.svg';
-import graph5 from '../assets/icons/small-graph5.svg';
+import graph1 from '../assets/images/small-graph1.png';
+import graph2 from '../assets/images/small-graph2.png';
+import graph3 from '../assets/images/small-graph3.png';
+import graph4 from '../assets/images/small-graph4.png';
+import graph5 from '../assets/images/small-graph5.png';
 
 const MOCK_ALL_COINS = [
   { name: 'Bitcoin', ticker: 'BTC', price: '$66,290.30', change: '+1.68%', cap: '$1.3T', vol: '$48.2B', positive: true, graph: graph1, category: 'top' },
