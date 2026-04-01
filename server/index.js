@@ -79,6 +79,11 @@ async function sendBrevoEmail({ name, email, subject, message, accountEmail }) {
   }
 }
 
+// Help check for Render deployment
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'Healthy', timestamp: new Date().toISOString() });
+});
+
 // Support Contact Endpoint
 app.post('/api/contact', async (req, res) => {
   try {
