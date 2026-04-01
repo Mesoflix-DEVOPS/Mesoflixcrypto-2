@@ -254,6 +254,93 @@ app.post('/api/staff/login', async (req, res) => {
   }
 });
 
+// Staff Reply to Ticket
+app.post('/api/staff/reply', async (req, res) => {
+  try {
+    const { ticketId, userEmail, userName, message, staffName } = req.body;
+
+    if (!ticketId || !userEmail || !message) {
+      return res.status(400).json({ error: 'Missing required reply data.' });
+    }
+
+    // 1. Send Email to User via Brevo
+    const emailData = {
+      sender: { name: 'MesoflixLabs Support', email: 'support@mesoflixlabs.com' },
+      to: [{ email: userEmail, name: userName }],
+      subject: `Re: Your Support Request (Ticket #${ticketId.slice(0, 8)})`,
+      htmlContent: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px; text-align: center;">
+            <h1 style="color: #38bdf8; margin: 0; font-size: 24px;">MesoflixLabs Support</h1>
+          </div>
+          <div style="padding: 32px; background: #ffffff;">
+            <p style="font-size: 16px; color: #64748b;">Hello <strong>${userName}</strong>,</p>
+            <p style="font-size: 16px; line-height: 1.6; color: #1e293b;">${message}</p>
+            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0;">
+            <p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Regards,</p>
+            <p style="font-size: 15px; font-weight: bold; color: #0f172a; margin: 0;">${staffName || 'Support Team'}</p>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Support Specialist @ MesoflixLabs</p>
+          </div>
+          <div style="background: #f8fafc; padding: 16px; text-align: center; border-top: 1px solid #f1f5f9;">
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">This is an automated reply from our secure staff dashboard.</p>
+          </div>
+        </div>
+      `
+    };
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(emailData)
+    });
+
+    if (!response.ok) throw new Error('Email delivery failed');
+
+    // 2. Update Ticket Status to 'active' in Supabase
+    const { error: updateError } = await supabase
+      .from('support_messages')
+      .update({ status: 'active' })
+      .eq('id', ticketId);
+
+    if (updateError) throw updateError;
+
+    res.status(200).json({ success: true, message: 'Reply sent successfully.' });
+
+  } catch (error) {
+    console.error('Staff reply error:', error);
+    res.status(500).json({ error: 'Failed to send reply.' });
+  }
+});
+
+// Update Ticket Status
+app.patch('/api/tickets/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['new', 'active', 'completed', 'closed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status.' });
+    }
+
+    const { error } = await supabase
+      .from('support_messages')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Status updated.' });
+
+  } catch (error) {
+    console.error('Status update error:', error);
+    res.status(500).json({ error: 'Failed to update ticket status.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Express API Server listening on port ${PORT}`);
 });
