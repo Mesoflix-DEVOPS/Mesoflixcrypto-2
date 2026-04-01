@@ -263,26 +263,39 @@ app.post('/api/staff/reply', async (req, res) => {
       return res.status(400).json({ error: 'Missing required reply data.' });
     }
 
-    // 1. Send Email to User via Brevo
+    // 1. Fetch existing replies first
+    const { data: ticket, error: fetchError } = await supabase
+      .from('support_messages')
+      .select('replies')
+      .eq('id', ticketId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const currentReplies = ticket.replies || [];
+    const newReply = {
+      message,
+      sender: staffName || 'Support Team',
+      timestamp: new Date().toISOString()
+    };
+
+    // 2. Send Professional Email to User
     const emailData = {
       sender: { name: 'MesoflixLabs Support', email: 'support@mesoflixlabs.com' },
       to: [{ email: userEmail, name: userName }],
-      subject: `Re: Your Support Request (Ticket #${ticketId.slice(0, 8)})`,
+      subject: `Update on Your Ticket: ${ticketId.slice(0, 8)}`,
       htmlContent: `
-        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px; text-align: center;">
-            <h1 style="color: #38bdf8; margin: 0; font-size: 24px;">MesoflixLabs Support</h1>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div style="background: #0f172a; padding: 30px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">Mesoflix<span style="color: #38bdf8;">Labs</span></h1>
           </div>
-          <div style="padding: 32px; background: #ffffff;">
-            <p style="font-size: 16px; color: #64748b;">Hello <strong>${userName}</strong>,</p>
-            <p style="font-size: 16px; line-height: 1.6; color: #1e293b;">${message}</p>
-            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0;">
-            <p style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Regards,</p>
-            <p style="font-size: 15px; font-weight: bold; color: #0f172a; margin: 0;">${staffName || 'Support Team'}</p>
-            <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Support Specialist @ MesoflixLabs</p>
-          </div>
-          <div style="background: #f8fafc; padding: 16px; text-align: center; border-top: 1px solid #f1f5f9;">
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">This is an automated reply from our secure staff dashboard.</p>
+          <div style="padding: 40px; background: #ffffff;">
+            <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">Hello ${userName},</p>
+            <div style="font-size: 16px; line-height: 1.6; color: #1e293b; background: #f8fafc; padding: 25px; border-radius: 12px; border-left: 4px solid #38bdf8;">
+              ${message}
+            </div>
+            <p style="font-size: 14px; color: #94a3b8; margin-top: 30px; margin-bottom: 0;">Best regards,</p>
+            <p style="font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 5px;">${staffName || 'The Support Team'}</p>
           </div>
         </div>
       `
@@ -300,19 +313,22 @@ app.post('/api/staff/reply', async (req, res) => {
 
     if (!response.ok) throw new Error('Email delivery failed');
 
-    // 2. Update Ticket Status to 'active' in Supabase
+    // 3. Update Status and Append Reply in Supabase
     const { error: updateError } = await supabase
       .from('support_messages')
-      .update({ status: 'active' })
+      .update({ 
+        status: 'active',
+        replies: [...currentReplies, newReply]
+      })
       .eq('id', ticketId);
 
     if (updateError) throw updateError;
 
-    res.status(200).json({ success: true, message: 'Reply sent successfully.' });
+    res.status(200).json({ success: true, message: 'Reply sent and stored successfully.' });
 
   } catch (error) {
     console.error('Staff reply error:', error);
-    res.status(500).json({ error: 'Failed to send reply.' });
+    res.status(500).json({ error: 'Failed to process reply.' });
   }
 });
 
