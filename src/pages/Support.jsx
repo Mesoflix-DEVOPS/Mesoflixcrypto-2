@@ -80,8 +80,12 @@ function Support() {
     
     setLoading(true);
 
+    const API_BASE_URL = import.meta.env.MODE === 'development' 
+      ? '' 
+      : 'https://mesoflixcrypto-2.onrender.com';
+
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formState)
