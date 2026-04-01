@@ -11,52 +11,29 @@ function StaffRegister() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const generateKey = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let key = 'S-';
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 4; j++) {
-        key += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      if (i < 2) key += '-';
-    }
-    return key;
-  };
-
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const newKey = generateKey();
+    const API_BASE_URL = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3001' 
+      : 'https://mesoflixcrypto-2.onrender.com';
 
     try {
-      // 1. Sign up user in Supabase Auth (passing metadata for the trigger)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName }
-        }
+      const response = await fetch(`${API_BASE_URL}/api/staff/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, fullName })
       });
 
-      if (authError) throw authError;
+      const data = await response.json();
 
-      if (authData.user) {
-        // 2. Wait a brief moment for the trigger to finish, then fetch the key
-        // (Triggers are nearly instant, but a small delay ensures the record is readable)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { data: profile, error: profileError } = await supabase
-          .from('staff_profiles')
-          .select('unique_key')
-          .eq('id', authData.user.id)
-          .single();
-
-        if (profileError) throw new Error('Account created, but could not retrieve security key. Please contact admin.');
-
-        setGeneratedKey(profile.unique_key);
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed.');
       }
+
+      setGeneratedKey(data.uniqueKey);
     } catch (err) {
       setError(err.message);
     } finally {

@@ -15,37 +15,28 @@ function StaffLogin() {
     setLoading(true);
     setError(null);
 
+    const API_BASE_URL = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3001' 
+      : 'https://mesoflixcrypto-2.onrender.com';
+
     try {
-      // 1. Primary Authentication (Email/Password)
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch(`${API_BASE_URL}/api/staff/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, uniqueKey: staffKey })
       });
 
-      if (authError) throw authError;
+      const data = await response.json();
 
-      if (authData.user) {
-        // 2. Secondary Authentication (Unique Staff Key)
-        const { data: profileData, error: profileError } = await supabase
-          .from('staff_profiles')
-          .select('unique_key')
-          .eq('id', authData.user.id)
-          .single();
-
-        if (profileError) {
-          await supabase.auth.signOut();
-          throw new Error('Access denied. Profile not found.');
-        }
-
-        if (profileData.unique_key !== staffKey) {
-          // KEY MISMATCH - Immediate Security Termination
-          await supabase.auth.signOut();
-          throw new Error('UNAUTHORIZED: Invalid Security Key. This attempt has been logged.');
-        }
-
-        // 3. SUCCESS - Redirect to main dash
-        navigate('/support/dashboard');
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed.');
       }
+
+      // 3. SUCCESS - Store custom session and redirect
+      localStorage.setItem('staffToken', data.token);
+      localStorage.setItem('staffUser', JSON.stringify(data.staff));
+      
+      navigate('/support/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

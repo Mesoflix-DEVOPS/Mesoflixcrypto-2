@@ -10,16 +10,9 @@ const ProtectedRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    const token = localStorage.getItem('staffToken');
+    setSession(token);
+    setLoading(false);
   }, []);
 
   if (loading) return (
@@ -54,8 +47,9 @@ function Dashboard() {
     setLoading(false);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('staffToken');
+    localStorage.removeItem('staffUser');
     navigate('/support/staff/login');
   };
 
