@@ -1,6 +1,7 @@
 {
   "name": "staff-onboarding",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
@@ -18,7 +19,7 @@
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
-    "vite": "^1.0.0-rc.13",
-    "vite-plugin-react": "^4.0.0"
+    "@vitejs/plugin-react": "^4.0.3",
+    "vite": "^4.4.5"
   }
 }
