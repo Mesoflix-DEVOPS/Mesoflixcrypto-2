@@ -250,13 +250,145 @@ app.post('/api/staff/login', async (req, res) => {
       staff: { 
         id: staff.id, 
         email: staff.email, 
-        fullName: staff.full_name 
+        fullName: staff.full_name,
+        category: staff.category,
+        role: staff.role,
+        teamId: staff.team_id,
+        agreementSigned: staff.agreement_signed
       } 
     });
 
   } catch (error) {
     console.error('Staff login error:', error);
     res.status(500).json({ error: 'Authentication failed.' });
+  }
+});
+
+// GET: staff/status - Check category availability
+app.get('/api/staff/status', async (req, res) => {
+  try {
+    const { data: teams, error } = await supabase
+      .from('staff_teams')
+      .select('category, member_count');
+
+    if (error) throw error;
+
+    // Default status for all categories
+    const status = {
+      binary: { hasLeader: false, members: 0 },
+      forex: { hasLeader: false, members: 0 },
+      crypto: { hasLeader: false, members: 0 }
+    };
+
+    teams.forEach(t => {
+      if (status[t.category]) {
+        status[t.category].hasLeader = true;
+        status[t.category].members = t.member_count;
+      }
+    });
+
+    res.status(200).json(status);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch staff status.' });
+  }
+});
+
+// POST: staff/onboard - Advanced Onboarding Flow (NDA + Category Selection)
+app.post('/api/staff/onboard', async (req, res) => {
+  try {
+    const { staffId, category } = req.body;
+
+    if (!staffId || !category) {
+      return res.status(400).json({ error: 'Staff ID and Category are required.' });
+    }
+
+    // 1. Check if category already has a team
+    const { data: existingTeam, error: teamError } = await supabase
+      .from('staff_teams')
+      .select('*')
+      .eq('category', category)
+      .single();
+
+    let finalRole = 'member';
+    let teamId = null;
+
+    if (!existingTeam) {
+      // 2. This person is the LEADER for this new branch
+      const { data: newTeam, error: createError } = await supabase
+        .from('staff_teams')
+        .insert([{ category, leader_id: staffId, member_count: 1 }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      finalRole = 'leader';
+      teamId = newTeam.id;
+    } else {
+      // 3. Leader exists, check for space (limit 3 members)
+      if (existingTeam.member_count >= 3) {
+        return res.status(400).json({ error: `The ${category} team is already full.` });
+      }
+
+      // 4. Register as member and update member count
+      teamId = existingTeam.id;
+      const { error: updateTeamError } = await supabase
+        .from('staff_teams')
+        .update({ member_count: existingTeam.member_count + 1 })
+        .eq('id', teamId);
+
+      if (updateTeamError) throw updateTeamError;
+    }
+
+    // 5. Update staff profile with role and domain info
+    const { error: profileError } = await supabase
+      .from('staff_profiles')
+      .update({ 
+        category, 
+        role: finalRole, 
+        team_id: teamId, 
+        onboarding_completed: true,
+        agreement_signed: true,
+        signed_at: new Date().toISOString()
+      })
+      .eq('id', staffId);
+
+    if (profileError) throw profileError;
+
+    res.status(200).json({ success: true, role: finalRole, teamId });
+
+  } catch (error) {
+    console.error('Staff onboarding error:', error);
+    res.status(500).json({ error: 'Failed to complete onboarding.' });
+  }
+});
+
+// GET: staff/team - Fetch current team members
+app.get('/api/staff/team/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 1. Get user's team ID
+    const { data: user, error: userError } = await supabase
+      .from('staff_profiles')
+      .select('team_id')
+      .eq('id', id)
+      .single();
+    
+    if (userError || !user.team_id) {
+       return res.status(404).json({ error: 'No team found for this user.' });
+    }
+
+    // 2. Get all staff in that team
+    const { data: members, error: membersError } = await supabase
+      .from('staff_profiles')
+      .select('id, full_name, email, role, category')
+      .eq('team_id', user.team_id);
+
+    if (membersError) throw membersError;
+
+    res.status(200).json(members);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch team data.' });
   }
 });
 
