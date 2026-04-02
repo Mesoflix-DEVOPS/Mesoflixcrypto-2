@@ -20,63 +20,94 @@
     }
 
     &-content{
-        background-color: rgba(0, 0, 0, 0.2);
-        padding: 48px 32px;
-        grid-template-columns: repeat(3, 1fr);
-        border-radius: 20px;
+        background-color: rgba(255, 255, 255, 0.03);
+        padding: 48px;
+        display: grid;
+        grid-template-columns: 1.2fr 2fr;
+        gap: 60px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
 
         @include breakpoints-down(lg){
-            padding: 32px 24px;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 40px;
+            padding: 40px;
         }
 
         @include breakpoints-down(md){
-            grid-template-columns: repeat(1, 1fr);
+            grid-template-columns: 1fr;
+            gap: 48px;
+            padding: 32px 24px;
+            text-align: center;
         }
 
         @include breakpoints-down(xs){
-            padding: 20px 16px;
+            padding: 24px 16px;
+        }
+    }
+
+    .footer-links-grid{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+
+        @include breakpoints-down(xs){
+            gap: 20px;
         }
     }
 
     .footer-item{
         &-title{
-            margin-bottom: 24px;
-            font-weight: 600;
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: $white;
+            font-size: 16px;
         }
 
         .footer-link{
             display: block;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
+            font-size: 14px;
+            color: $cool-grey;
             transition: $default-transition;
             &:hover{
-                color: $white;
+                color: $lavender;
+                transform: translateX(4px);
             }
         }
 
-        &:nth-child(1){
+        &:first-child{
             p.text{
-                margin-bottom: 18px;
+                margin-bottom: 20px;
+                line-height: 1.6;
             }
 
             form{
-                margin-bottom: 18px;
+                margin-bottom: 24px;
                 .input-group{
                     max-width: 400px;
                     width: 100%;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 10px;
+                    padding: 4px 4px 4px 16px;
+                    
+                    &:focus-within{ border-color: $lavender; }
                 }
             }
-        }
-
-        &:nth-child(2){
-            margin-right: auto;
-            margin-left: auto;
         }
 
         @include breakpoints-down(md){
             text-align: center;
 
+            .footer-link:hover{
+                transform: none;
+            }
+
             form{
                 justify-content: center;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
     }

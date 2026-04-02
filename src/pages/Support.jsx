@@ -37,9 +37,18 @@ const faqs = [
 
 const supportChannels = [
   { icon: '📧', title: 'Email Support', desc: 'Detailed technical and account support. Typically respond within 4 hours.', action: 'support@mesoflixlabs.com', type: 'email' },
-  { icon: '💬', title: 'Live Chat', desc: 'Get instant answers from our support team — available Mon–Fri, 8am–10pm UTC.', action: 'Start Chat', type: 'chat' },
   { icon: '📚', title: 'Help Center', desc: 'Browse 200+ articles, tutorials, and guides in our self-service knowledge base.', action: 'Browse Docs', type: 'docs' },
-  { icon: '🌐', title: 'Community', desc: 'Join our Telegram and Discord for peer support, market discussion, and announcements.', action: 'Join Community', type: 'community' },
+  { 
+    icon: '🌐', 
+    title: 'Community', 
+    desc: 'Join our official channels for market updates, product launches, and community support.', 
+    links: [
+      { label: 'Telegram Channel', url: 'https://t.me/mesoflix_labs' },
+      { label: 'WhatsApp Channel', url: 'https://whatsapp.com/channel/0029VbCDAG6Gk1FsJYHwbo0a' },
+      { label: 'WhatsApp Group', url: 'https://whatsapp.com/channel/0029VbCDAG6Gk1FsJYHwbo0a' } // Placeholder for now, user did not provide a separate link.
+    ],
+    type: 'community' 
+  },
 ];
 
 function FAQItem({ faq }) {
@@ -140,6 +149,14 @@ function Support() {
                   <a href={`mailto:${ch.action}`} className="btn btn-g-blue-veronica btn-base text-base" style={{ marginTop: '24px' }}>
                     Send Email
                   </a>
+                ) : ch.type === 'community' ? (
+                  <div className="flex flex-column" style={{ gap: '12px', marginTop: '24px' }}>
+                    {ch.links.map((link, j) => (
+                      <a key={j} href={link.url} target="_blank" rel="noopener noreferrer" className="btn btn-outline text-base w-full">
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
                 ) : (
                   <button className="btn btn-outline text-base" style={{ marginTop: '24px' }}>{ch.action}</button>
                 )}
@@ -178,11 +195,11 @@ function Support() {
                     label: 'Secure', value: 'All conversations encrypted' 
                   },
                 ].map((item, i) => (
-                  <div key={i} className="support-info-item flex" style={{ alignItems: 'center' }}>
-                    <div className="support-info-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>{item.icon}</div>
-                    <div style={{ marginLeft: '16px' }}>
-                      <span className="text-gray text-base" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>{item.label}</span>
-                      <span className="text-white text-base" style={{ display: 'block', fontSize: '16px', marginTop: '2px' }}>{item.value}</span>
+                  <div key={i} className="support-info-item flex items-center">
+                    <div className="support-info-icon flex items-center justify-center">{item.icon}</div>
+                    <div className="support-info-content">
+                      <span className="info-label text-gray text-base">{item.label}</span>
+                      <span className="info-value text-white text-base">{item.value}</span>
                     </div>
                   </div>
                 ))}

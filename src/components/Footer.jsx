@@ -32,26 +32,28 @@ function Footer() {
             <p className="text text-base">&copy; 2026 MesoflixLabs, LLC. All rights reserved.</p>
           </div>
 
-          <div className="footer-item">
-            <h4 className="footer-item-title text-gray text-base">Company</h4>
-            <ul className="footer-links">
-              <li><Link to="/about" className="footer-link text-gray text-base">About Us</Link></li>
-              <li><Link to="/careers" className="footer-link text-gray text-base">Careers</Link></li>
-              <li><Link to="/press" className="footer-link text-gray text-base">Press</Link></li>
-              <li><Link to="/news" className="footer-link text-gray text-base">News</Link></li>
-              <li><Link to="/ecosystem" className="footer-link text-gray text-base">Ecosystem</Link></li>
-            </ul>
-          </div>
+          <div className="footer-links-grid">
+            <div className="footer-item">
+              <h4 className="footer-item-title text-gray text-base">Company</h4>
+              <ul className="footer-links">
+                <li><Link to="/about" className="footer-link text-gray text-base">About Us</Link></li>
+                <li><Link to="/careers" className="footer-link text-gray text-base">Careers</Link></li>
+                <li><Link to="/press" className="footer-link text-gray text-base">Press</Link></li>
+                <li><Link to="/news" className="footer-link text-gray text-base">News</Link></li>
+                <li><Link to="/ecosystem" className="footer-link text-gray text-base">Ecosystem</Link></li>
+              </ul>
+            </div>
 
-          <div className="footer-item">
-            <h4 className="footer-item-title text-gray text-base">Legal</h4>
-            <ul className="footer-links">
-              <li><Link to="/privacy" className="footer-link text-gray text-base">Privacy Policy</Link></li>
-              <li><Link to="/biometrics-privacy" className="footer-link text-gray text-base">Biometrics Privacy</Link></li>
-              <li><Link to="/financial-policy" className="footer-link text-gray text-base">Financial Policy</Link></li>
-              <li><Link to="/terms" className="footer-link text-gray text-base">Terms of Service</Link></li>
-              <li><Link to="/trading-terms" className="footer-link text-gray text-base">Trading Terms</Link></li>
-            </ul>
+            <div className="footer-item">
+              <h4 className="footer-item-title text-gray text-base">Legal</h4>
+              <ul className="footer-links">
+                <li><Link to="/privacy" className="footer-link text-gray text-base">Privacy Policy</Link></li>
+                <li><Link to="/biometrics-privacy" className="footer-link text-gray text-base">Biometrics Privacy</Link></li>
+                <li><Link to="/financial-policy" className="footer-link text-gray text-base">Financial Policy</Link></li>
+                <li><Link to="/terms" className="footer-link text-gray text-base">Terms of Service</Link></li>
+                <li><Link to="/trading-terms" className="footer-link text-gray text-base">Trading Terms</Link></li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
