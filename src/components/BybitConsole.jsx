@@ -21,7 +21,6 @@ function BybitConsole() {
     setBalance(null);
 
     try {
-      // Use the local server or the production server
       const API_BASE_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
       const res = await fetch(`${API_BASE_URL}/api/bybit/balance`, {
         method: 'POST',
@@ -83,7 +82,7 @@ function BybitConsole() {
       <div className="console-body">
         {/* Credentials Form */}
         <div className="credentials-form">
-          <div className="input-group">
+          <div className="tester-input-group">
             <label>API Key</label>
             <input 
               type="text" 
@@ -92,7 +91,7 @@ function BybitConsole() {
               placeholder="Enter your API Key"
             />
           </div>
-          <div className="input-group">
+          <div className="tester-input-group">
             <label>API Secret</label>
             <input 
               type="password" 
@@ -130,7 +129,7 @@ function BybitConsole() {
         <button 
           onClick={checkConnection}
           disabled={loading}
-          className={`check-btn ${isTestnet ? 'testnet-variant' : 'mainnet-variant'}`}
+          className={`tester-check-btn ${isTestnet ? 'testnet-variant' : 'mainnet-variant'}`}
         >
           {loading ? (
             <svg className="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -139,7 +138,7 @@ function BybitConsole() {
             </svg>
           ) : (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04m17.236 0L12 2.189l-8.618.755m17.236 0a11.95 11.95 0 01-1.12 6.13M4 12a11.962 11.962 0 001.385 5.568L12 21.362l6.615-3.794A11.962 11.962 0 0020 12M12 2.944a11.952 11.952 0 01-1.12-6.13M12 2.944V21.362" />
               </svg>
               <span>Verifying Connection</span>

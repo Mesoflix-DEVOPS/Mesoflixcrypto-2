@@ -14,6 +14,15 @@
     overflow-x: hidden;
     z-index: 1;
 
+    // SVG scaling fix (The massive icons issue)
+    svg {
+        max-width: 20px;
+        max-height: 20px;
+        width: 100%;
+        height: auto;
+        flex-shrink: 0;
+    }
+
     // Background decoration
     &::before {
         content: '';
@@ -163,6 +172,7 @@
     border-radius: 32px;
     overflow: hidden;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: 100%;
 
     // Console Header
     .console-top {
@@ -237,16 +247,17 @@
         flex-direction: column;
         gap: 32px;
 
-        // Form fields
+        // Form fields — Fix: Namespace change to avoid global .input-group collision
         .credentials-form {
             display: flex;
             flex-direction: column;
             gap: 20px;
 
-            .input-group {
+            .tester-input-group {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
+                position: relative; // override possible relative from others
 
                 label {
                     font-size: 10px;
@@ -258,19 +269,22 @@
                 }
 
                 input {
-                    background: #050510;
-                    border: 1px solid #1f1f3f;
-                    border-radius: 16px;
-                    padding: 16px 20px;
-                    color: #fff;
-                    font-size: 14px;
+                    background: #050510 !important;
+                    border: 1px solid #1f1f3f !important;
+                    border-radius: 16px !important;
+                    padding: 16px 20px !important;
+                    color: #fff !important;
+                    font-size: 14px !important;
+                    height: auto !important;
+                    width: 100% !important;
+                    max-width: none !important;
                     transition: all 0.3s ease;
 
-                    &::placeholder { color: #333; }
+                    &::placeholder { color: #333 !important; }
                     &:focus {
-                        outline: none;
-                        border-color: rgba(0, 163, 255, 0.5);
-                        box-shadow: 0 0 0 4px rgba(0, 163, 255, 0.05);
+                        outline: none !important;
+                        border-color: rgba(0, 163, 255, 0.5) !important;
+                        box-shadow: 0 0 0 4px rgba(0, 163, 255, 0.05) !important;
                     }
                 }
             }
@@ -304,7 +318,7 @@
         }
 
         // Action button
-        .check-btn {
+        .tester-check-btn {
             width: 100%;
             padding: 16px;
             border-radius: 16px;
@@ -342,6 +356,8 @@
                 animation: rotate 1s linear infinite;
                 width: 18px;
                 height: 18px;
+                max-width: 18px; // specific override
+                max-height: 18px;
             }
         }
 
