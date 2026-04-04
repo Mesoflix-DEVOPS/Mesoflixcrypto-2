@@ -103,37 +103,40 @@ function BybitDashboard() {
   if (!config) return null;
 
   return (
-    <div className="inner-page">
-      <div className="container" style={{ maxWidth: '1000px', padding: '40px 20px' }}>
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <div className="inner-hero-badge">Broker Tracking Active</div>
-            <h1 className="inner-hero-title" style={{ fontSize: '32px', marginTop: '10px' }}>Test Dashboard</h1>
+    <div className="bybit-dashboard-page">
+      <div className="dashboard-container">
+        {/* Header Section */}
+        <header className="dashboard-header">
+          <div className="header-main">
+            <div className="tracking-badge">
+              <span>Broker Tracking Active</span>
+            </div>
+            <h1>Institutional Trading Dashboard</h1>
           </div>
-          <button onClick={logout} className="btn border border-slate-700 text-slate-400 text-xs px-4 py-2 rounded-lg hover:bg-slate-800 transition">
+          <button onClick={logout} className="btn-disconnect">
             Disconnect Session
           </button>
-        </div>
+        </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+        <div className="dashboard-grid">
           {/* Sidebar / Stats */}
-          <div className="space-y-6">
-            <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-4">Account Overview</h3>
+          <aside className="dashboard-sidebar">
+            <div className="stats-card">
+              <span className="card-label">Account Overview</span>
               {loading && !balance ? (
                 <div className="animate-pulse space-y-3">
                   <div className="h-8 bg-slate-800 rounded w-full"></div>
                   <div className="h-8 bg-slate-800 rounded w-3/4"></div>
                 </div>
               ) : balance ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-slate-400 text-xs mb-1">Total Equity (USD)</p>
-                    <p className="text-3xl font-bold text-white">${parseFloat(balance.totalEquity).toLocaleString()}</p>
+                <div className="metric-group">
+                  <div className="metric-item">
+                    <p>Total Equity (USD)</p>
+                    <div className="value">${parseFloat(balance.totalEquity).toLocaleString()}</div>
                   </div>
-                  <div>
-                    <p className="text-slate-400 text-xs mb-1">Available Margin</p>
-                    <p className="text-xl font-bold text-emerald-400">${parseFloat(balance.totalAvailableBalance).toLocaleString()}</p>
+                  <div className="metric-item">
+                    <p>Available Margin</p>
+                    <div className="value green">${parseFloat(balance.totalAvailableBalance).toLocaleString()}</div>
                   </div>
                 </div>
               ) : (
@@ -141,94 +144,92 @@ function BybitDashboard() {
               )}
             </div>
 
-            <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-4">Tracking Configuration</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs text-left">Broker ID</span>
-                  <span className="text-blue-400 text-xs font-mono font-bold">Ef001038</span>
+            <div className="stats-card">
+              <span className="card-label">Tracking Configuration</span>
+              <div className="config-list">
+                <div className="config-item">
+                  <span className="key">Broker ID</span>
+                  <span className="val blue">Ef001038</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-xs text-left">Environment</span>
-                  <span className={`text-xs font-bold ${config.isTestnet ? 'text-blue-400' : 'text-orange-400'}`}>
+                <div className="config-item">
+                  <span className="key">Environment</span>
+                  <span className={`val ${config.isTestnet ? 'blue' : 'orange'}`}>
                     {config.isTestnet ? 'TESTNET' : 'MAINNET'}
                   </span>
                 </div>
-                <div className="flex justify-center p-3 mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <p className="text-[10px] text-emerald-400 font-bold text-center">SIGNED HEADERS ACTIVE</p>
+              </div>
+            </div>
+
+            <div className="stats-card">
+              <span className="card-label">Verify Integration</span>
+              <div className="verify-actions">
+                <p className="verify-desc">
+                  Place a small test order to confirm that the Bybit rebate system records the transaction under your Broker ID.
+                </p>
+                <div className="action-buttons">
+                  <button 
+                    onClick={() => placeTestOrder('BTCUSDT', 'Buy', '0.0001')}
+                    disabled={loading}
+                    className="primary"
+                  >
+                    Place Test BTC Order
+                  </button>
+                  <button 
+                    onClick={() => placeTestOrder('XRPUSDT', 'Buy', '10')}
+                    disabled={loading}
+                    className="secondary"
+                  >
+                    Place Test XRP Order
+                  </button>
                 </div>
               </div>
             </div>
+          </aside>
 
-            <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-4">Verify Integration</h3>
-              <p className="text-slate-400 text-[11px] leading-relaxed mb-4">
-                Place a small test order to confirm that the Bybit rebate system records the transaction under your Broker ID.
-              </p>
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={() => placeTestOrder('BTCUSDT', 'Buy', '0.0001')}
-                  disabled={loading}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/30 transition-all active:scale-95"
-                >
-                  Place Test BTC Order
-                </button>
-                <button 
-                  onClick={() => placeTestOrder('XRPUSDT', 'Buy', '10')}
-                  disabled={loading}
-                  className="w-full py-3 border border-slate-700 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all active:scale-95"
-                >
-                  Place Test XRP Order
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Logs */}
-          <div className="bg-[#0a0f1d] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[600px]">
-            <div className="bg-slate-900/50 p-4 border-b border-slate-800 flex justify-between items-center">
-               <h3 className="text-slate-300 text-sm font-bold flex items-center gap-2">
-                 <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+          {/* Activity Feed */}
+          <section className="activity-feed">
+            <div className="feed-header">
+               <h3>
+                 <div className="pulse-indicator"></div>
                  Activity Stream (Broker Tracked)
                </h3>
                {orderLogs.length > 0 && (
-                 <button onClick={() => setOrderLogs([])} className="text-[10px] text-slate-500 hover:text-slate-300 transition">Clear</button>
+                 <button onClick={() => setOrderLogs([])} className="btn-clear">Clear History</button>
                )}
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono">
+            <div className="feed-content">
               {orderLogs.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  <p className="text-[10px] uppercase tracking-widest font-bold">Waiting for requests...</p>
+                  <p>Awaiting Broker Requests...</p>
                 </div>
               ) : (
                 orderLogs.map(log => (
-                  <div key={log.id} className="p-3 bg-slate-900/80 border border-slate-800/50 rounded-xl animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-slate-500">{log.time}</span>
-                        <span className="text-[10px] font-bold text-blue-400">{log.type}</span>
-                        <span className={`text-[10px] font-bold ${log.side === 'Buy' ? 'text-emerald-400' : 'text-rose-400'}`}>{log.side} {log.symbol}</span>
+                  <div key={log.id} className="log-entry">
+                    <div className="entry-top">
+                      <div className="info">
+                        <span className="time">{log.time}</span>
+                        <span className="type">{log.type}</span>
+                        <span className={`target ${log.side === 'Buy' ? 'side-buy' : 'side-sell'}`}>
+                           {log.side} {log.symbol}
+                        </span>
                       </div>
-                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${
-                        log.status === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-400' : 
-                        log.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
-                      }`}>
+                      <div className={`status-pill ${log.status.toLowerCase()}`}>
                         {log.status}
-                      </span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-400">{log.details}</p>
-                    <div className="mt-2 pt-2 border-t border-slate-800/50 flex gap-4">
-                       <span className="text-[8px] text-slate-600">Header: <span className="text-slate-400">Referer:Ef001038</span></span>
-                       <span className="text-[8px] text-slate-600">Ver: <span className="text-slate-400">V5</span></span>
+                    <p className="entry-details">{log.details}</p>
+                    <div className="entry-footer">
+                       <div className="tag">Header: <span>Referer:Ef001038</span></div>
+                       <div className="tag">Protocol: <span>V5</span></div>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
@@ -236,3 +237,4 @@ function BybitDashboard() {
 }
 
 export default BybitDashboard;
+
