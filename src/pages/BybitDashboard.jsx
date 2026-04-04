@@ -95,30 +95,6 @@ function BybitDashboard() {
     }
   };
 
-  const handleModeChange = (mode) => {
-    if (!config) return;
-    
-    let newConfig = { ...config };
-    if (mode === 'testnet') {
-      newConfig.isTestnet = true;
-      newConfig.isDemo = false;
-    } else if (mode === 'demo') {
-      newConfig.isTestnet = false;
-      newConfig.isDemo = true;
-    } else {
-      newConfig.isTestnet = false;
-      newConfig.isDemo = false;
-    }
-
-    setConfig(newConfig);
-    localStorage.setItem('bybit_test_config', JSON.stringify(newConfig));
-    fetchBalance(newConfig);
-    
-    // Clear logs when switching environment to avoid confusion
-    setOrderLogs([]);
-    setError('');
-  };
-
   const logout = () => {
     localStorage.removeItem('bybit_test_config');
     navigate('/broker/api/test');
@@ -175,28 +151,11 @@ function BybitDashboard() {
                   <span className="key">Broker ID</span>
                   <span className="val blue">Ef001038</span>
                 </div>
-                <div className="config-item" style={{ marginTop: '12px', borderTop: '1px solid #1a1a3a', paddingTop: '12px' }}>
-                  <span className="key" style={{ marginBottom: '8px', display: 'block' }}>Active Environment</span>
-                  <div className="dashboard-mode-switcher">
-                    <button 
-                      onClick={() => handleModeChange('testnet')}
-                      className={config.isTestnet ? 'active-blue' : ''}
-                    >
-                      TESTNET
-                    </button>
-                    <button 
-                      onClick={() => handleModeChange('demo')}
-                      className={config.isDemo ? 'active-teal' : ''}
-                    >
-                      DEMO
-                    </button>
-                    <button 
-                      onClick={() => handleModeChange('real')}
-                      className={!config.isTestnet && !config.isDemo ? 'active-orange' : ''}
-                    >
-                      REAL
-                    </button>
-                  </div>
+                <div className="config-item">
+                  <span className="key">Environment</span>
+                  <span className={`val ${config.isDemo ? 'teal' : config.isTestnet ? 'blue' : 'orange'}`}>
+                    {config.isDemo ? 'DEMO' : config.isTestnet ? 'TESTNET' : 'REAL'}
+                  </span>
                 </div>
               </div>
             </div>

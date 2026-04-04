@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 function BybitConsole() {
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
-  const [isTestnet, setIsTestnet] = useState(false);
-  const [isDemo, setIsDemo] = useState(true);
+  const [isTestnet, setIsTestnet] = useState(true);
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,7 +29,6 @@ function BybitConsole() {
             apiKey,
             apiSecret,
             isTestnet,
-            isDemo,
             brokerId: 'Ef001038'
           }
         })
@@ -53,28 +51,22 @@ function BybitConsole() {
   return (
     <div className="bg-[#0a0a1a] rounded-2xl border border-[#1a1a3a] shadow-xl overflow-hidden">
       {/* Header with Mode Toggle */}
-      <div className={`p-4 flex justify-between items-center border-b border-[#1a1a3a] ${isTestnet ? 'bg-blue-900/10' : isDemo ? 'bg-emerald-900/10' : 'bg-orange-900/10'}`}>
+      <div className={`p-4 flex justify-between items-center border-b border-[#1a1a3a] ${isTestnet ? 'bg-blue-900/10' : 'bg-orange-900/10'}`}>
         <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full animate-pulse ${isTestnet ? 'bg-blue-400' : isDemo ? 'bg-emerald-400' : 'bg-orange-400'}`}></div>
+          <div className={`w-2 h-2 rounded-full animate-pulse ${isTestnet ? 'bg-blue-400' : 'bg-orange-400'}`}></div>
           <h3 className="font-bold text-sm text-white">Bybit Management Console</h3>
         </div>
         
         <div className="flex bg-[#050510] rounded-lg p-1 border border-[#1f1f3f]">
           <button 
-            onClick={() => { setIsTestnet(true); setIsDemo(false); }}
+            onClick={() => setIsTestnet(true)}
             className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${isTestnet ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            TESTNET
-          </button>
-          <button 
-            onClick={() => { setIsTestnet(false); setIsDemo(true); }}
-            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${isDemo ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' : 'text-gray-500 hover:text-gray-300'}`}
           >
             DEMO
           </button>
           <button 
-            onClick={() => { setIsTestnet(false); setIsDemo(false); }}
-            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${!isTestnet && !isDemo ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/40' : 'text-gray-500 hover:text-gray-300'}`}
+            onClick={() => setIsTestnet(false)}
+            className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${!isTestnet ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/40' : 'text-gray-500 hover:text-gray-300'}`}
           >
             REAL
           </button>
