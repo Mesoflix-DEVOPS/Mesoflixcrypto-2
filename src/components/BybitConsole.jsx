@@ -21,7 +21,9 @@ function BybitConsole() {
     setBalance(null);
 
     try {
-      const API_BASE_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
+      const API_BASE_URL = import.meta.env.MODE === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://mesoflixcrypto-2.onrender.com';
       const res = await fetch(`${API_BASE_URL}/api/bybit/balance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
