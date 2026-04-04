@@ -153,8 +153,8 @@ function BybitDashboard() {
                 </div>
                 <div className="config-item">
                   <span className="key">Environment</span>
-                  <span className={`val ${config.isTestnet ? 'blue' : 'orange'}`}>
-                    {config.isTestnet ? 'TESTNET' : 'MAINNET'}
+                  <span className={`val ${config.isDemo ? 'teal' : config.isTestnet ? 'blue' : 'orange'}`}>
+                    {config.isDemo ? 'DEMO' : config.isTestnet ? 'TESTNET' : 'REAL'}
                   </span>
                 </div>
               </div>
@@ -168,14 +168,14 @@ function BybitDashboard() {
                 </p>
                 <div className="action-buttons">
                   <button 
-                    onClick={() => placeTestOrder('BTCUSDT', 'Buy', '0.0001')}
+                    onClick={() => placeTestOrder('BTCUSDT', 'Buy', '0.0002')}
                     disabled={loading}
                     className="primary"
                   >
                     Place Test BTC Order
                   </button>
                   <button 
-                    onClick={() => placeTestOrder('XRPUSDT', 'Buy', '10')}
+                    onClick={() => placeTestOrder('XRPUSDT', 'Buy', '20')}
                     disabled={loading}
                     className="secondary"
                   >
@@ -184,6 +184,7 @@ function BybitDashboard() {
                 </div>
               </div>
             </div>
+
           </aside>
 
           {/* Activity Feed */}

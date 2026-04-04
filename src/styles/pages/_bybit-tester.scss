@@ -183,6 +183,7 @@
         border-bottom: 1px solid #1a1a3a;
         background: rgba(255, 255, 255, 0.02);
 
+        &.demo-mode { border-top: 4px solid #10B981; }
         &.testnet-mode { border-top: 4px solid #00A3FF; }
         &.mainnet-mode { border-top: 4px solid #F7A600; }
 
@@ -197,8 +198,10 @@
                 border-radius: 50%;
                 &.bg-blue { background: #00A3FF; box-shadow: 0 0 10px #00A3FF; }
                 &.bg-orange { background: #F7A600; box-shadow: 0 0 10px #F7A600; }
+                &.bg-teal { background: #10B981; box-shadow: 0 0 10px #10B981; }
                 animation: pulseGlow 2s infinite;
             }
+
 
             .identity-text {
                 h2 { font-size: 18px; font-weight: 800; color: #fff; margin: 0; }
@@ -229,6 +232,11 @@
                     background: #00A3FF;
                     color: #fff;
                     box-shadow: 0 4px 12px rgba(0, 163, 255, 0.3);
+                }
+                &.active-demo {
+                    background: #10B981;
+                    color: #fff;
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
                 }
                 &.active-mainnet {
                     background: #F7A600;

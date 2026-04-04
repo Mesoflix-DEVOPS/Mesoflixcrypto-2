@@ -5,12 +5,25 @@ function BybitConsole() {
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
   const [isTestnet, setIsTestnet] = useState(true);
-  const [balance, setBalance] = useState(null);
+  const [isDemo, setIsDemo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
   const navigate = useNavigate();
+
+  const handleModeChange = (mode) => {
+    if (mode === 'testnet') {
+      setIsTestnet(true);
+      setIsDemo(false);
+    } else if (mode === 'demo') {
+      setIsTestnet(false);
+      setIsDemo(true);
+    } else {
+      setIsTestnet(false);
+      setIsDemo(false);
+    }
+  };
 
   const checkConnection = async () => {
     if (!apiKey || !apiSecret) {
@@ -21,12 +34,12 @@ function BybitConsole() {
     setLoading(true);
     setError('');
     setSuccessMsg('');
-    setBalance(null);
 
     const apiConfig = {
       apiKey,
       apiSecret,
       isTestnet,
+      isDemo,
       brokerId: 'Ef001038'
     };
 
@@ -47,11 +60,8 @@ function BybitConsole() {
       if (res.ok) {
         // Persist session locally for the dashboard
         localStorage.setItem('bybit_test_config', JSON.stringify(apiConfig));
-        
-        setBalance(data.result.list[0]);
         setSuccessMsg('Connection successful! Redirecting to dashboard...');
         
-        // Brief delay for user to see the success message
         setTimeout(() => {
           navigate('/broker/api/test/dashboard');
         }, 1500);
@@ -66,13 +76,18 @@ function BybitConsole() {
     }
   };
 
+  const getStatusColor = () => {
+    if (isDemo) return 'bg-teal';
+    if (isTestnet) return 'bg-blue';
+    return 'bg-orange';
+  };
 
   return (
     <div className="bybit-console">
       {/* Header with Mode Toggle */}
-      <div className={`console-top ${isTestnet ? 'testnet-mode' : 'mainnet-mode'}`}>
+      <div className={`console-top ${isDemo ? 'demo-mode' : isTestnet ? 'testnet-mode' : 'mainnet-mode'}`}>
         <div className="console-identity">
-          <div className={`status-indicator ${isTestnet ? 'bg-blue' : 'bg-orange'}`}></div>
+          <div className={`status-indicator ${getStatusColor()}`}></div>
           <div className="identity-text">
             <h2>Bybit API Console</h2>
             <p className="sub-label">SECURE ENDPOINT: V5</p>
@@ -81,19 +96,26 @@ function BybitConsole() {
         
         <div className="mode-switcher">
           <button 
-            onClick={() => setIsTestnet(true)}
+            onClick={() => handleModeChange('testnet')}
             className={isTestnet ? 'active-testnet' : ''}
           >
             TESTNET
           </button>
           <button 
-            onClick={() => setIsTestnet(false)}
-            className={!isTestnet ? 'active-mainnet' : ''}
+            onClick={() => handleModeChange('demo')}
+            className={isDemo ? 'active-demo' : ''}
           >
-            MAINNET
+            DEMO
+          </button>
+          <button 
+            onClick={() => handleModeChange('real')}
+            className={!isTestnet && !isDemo ? 'active-mainnet' : ''}
+          >
+            REAL
           </button>
         </div>
       </div>
+
 
       <div className="console-body">
         {/* Credentials Form */}

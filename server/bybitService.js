@@ -28,7 +28,7 @@ function generateSignature(timestamp, apiKey, apiSecret, recvWindow, data) {
  * @returns {Promise<object>}
  */
 async function bybitRequest(method, endpoint, params = {}, config = {}) {
-  const { apiKey, apiSecret, isTestnet, brokerId } = config;
+  const { apiKey, apiSecret, isTestnet, isDemo, brokerId } = config;
   
   if (!apiKey || !apiSecret) {
     throw new Error('Bybit API Key and Secret are required for this request.');
@@ -37,9 +37,13 @@ async function bybitRequest(method, endpoint, params = {}, config = {}) {
   // MANDATORY: Bybit Broker ID for Rebate Tracking
   const FINAL_BROKER_ID = brokerId || 'Ef001038';
 
-  const baseUrl = isTestnet 
-    ? 'https://api-testnet.bybit.com' 
-    : 'https://api.bybit.com';
+  // Base URL selection based on environment
+  const baseUrl = isDemo
+    ? 'https://api-demo.bybit.com'
+    : isTestnet 
+      ? 'https://api-testnet.bybit.com' 
+      : 'https://api.bybit.com';
+
     
   const timestamp = Date.now().toString();
   const recvWindow = '5000';
