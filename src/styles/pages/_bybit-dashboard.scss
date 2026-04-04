@@ -166,6 +166,46 @@
                     .val.orange { color: #F7A600; font-family: monospace; }
                 }
 
+                .dashboard-mode-switcher {
+                    display: flex;
+                    gap: 8px;
+                    background: #050510;
+                    padding: 4px;
+                    border-radius: 12px;
+                    border: 1px solid #1f1f3f;
+                    width: 100%;
+
+                    button {
+                        flex: 1;
+                        padding: 8px 0;
+                        border-radius: 8px;
+                        font-size: 9px;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        transition: all 0.2s ease;
+                        border: none;
+                        cursor: pointer;
+                        color: #444;
+                        background: transparent;
+
+                        &.active-blue {
+                            background: #00A3FF;
+                            color: #fff;
+                            box-shadow: 0 4px 12px rgba(0, 163, 255, 0.3);
+                        }
+                        &.active-teal {
+                            background: #10B981;
+                            color: #fff;
+                            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                        }
+                        &.active-orange {
+                            background: #F7A600;
+                            color: #fff;
+                            box-shadow: 0 4px 12px rgba(247, 166, 0, 0.3);
+                        }
+                        &:not([class*='active']):hover { color: #888; }
+                    }
+                }
             }
 
             .verify-actions {
