@@ -27,7 +27,7 @@ function generateSignature(timestamp, apiKey, apiSecret, recvWindow, data) {
  * @param {object} config { apiKey, apiSecret, isTestnet, brokerId }
  * @returns {Promise<object>}
  */
-async function bybitRequest(method, endpoint, params = {}, config = {}) {
+export async function bybitRequest(method, endpoint, params = {}, config = {}) {
   const { apiKey, apiSecret, isTestnet, isDemo, brokerId } = config;
   
   if (!apiKey || !apiSecret) {

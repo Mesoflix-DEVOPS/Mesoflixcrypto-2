@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 function BybitConsole() {
   const [apiKey, setApiKey] = useState('');
@@ -10,8 +10,85 @@ function BybitConsole() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [managedAccount, setManagedAccount] = useState(null);
+  const [isOnboarding, setIsOnboarding] = useState(false);
   
   const navigate = useNavigate();
+  const staffUser = JSON.parse(localStorage.getItem('staff_user') || '{}');
+  const userId = staffUser.id;
+  
+  const API_BASE_URL = import.meta.env.MODE === 'development' 
+    ? 'http://localhost:3001' 
+    : 'https://mesoflixcrypto-2.onrender.com';
+
+  useEffect(() => {
+    if (userId) {
+      fetchManagedAccount();
+    }
+  }, [userId, isTestnet, isDemo]);
+
+  const fetchManagedAccount = async () => {
+    try {
+      const env = isDemo ? 'DEMO' : isTestnet ? 'TESTNET' : 'REAL';
+      const res = await fetch(`${API_BASE_URL}/api/broker/account/${userId}?environment=${env}`);
+      const data = await res.json();
+      if (res.ok) {
+        setManagedAccount(data);
+      } else {
+        setManagedAccount(null);
+      }
+    } catch (err) {
+      console.error('Error fetching managed account:', err);
+    }
+  };
+
+  const startOnboarding = async () => {
+    if (!userId) {
+      setError('You must be logged in as staff to activate broker features.');
+      return;
+    }
+
+    setIsOnboarding(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const env = isDemo ? 'DEMO' : isTestnet ? 'TESTNET' : 'REAL';
+      const res = await fetch(`${API_BASE_URL}/api/broker/onboard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, environment: env })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setSuccessMsg('Institutional account created successfully!');
+        fetchManagedAccount();
+      } else {
+        setError(data.error || 'Failed to activate institutional account.');
+      }
+    } catch (err) {
+      setError('Network error during onboarding.');
+    } finally {
+      setIsOnboarding(false);
+    }
+  };
+
+  const loginWithManagedAccount = () => {
+    if (!managedAccount) return;
+    
+    setLoading(true);
+    setError('');
+    
+    const { apiConfig } = managedAccount;
+    // Persist session locally for the dashboard
+    localStorage.setItem('bybit_test_config', JSON.stringify(apiConfig));
+    setSuccessMsg('Institutional Session Active. Redirecting...');
+    
+    setTimeout(() => {
+      navigate('/broker/api/test/dashboard');
+    }, 1500);
+  };
 
   const handleModeChange = (mode) => {
     if (mode === 'testnet') {
@@ -122,6 +199,37 @@ function BybitConsole() {
 
 
       <div className="console-body">
+        {/* Seamless / Managed Section */}
+        <div className="managed-onboarding-section">
+          {managedAccount ? (
+            <div className="managed-status-box success">
+              <div className="status-info">
+                <span className="status-label">INSTITUTIONAL ACCOUNT ACTIVE</span>
+                <span className="sub-uid">UID: {managedAccount.sub_uid} ({managedAccount.username})</span>
+              </div>
+              <button onClick={loginWithManagedAccount} className="one-click-btn">
+                One-Click Login
+              </button>
+            </div>
+          ) : (
+            <div className="managed-status-box onboarding">
+              <div className="status-info">
+                <span className="status-label">SEAMLESS CONNECTIVITY</span>
+                <p>Generate an institucional sub-account automatically via the Mesoflix Broker ID.</p>
+              </div>
+              <button 
+                onClick={startOnboarding} 
+                disabled={isOnboarding}
+                className="activate-btn"
+              >
+                {isOnboarding ? 'Activating...' : 'Activate Managed Account'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="divider-text"><span>OR MANUAL ENTRY</span></div>
+
         {/* Credentials Form */}
         <div className="credentials-form">
           <div className="tester-input-group">

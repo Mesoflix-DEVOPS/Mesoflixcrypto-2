@@ -18,6 +18,8 @@ import {
 } from './pages/StaticPages';
 import BybitTester from './pages/BybitTester';
 import BybitDashboard from './pages/BybitDashboard';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
 
 function App() {
   return (
@@ -49,9 +51,9 @@ function App() {
           <Route path="financial-policy" element={<Terms />} />
           <Route path="trading-terms" element={<Terms />} />
 
-          {/* Auth stubs */}
-          <Route path="sign-in" element={<AuthStub type="signin" />} />
-          <Route path="sign-up" element={<AuthStub type="signup" />} />
+          {/* Live auth pages */}
+          <Route path="sign-in" element={<SignIn />} />
+          <Route path="sign-up" element={<SignUp />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

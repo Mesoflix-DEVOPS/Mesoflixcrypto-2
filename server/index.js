@@ -7,6 +7,8 @@ import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createOrder, getWalletBalance } from './bybitService.js';
+import brokerService from './brokerService.js';
+import encryption from './encryption.js';
 
 // Load environment variables
 dotenv.config();
@@ -261,6 +263,113 @@ app.post('/api/staff/login', async (req, res) => {
 
   } catch (error) {
     console.error('Staff login error:', error);
+    res.status(500).json({ error: 'Authentication failed.' });
+  }
+});
+
+// --- CLIENT AUTH ENDPOINTS (TRADERS) ---
+
+// User Registration (Main Landing Page)
+app.post('/api/user/register', async (req, res) => {
+  try {
+    const { email, password, fullName } = req.body;
+
+    if (!email || !password || !fullName) {
+      return res.status(400).json({ error: 'Email, password, and name are required.' });
+    }
+
+    // 1. Check if email exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'User with this email already exists.' });
+    }
+
+    // 2. Hash Password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Create User Profile
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert([
+        { 
+          email, 
+          password_hash: hashedPassword, 
+          full_name: fullName 
+        }
+      ])
+      .select('id, email, full_name')
+      .single();
+
+    if (insertError) {
+      console.error('Supabase Insert User Error:', insertError);
+      return res.status(400).json({ error: 'Account creation failed. Please try again.' });
+    }
+
+    // 4. Generate Token
+    const token = jwt.sign(
+      { id: newUser.id, email: newUser.email, role: 'trader' },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({ success: true, token, user: newUser });
+
+  } catch (error) {
+    console.error('User registration error:', error);
+    res.status(500).json({ error: 'Server error during registration.' });
+  }
+});
+
+// User Login (Main Landing Page)
+app.post('/api/user/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    // 1. Fetch user
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (!user || error) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // 2. Compare Password
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // 3. Generate Token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: 'trader' },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      token, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        fullName: user.full_name 
+      } 
+    });
+
+  } catch (error) {
+    console.error('User login error:', error);
     res.status(500).json({ error: 'Authentication failed.' });
   }
 });
@@ -537,6 +646,145 @@ app.post('/api/bybit/balance', async (req, res) => {
   } catch (error) {
     console.error('Bybit Balance Fetch Error:', error);
     res.status(500).json({ error: 'Failed to fetch Bybit balance.' });
+  }
+});
+
+// --- BROKER SEAMLESS ONBOARDING ENDPOINT ---
+
+app.post('/api/broker/onboard', async (req, res) => {
+  try {
+    const { userId, environment } = req.body; // environment: 'REAL', 'DEMO', 'TESTNET'
+    const finalEnv = environment || 'REAL';
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required for broker onboarding.' });
+    }
+
+    // 1. Check if user already has an account for this environment
+    const { data: existingAccount } = await supabase
+      .from('user_broker_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('environment', finalEnv)
+      .single();
+
+    if (existingAccount) {
+      return res.status(409).json({ 
+        success: true, 
+        message: 'Account already exists.', 
+        sub_uid: existingAccount.bybit_sub_uid 
+      });
+    }
+
+    // 2. Master Account Credentials (MANDATORY in .env)
+    const masterConfig = {
+      apiKey: process.env.BYBIT_MASTER_API_KEY,
+      apiSecret: process.env.BYBIT_MASTER_API_SECRET,
+      isTestnet: finalEnv === 'TESTNET' || finalEnv === 'DEMO' // Map Demo/Testnet to Testnet master if necessary, or check env
+    };
+
+    if (!masterConfig.apiKey || !masterConfig.apiSecret) {
+      console.error('CRITICAL: Bybit Master API Keys are missing in environment variables.');
+      return res.status(500).json({ error: 'Broker Master Account is not configured on the server.' });
+    }
+
+    // 3. Generate a Unique Sub-Account Username
+    const timestamp = Date.now().toString().slice(-6);
+    const shortId = userId.slice(0, 4);
+    const username = `msflx_${shortId}${timestamp}`;
+
+    // 4. Create Sub-Account UID on Bybit
+    console.log(`[BROKER] Creating sub-account: ${username} for user ${userId}`);
+    const subAccountRes = await brokerService.createClientSubAccount(username, masterConfig);
+    
+    if (subAccountRes.retCode !== 0) {
+      console.error('Bybit Broker Create Account Error:', subAccountRes);
+      return res.status(400).json({ error: subAccountRes.retMsg || 'Failed to create Bybit sub-account.' });
+    }
+
+    const subUid = subAccountRes.result.subMemberId || subAccountRes.result.uid;
+
+    // 5. Generate API Keys for the new Sub-Account
+    console.log(`[BROKER] Generating API Keys for UID: ${subUid}`);
+    const apiKeyRes = await brokerService.createClientApiKey(subUid, masterConfig);
+
+    if (apiKeyRes.retCode !== 0) {
+      console.error('Bybit Broker Create API Error:', apiKeyRes);
+      return res.status(400).json({ error: apiKeyRes.retMsg || 'Failed to generate sub-account API keys.' });
+    }
+
+    const { apiKey, apiSecret } = apiKeyRes.result;
+
+    // 6. Encrypt and store in Supabase
+    const encryptedKey = encryption.encrypt(apiKey);
+    const encryptedSecret = encryption.encrypt(apiSecret);
+
+    const { error: dbError } = await supabase
+      .from('user_broker_accounts')
+      .insert([{
+        user_id: userId,
+        bybit_sub_uid: subUid.toString(),
+        bybit_username: username,
+        encrypted_api_key: encryptedKey,
+        encrypted_api_secret: encryptedSecret,
+        environment: finalEnv
+      }]);
+
+    if (dbError) {
+      console.error('Database Error storing broker keys:', dbError);
+      return res.status(500).json({ error: 'Sub-account created but failed to store credentials securely.' });
+    }
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Seamless Bybit connectivity activated!',
+      sub_uid: subUid 
+    });
+
+  } catch (error) {
+    console.error('Broker onboarding catastrophic failure:', error);
+    res.status(500).json({ error: 'An unexpected error occurred during broker integration.' });
+  }
+});
+
+// GET: broker/account - Retrieve existing managed account
+app.get('/api/broker/account/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { environment } = req.query; // optional: 'REAL', 'DEMO', 'TESTNET'
+    const finalEnv = environment || 'REAL';
+
+    const { data: account, error } = await supabase
+      .from('user_broker_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('environment', finalEnv)
+      .single();
+
+    if (error || !account) {
+      return res.status(404).json({ error: 'No managed account found for this environment.' });
+    }
+
+    // Decrypt keys for the platform to use
+    const apiKey = encryption.decrypt(account.encrypted_api_key);
+    const apiSecret = encryption.decrypt(account.encrypted_api_secret);
+
+    res.status(200).json({
+      success: true,
+      sub_uid: account.bybit_sub_uid,
+      username: account.bybit_username,
+      apiConfig: {
+        apiKey,
+        apiSecret,
+        isTestnet: finalEnv === 'TESTNET' || finalEnv === 'DEMO',
+        isDemo: finalEnv === 'DEMO',
+        brokerId: 'Ef001038'
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching broker account:', error);
+    res.status(500).json({ error: 'Failed to retrieve connection security keys.' });
   }
 });
 
