@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function BybitConsole() {
   const [apiKey, setApiKey] = useState('');
@@ -8,6 +9,8 @@ function BybitConsole() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  
+  const navigate = useNavigate();
 
   const checkConnection = async () => {
     if (!apiKey || !apiSecret) {
@@ -20,6 +23,13 @@ function BybitConsole() {
     setSuccessMsg('');
     setBalance(null);
 
+    const apiConfig = {
+      apiKey,
+      apiSecret,
+      isTestnet,
+      brokerId: 'Ef001038'
+    };
+
     try {
       const API_BASE_URL = import.meta.env.MODE === 'development' 
         ? 'http://localhost:3001' 
@@ -29,19 +39,22 @@ function BybitConsole() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accountType: 'UNIFIED',
-          apiConfig: {
-            apiKey,
-            apiSecret,
-            isTestnet,
-            brokerId: 'Ef001038'
-          }
+          apiConfig
         })
       });
 
       const data = await res.json();
       if (res.ok) {
+        // Persist session locally for the dashboard
+        localStorage.setItem('bybit_test_config', JSON.stringify(apiConfig));
+        
         setBalance(data.result.list[0]);
-        setSuccessMsg('Connection successful! Signed requests are working.');
+        setSuccessMsg('Connection successful! Redirecting to dashboard...');
+        
+        // Brief delay for user to see the success message
+        setTimeout(() => {
+          navigate('/broker/api/test/dashboard');
+        }, 1500);
       } else {
         setError(data.retMsg || 'Failed to connect to Bybit.');
       }
@@ -52,6 +65,7 @@ function BybitConsole() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="bybit-console">

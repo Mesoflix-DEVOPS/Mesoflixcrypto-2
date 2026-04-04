@@ -17,6 +17,7 @@ import {
   NotFound,
 } from './pages/StaticPages';
 import BybitTester from './pages/BybitTester';
+import BybitDashboard from './pages/BybitDashboard';
 
 function App() {
   return (
@@ -30,7 +31,12 @@ function App() {
           <Route path="market" element={<Market />} />
           <Route path="ecosystem" element={<Ecosystem />} />
           <Route path="support" element={<Support />} />
-          <Route path="bybit-test" element={<BybitTester />} />
+          
+          {/* Broker Tracking & Testing Portal */}
+          <Route path="broker/api/test">
+            <Route index element={<BybitTester />} />
+            <Route path="dashboard" element={<BybitDashboard />} />
+          </Route>
 
           {/* Footer pages */}
           <Route path="about" element={<About />} />

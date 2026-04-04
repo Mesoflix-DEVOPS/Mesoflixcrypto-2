@@ -34,6 +34,9 @@ async function bybitRequest(method, endpoint, params = {}, config = {}) {
     throw new Error('Bybit API Key and Secret are required for this request.');
   }
 
+  // MANDATORY: Bybit Broker ID for Rebate Tracking
+  const FINAL_BROKER_ID = brokerId || 'Ef001038';
+
   const baseUrl = isTestnet 
     ? 'https://api-testnet.bybit.com' 
     : 'https://api.bybit.com';
@@ -61,10 +64,12 @@ async function bybitRequest(method, endpoint, params = {}, config = {}) {
     'X-BAPI-SIGN': sign,
     'X-BAPI-RECV-WINDOW': recvWindow,
     'Content-Type': 'application/json',
-    'Referer': brokerId || 'Ef001038' // Broker ID tracking
+    'Referer': FINAL_BROKER_ID, // Mandatory Header for Bybit Broker Program
+    'X-Referer': FINAL_BROKER_ID  // Backup redundancy for some endpoints
   };
 
   try {
+    const startTime = Date.now();
     const response = await fetch(url, {
       method,
       headers,
@@ -72,12 +77,17 @@ async function bybitRequest(method, endpoint, params = {}, config = {}) {
     });
 
     const result = await response.json();
+    
+    // Internal Logging for Broker Verification
+    console.log(`[BYBIT_API_LOG] ${new Date().toISOString()} | ${method} ${endpoint} | Status: ${result.retCode} | Msg: ${result.retMsg} | Broker: ${FINAL_BROKER_ID} | Latency: ${Date.now() - startTime}ms`);
+    
     return result;
   } catch (error) {
     console.error('Bybit API Request Failed:', error);
     throw error;
   }
 }
+
 
 /**
  * Create a new order (Stateless)
