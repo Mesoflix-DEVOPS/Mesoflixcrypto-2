@@ -79,7 +79,13 @@ function BybitDashboard() {
       
       setOrderLogs(prev => prev.map(log => 
         log.id === logId 
-          ? { ...log, status: res.ok ? 'SUCCESS' : 'FAILED', details: data.retMsg || (res.ok ? 'Order placed successfully' : 'Unknown error') }
+          ? { 
+              ...log, 
+              status: res.ok ? 'SUCCESS' : 'FAILED', 
+              details: res.ok 
+                ? `Order ID: ${data.result.orderId} | Status: Success` 
+                : (data.retMsg || 'Unknown error') 
+            }
           : log
       ));
 
