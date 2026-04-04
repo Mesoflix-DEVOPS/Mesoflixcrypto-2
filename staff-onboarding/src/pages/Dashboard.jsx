@@ -121,8 +121,11 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Team Widget */}
-          <div className="bg-[#0a0a1a] rounded-2xl border border-[#1a1a3a] shadow-lg p-6">
+          </div>
+          
+          <div className="space-y-8">
+            {/* Team Widget */}
+            <div className="bg-[#0a0a1a] rounded-2xl border border-[#1a1a3a] shadow-lg p-6">
             <h2 className="text-lg font-bold text-white mb-4 flex justify-between items-center">
               Team Roster
               <span className="bg-[#1f1f3f] text-xs px-2 py-1 rounded text-gray-300">{teamMembers.length}/3</span>

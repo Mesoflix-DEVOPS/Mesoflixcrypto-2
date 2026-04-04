@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { createOrder, getWalletBalance } from './bybitService.js';
 
 // Load environment variables
 dotenv.config();
@@ -277,7 +278,8 @@ app.get('/api/staff/status', async (req, res) => {
     const status = {
       binary: { hasLeader: false, members: 0 },
       forex: { hasLeader: false, members: 0 },
-      crypto: { hasLeader: false, members: 0 }
+      crypto: { hasLeader: false, members: 0 },
+      support: { hasLeader: false, members: 0 }
     };
 
     teams.forEach(t => {
@@ -474,28 +476,67 @@ app.post('/api/staff/reply', async (req, res) => {
   }
 });
 
-// Update Ticket Status
-app.patch('/api/tickets/:id/status', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+// --- BYBIT API ENDPOINTS ---
 
-    if (!['new', 'active', 'completed', 'closed'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status.' });
+// Test Bybit Order Placement (Dynamic Config)
+app.post('/api/bybit/test-order', async (req, res) => {
+  try {
+    const { symbol, side, qty, price, category, apiConfig } = req.body;
+
+    if (!symbol || !side || !qty) {
+      return res.status(400).json({ error: 'Missing order parameters (symbol, side, qty).' });
     }
 
-    const { error } = await supabase
-      .from('support_messages')
-      .update({ status })
-      .eq('id', id);
+    if (!apiConfig || !apiConfig.apiKey || !apiConfig.apiSecret) {
+      return res.status(400).json({ error: 'Missing Bybit API credentials (apiKey, apiSecret).' });
+    }
 
-    if (error) throw error;
+    const orderParams = {
+      category: category || 'spot',
+      symbol,
+      side,
+      orderType: price ? 'Limit' : 'Market',
+      qty: qty.toString(),
+      price: price ? price.toString() : undefined,
+      timeInForce: 'GTC',
+      orderLinkId: `test-${Date.now()}`
+    };
 
-    res.status(200).json({ success: true, message: 'Status updated.' });
+    console.log('Placing Test Order:', orderParams);
+    const result = await createOrder(orderParams, apiConfig);
+    
+    if (result.retCode !== 0) {
+      console.error('Bybit API Error:', result);
+      return res.status(400).json(result);
+    }
 
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
-    console.error('Status update error:', error);
-    res.status(500).json({ error: 'Failed to update ticket status.' });
+    console.error('Bybit Order Execution Error:', error);
+    res.status(500).json({ error: 'Failed to place Bybit order.' });
+  }
+});
+
+// Get Bybit Wallet Balance (Dynamic Config)
+app.post('/api/bybit/balance', async (req, res) => {
+  try {
+    const { accountType, apiConfig } = req.body;
+
+    if (!apiConfig || !apiConfig.apiKey || !apiConfig.apiSecret) {
+      return res.status(400).json({ error: 'Missing Bybit API credentials.' });
+    }
+
+    const result = await getWalletBalance({ accountType: accountType || 'UNIFIED' }, apiConfig);
+
+    if (result.retCode !== 0) {
+      console.error('Bybit Balance Error:', result);
+      return res.status(400).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Bybit Balance Fetch Error:', error);
+    res.status(500).json({ error: 'Failed to fetch Bybit balance.' });
   }
 });
 

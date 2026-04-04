@@ -16,6 +16,7 @@ import {
   News,
   NotFound,
 } from './pages/StaticPages';
+import BybitTester from './pages/BybitTester';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="market" element={<Market />} />
           <Route path="ecosystem" element={<Ecosystem />} />
           <Route path="support" element={<Support />} />
+          <Route path="bybit-test" element={<BybitTester />} />
 
           {/* Footer pages */}
           <Route path="about" element={<About />} />

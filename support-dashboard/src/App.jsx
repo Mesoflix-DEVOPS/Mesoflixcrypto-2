@@ -376,8 +376,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Hidden Registration Path */}
+        {/* Hidden Registration Paths */}
         <Route path="/ms/support/registration/2026/secure" element={<StaffRegister />} />
+        <Route path="/ms/support/registration/2026/secure-team-2" element={<StaffRegister />} />
         
         {/* Staff Login */}
         <Route path="/support/staff/login" element={<StaffLogin />} />

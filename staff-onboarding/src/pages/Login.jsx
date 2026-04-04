@@ -33,6 +33,12 @@ function Login() {
       localStorage.setItem('staffToken', data.token);
       localStorage.setItem('staffData', JSON.stringify(data.staff));
 
+      // 3. Admin Unified Dashboard Redirect
+      if (data.staff.email === 'admin@mesoflix.com' || data.staff.email === 'admin@mesoflixlabs.com') {
+        navigate('/admin');
+        return;
+      }
+
       // Redirect based on onboarding status
       if (!data.staff.agreementSigned) {
         navigate('/onboarding');
