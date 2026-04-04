@@ -168,18 +168,18 @@ function BybitDashboard() {
                 </p>
                 <div className="action-buttons">
                   <button 
-                    onClick={() => placeTestOrder('BTCUSDT', 'Buy', '0.002')}
+                    onClick={() => placeTestOrder('BTCUSDT', 'Buy', '100')}
                     disabled={loading}
                     className="primary"
                   >
-                    Place Test BTC Order
+                    Test Trade: $100 BTC (USDT Value)
                   </button>
                   <button 
-                    onClick={() => placeTestOrder('XRPUSDT', 'Buy', '200')}
+                    onClick={() => placeTestOrder('XRPUSDT', 'Buy', '100')}
                     disabled={loading}
                     className="secondary"
                   >
-                    Place Test XRP Order
+                    Test Trade: $100 XRP (USDT Value)
                   </button>
                 </div>
               </div>
