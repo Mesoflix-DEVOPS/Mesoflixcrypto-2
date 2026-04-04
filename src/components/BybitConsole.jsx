@@ -6,6 +6,7 @@ function BybitConsole() {
   const [apiSecret, setApiSecret] = useState('');
   const [isTestnet, setIsTestnet] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
+  const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -58,6 +59,9 @@ function BybitConsole() {
 
       const data = await res.json();
       if (res.ok) {
+        // Update balance display in console
+        setBalance(data.result.list[0]);
+        
         // Persist session locally for the dashboard
         localStorage.setItem('bybit_test_config', JSON.stringify(apiConfig));
         setSuccessMsg('Connection successful! Redirecting to dashboard...');
