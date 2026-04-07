@@ -20,6 +20,7 @@ import BybitTester from './pages/BybitTester';
 import BybitDashboard from './pages/BybitDashboard';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import BybitRelay from './pages/BybitRelay';
 
 function App() {
   return (
@@ -54,6 +55,9 @@ function App() {
           {/* Live auth pages */}
           <Route path="sign-in" element={<SignIn />} />
           <Route path="sign-up" element={<SignUp />} />
+
+          {/* Institutional Relay */}
+          <Route path="callback/bybit" element={<BybitRelay />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

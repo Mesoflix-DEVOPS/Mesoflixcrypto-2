@@ -13,7 +13,7 @@ import encryption from './encryption.js';
 // --- Broker OAuth Config ---
 const BYBIT_CLIENT_ID = process.env.BYBIT_CLIENT_ID || 'oUR2aPlwXyuH';
 const BYBIT_CLIENT_SECRET = process.env.BYBIT_CLIENT_SECRET || 'JI3UB8NnO04T3w3EnzX41VogA';
-const REDIRECT_URI = process.env.REDIRECT_URI || 'https://mesoflixlabs.com/api/auth/bybit/callback';
+const REDIRECT_URI = process.env.REDIRECT_URI || 'https://www.mesoflixlabs.com/callback/bybit';
 
 // Load environment variables
 dotenv.config();
