@@ -12,10 +12,29 @@ function BybitConsole() {
   const [successMsg, setSuccessMsg] = useState('');
   const [managedAccount, setManagedAccount] = useState(null);
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [userId, setUserId] = useState(null);
   
   const navigate = useNavigate();
-  const userProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
-  const userId = userProfile.id;
+  
+  useEffect(() => {
+    // 1. Load user profile
+    const profile = localStorage.getItem('user_profile');
+    if (profile) {
+      const parsed = JSON.parse(profile);
+      setUserId(parsed.id);
+    }
+
+    // 2. Check for fresh OAuth sync
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sync') === 'true') {
+      setSuccessMsg('Successfully linked with Bybit!');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 3. Fetch current status
+    fetchManagedAccount();
+  }, []);
   
   const API_BASE_URL = import.meta.env.MODE === 'development' 
     ? 'http://localhost:3001' 

@@ -29,7 +29,11 @@ function SignUp() {
       if (response.ok) {
         localStorage.setItem('user_token', data.token);
         localStorage.setItem('user_profile', JSON.stringify(data.user));
-        navigate('/brokerage'); // Redirect to main trading dashboard
+        
+        // --- SEAMLESS INSTITUTIONAL REDIRECT ---
+        // Instead of going to the dashboard, we go directly to Bybit to sync the broker account.
+        const userId = data.user.id;
+        window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${userId}`;
       } else {
         setError(data.error || 'Registration failed.');
       }

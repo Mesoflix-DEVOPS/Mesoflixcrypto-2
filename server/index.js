@@ -853,7 +853,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     }
 
     console.log(`[OAUTH] Successfully synced Bybit keys for userId: ${userId}`);
-    res.redirect('/broker/api/test?success=true');
+    res.redirect('/brokerage?sync=true');
 
   } catch (err) {
     console.error('Catastrophic OAuth Failure:', err);
