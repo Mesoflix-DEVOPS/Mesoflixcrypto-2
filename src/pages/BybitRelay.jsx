@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 
 function BybitRelay() {
   const [searchParams] = useSearchParams();
-  const [syncStep, setSyncStep] = useState(0);
+  const [syncStep, setSyncStep] = React.useState(0);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // 1. Instantly clean up the URL for the user
     window.history.replaceState({}, document.title, window.location.pathname);
 
