@@ -9,9 +9,7 @@ function BybitDashboard() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const API_BASE_URL = import.meta.env.MODE === 'development' 
-    ? 'http://localhost:3001' 
-    : window.location.origin;
+  const API_BASE_URL = ''; // Use relative paths in production
 
   useEffect(() => {
     const savedConfig = localStorage.getItem('bybit_test_config');

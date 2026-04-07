@@ -39,7 +39,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const staff = JSON.parse(localStorage.getItem('staffUser') || '{}');
 
-  const API_BASE_URL = window.location.origin;
+  const API_BASE_URL = ''; // Relative path in production
 
   useEffect(() => {
     fetchMessages();

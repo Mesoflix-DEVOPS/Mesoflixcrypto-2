@@ -18,7 +18,7 @@ function StaffRegister() {
 
     const API_BASE_URL = import.meta.env.MODE === 'development' 
       ? 'http://localhost:3001' 
-      : window.location.origin;
+      : ''; // Use relative paths in production
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/staff/register`, {

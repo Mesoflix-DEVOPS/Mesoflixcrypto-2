@@ -17,7 +17,7 @@ function SignUp() {
     try {
       const API_BASE_URL = import.meta.env.MODE === 'development' 
         ? 'http://localhost:3001' 
-        : window.location.origin;
+        : ''; // Use relative paths in production
         
       const response = await fetch(`${API_BASE_URL}/api/user/register`, {
         method: 'POST',
