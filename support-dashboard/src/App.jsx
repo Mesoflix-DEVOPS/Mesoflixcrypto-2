@@ -39,9 +39,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const staff = JSON.parse(localStorage.getItem('staffUser') || '{}');
 
-  const API_BASE_URL = import.meta.env.MODE === 'development' 
-    ? 'http://localhost:3001' 
-    : 'https://mesoflixcrypto-2.onrender.com';
+  const API_BASE_URL = window.location.origin;
 
   useEffect(() => {
     fetchMessages();

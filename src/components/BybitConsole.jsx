@@ -38,7 +38,7 @@ function BybitConsole() {
   
   const API_BASE_URL = import.meta.env.MODE === 'development' 
     ? 'http://localhost:3001' 
-    : 'https://mesoflixlabs.com';
+    : window.location.origin;
 
   useEffect(() => {
     if (userId) {

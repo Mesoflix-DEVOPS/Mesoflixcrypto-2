@@ -18,7 +18,7 @@ function StaffRegister() {
 
     const API_BASE_URL = import.meta.env.MODE === 'development' 
       ? 'http://localhost:3001' 
-      : 'https://mesoflixcrypto-2.onrender.com';
+      : window.location.origin;
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/staff/register`, {

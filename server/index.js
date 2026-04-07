@@ -50,7 +50,10 @@ function generateUniqueKey() {
 }
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: true, // Dynamically allow the origin of the request
+  credentials: true
+}));
 app.use(express.json());
 
 // Helper function to send email via Brevo

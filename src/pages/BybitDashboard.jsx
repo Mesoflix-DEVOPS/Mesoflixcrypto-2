@@ -11,7 +11,7 @@ function BybitDashboard() {
 
   const API_BASE_URL = import.meta.env.MODE === 'development' 
     ? 'http://localhost:3001' 
-    : 'https://mesoflixlabs.com';
+    : window.location.origin;
 
   useEffect(() => {
     const savedConfig = localStorage.getItem('bybit_test_config');
