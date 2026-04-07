@@ -792,11 +792,11 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
   if (error) {
     console.error('Bybit OAuth error:', error);
-    return res.redirect(`/broker/api/test?error=${error}`);
+    return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=${error}`);
   }
 
   if (!code || !userId) {
-    return res.redirect('/broker/api/test?error=missing_parameters');
+    return res.redirect('https://www.mesoflixlabs.com/brokerage?error=missing_parameters');
   }
 
   try {
@@ -815,7 +815,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     const tokenData = await tokenRes.json();
     if (!tokenData.access_token) {
       console.error('Token exchange failed:', tokenData);
-      return res.redirect(`/broker/api/test?error=token_exchange_failed`);
+      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=token_exchange_failed`);
     }
 
     const accessToken = tokenData.access_token;
@@ -830,7 +830,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     const keyData = await keyRes.json();
     if (keyData.ret_code !== 0 || !keyData.result) {
       console.error('Key retrieval failed:', keyData);
-      return res.redirect(`/broker/api/test?error=key_retrieval_failed`);
+      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=key_retrieval_failed`);
     }
 
     const { api_key: apiKey, api_secret: apiSecret } = keyData.result;
@@ -852,7 +852,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (dbError) {
       console.error('Database Error storing OAuth keys:', dbError);
-      return res.redirect(`/broker/api/test?error=db_storage_failed`);
+      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=db_storage_failed`);
     }
 
     console.log(`[OAUTH] Successfully synced Bybit keys for userId: ${userId}`);
@@ -860,7 +860,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
   } catch (err) {
     console.error('Catastrophic OAuth Failure:', err);
-    res.redirect(`/broker/api/test?error=server_error`);
+    res.redirect(`https://www.mesoflixlabs.com/brokerage?error=server_error`);
   }
 });
 

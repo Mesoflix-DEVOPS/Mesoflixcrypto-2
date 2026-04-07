@@ -26,9 +26,16 @@ function BybitConsole() {
 
     // 2. Check for fresh OAuth sync
     const params = new URLSearchParams(window.location.search);
+    const syncError = params.get('error');
+    
     if (params.get('sync') === 'true') {
       setSuccessMsg('Successfully linked with Bybit!');
-      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (syncError === 'db_storage_failed') {
+      setError('System Error: Database configuration required for institutional sync. Please contact your administrator.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (syncError) {
+      setError(`Wait! Connection Failed: ${syncError.replace(/_/g, ' ')}`);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
