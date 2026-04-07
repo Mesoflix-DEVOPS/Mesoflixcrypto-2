@@ -38,7 +38,7 @@ function BybitConsole() {
   
   const API_BASE_URL = import.meta.env.MODE === 'development' 
     ? 'http://localhost:3001' 
-    : ''; // Use relative paths in production
+    : 'https://mesoflixcrypto-2.onrender.com';
 
   useEffect(() => {
     if (userId) {

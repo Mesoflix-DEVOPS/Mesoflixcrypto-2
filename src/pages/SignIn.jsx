@@ -16,7 +16,7 @@ function SignIn() {
     try {
       const API_BASE_URL = import.meta.env.MODE === 'development' 
         ? 'http://localhost:3001' 
-        : ''; // Use relative paths in production
+        : 'https://mesoflixcrypto-2.onrender.com';
         
       const response = await fetch(`${API_BASE_URL}/api/user/login`, {
         method: 'POST',
