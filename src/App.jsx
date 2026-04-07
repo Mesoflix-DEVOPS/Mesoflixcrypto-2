@@ -56,8 +56,9 @@ function App() {
           <Route path="sign-in" element={<SignIn />} />
           <Route path="sign-up" element={<SignUp />} />
 
-          {/* Institutional Relay */}
+          {/* Institutional Relay (Catch messy Bybit links) */}
           <Route path="callback/bybit" element={<BybitRelay />} />
+          <Route path="api/auth/bybit/callback" element={<BybitRelay />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
