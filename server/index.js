@@ -487,8 +487,19 @@ app.get('/api/staff/team/:id', async (req, res) => {
     const { id } = req.params;
     
     // 1. Get user's team ID
+    // 1. Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'This email is already registered. Please sign in instead.' });
+    }
+
     const { data: user, error: userError } = await supabase
-      .from('staff_profiles')
+     .from('staff_profiles')
       .select('team_id')
       .eq('id', id)
       .single();
@@ -833,7 +844,20 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=key_retrieval_failed`);
     }
 
-    const { api_key: apiKey, api_secret: apiSecret } = keyData.result;
+    const { api_key: apiKey, api_secret: apiSecret, sub_member_id: subUid } = keyData.result;
+
+    // --- NEW: Duplicate Bybit Account Prevention ---
+    const { data: existingAccount } = await supabase
+      .from('user_broker_accounts')
+      .select('user_id')
+      .eq('bybit_sub_uid', subUid.toString())
+      .single();
+
+    if (existingAccount && existingAccount.user_id !== userId) {
+      console.warn(`[OAUTH] Security Alert: User ${userId} attempted to link Bybit UID ${subUid} which is already owned by User ${existingAccount.user_id}`);
+      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=bybit_account_already_linked`);
+    }
+    // ---------------------------------------------
 
     // 5. Encrypt and store keys in Supabase
     const encryptedKey = encryption.encrypt(apiKey);

@@ -7,19 +7,16 @@ function BybitRelay() {
 
   useEffect(() => {
     // 1. Instantly clean up the URL for the user
-    // This hides the 'messy' code and state from the address bar
     window.history.replaceState({}, document.title, window.location.pathname);
 
-    // 2. Extract the actual parameters
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
     const backendUrl = 'https://mesoflixcrypto-2.onrender.com/api/auth/bybit/callback';
 
-    // 3. Institutional Animation Sequence
-    const timer1 = setTimeout(() => setSyncStep(1), 800);  // "Secure Handshake..."
-    const timer2 = setTimeout(() => setSyncStep(2), 1800); // "Synchronizing Credentials..."
+    const timer1 = setTimeout(() => setSyncStep(1), 800);
+    const timer2 = setTimeout(() => setSyncStep(2), 1800);
     
     const timer3 = setTimeout(() => {
       if (code && state) {
@@ -29,7 +26,7 @@ function BybitRelay() {
       } else {
         window.location.href = '/brokerage';
       }
-    }, 2800); // The "Jump" to Render
+    }, 2800);
 
     return () => {
       clearTimeout(timer1);
@@ -39,50 +36,92 @@ function BybitRelay() {
   }, [searchParams]);
 
   return (
-    <div className="inner-page flex items-center justify-center p-6" 
-         style={{ minHeight: '100vh', background: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      fontFamily: 'Inter, sans-serif'
+    }}>
       
-      <div className="max-w-md w-full bg-slate-900/50 backdrop-blur-xl border border-emerald-500/20 p-10 rounded-3xl text-center shadow-2xl">
+      <div style={{ 
+        maxWidth: '440px', 
+        width: '100%', 
+        backgroundColor: 'rgba(15, 23, 42, 0.6)', 
+        backdropFilter: 'blur(16px)', 
+        border: '1px solid rgba(16, 185, 129, 0.2)', 
+        padding: '40px', 
+        borderRadius: '32px', 
+        textAlign: 'center',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+      }}>
         
-        {/* Animated Institutional Logo/Spinner */}
-        <div className="relative w-24 h-24 mx-auto mb-8">
-          <div className="absolute inset-0 border-4 border-emerald-500/10 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-t-emerald-400 rounded-full animate-spin"></div>
-          <div className="absolute inset-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+        {/* Animated Institutional Spinner */}
+        <div style={{ position: 'relative', width: '96px', height: '96px', margin: '0 auto 32px' }}>
+          <div style={{ position: 'absolute', inset: '0', border: '4px solid rgba(16, 185, 129, 0.1)', borderRadius: '50%' }}></div>
+          <div style={{ 
+            position: 'absolute', 
+            inset: '0', 
+            border: '4px solid transparent', 
+            borderTopColor: '#34d399', 
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <div style={{ 
+            position: 'absolute', 
+            inset: '16px', 
+            backgroundColor: 'rgba(16, 185, 129, 0.1)', 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <svg style={{ width: '32px', height: '32px', color: '#34d399' }} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M2.166 4.9L9.03 9.003c.273.163.665.163.938 0l6.865-4.103a.5.5 0 000-.853l-6.865-4.103a.965.965 0 00-.938 0L2.166 4.047a.5.5 0 000 .853zM10 10.463l6.547-3.914a.5.5 0 01.765.426v6.78a.966.966 0 01-.482.836l-6.36 3.8a.965.965 0 01-.94 0l-6.36-3.8a.966.966 0 01-.481-.836V6.975a.5.5 0 01.766-.426L10 10.463z" clipRule="evenodd" />
             </svg>
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+        <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', marginBottom: '16px', letterSpacing: '-0.025em' }}>
           Bybit Institutional Sync
         </h2>
         
         {/* Progress Steps */}
-        <div className="space-y-4 text-left mt-8">
-          <div className={`flex items-center gap-4 transition-all duration-500 ${syncStep >= 0 ? 'opacity-100' : 'opacity-30'}`}>
-            <div className={`w-2 h-2 rounded-full ${syncStep >= 1 ? 'bg-emerald-400' : 'bg-slate-600 animate-pulse'}`}></div>
-            <p className="text-sm font-medium text-slate-300">Verifying Brokerage Handshake</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left', marginTop: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: syncStep >= 0 ? 1 : 0.3, transition: 'opacity 0.5s' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: syncStep >= 1 ? '#34d399' : '#475569' }}></div>
+            <p style={{ fontSize: '14px', fontWeight: '500', color: '#94a3b8', margin: '0' }}>Verifying Brokerage Handshake</p>
           </div>
           
-          <div className={`flex items-center gap-4 transition-all duration-500 ${syncStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
-            <div className={`w-2 h-2 rounded-full ${syncStep >= 2 ? 'bg-emerald-400' : 'bg-slate-600 animate-pulse'}`}></div>
-            <p className="text-sm font-medium text-slate-300">Synchronizing OAuth Credentials</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: syncStep >= 1 ? 1 : 0.3, transition: 'opacity 0.5s' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: syncStep >= 2 ? '#34d399' : '#475569' }}></div>
+            <p style={{ fontSize: '14px', fontWeight: '500', color: '#94a3b8', margin: '0' }}>Synchronizing OAuth Credentials</p>
           </div>
 
-          <div className={`flex items-center gap-4 transition-all duration-500 ${syncStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
-            <div className={`w-2 h-2 rounded-full ${syncStep >= 2 ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`}></div>
-            <p className="text-sm font-medium text-slate-300">Securing Exchange Connection</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: syncStep >= 2 ? 1 : 0.3, transition: 'opacity 0.5s' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: syncStep >= 2 ? '#34d399' : '#475569', animation: syncStep >= 2 ? 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' : 'none' }}></div>
+            <p style={{ fontSize: '14px', fontWeight: '500', color: '#94a3b8', margin: '0' }}>Securing Exchange Connection</p>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-white/5">
-          <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">
+        <div style={{ marginTop: '40px', paddingTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <p style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: '700', margin: '0' }}>
             Mesoflix Secure Gateway
           </p>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes ping {
+          75%, 100% { transform: scale(2); opacity: 0; }
+        }
+      `}} />
     </div>
   );
 }
