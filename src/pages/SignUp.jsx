@@ -29,7 +29,7 @@ function SignUp() {
       if (response.ok) {
         localStorage.setItem('user_token', data.token);
         localStorage.setItem('user_profile', JSON.stringify(data.user));
-        navigate('/broker/api/test'); // Redirect to connectivity hub
+        navigate('/brokerage'); // Redirect to main trading dashboard
       } else {
         setError(data.error || 'Registration failed.');
       }
