@@ -856,7 +856,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     }
 
     console.log(`[OAUTH] Successfully synced Bybit keys for userId: ${userId}`);
-    res.redirect('/brokerage?sync=true');
+    res.redirect('https://www.mesoflixlabs.com/brokerage?sync=true');
 
   } catch (err) {
     console.error('Catastrophic OAuth Failure:', err);

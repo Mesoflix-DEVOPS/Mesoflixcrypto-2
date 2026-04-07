@@ -66,7 +66,7 @@ function Home() {
       <div className="home-hero-wrapper">
         <div className="header-intro flex-1 flex flex-col items-center justify-center text-center">
           <h1>We make trading crypto clear and simple</h1>
-          <Link to="/buy-sell" className="btn btn-base btn-g-blue-veronica text-base">Get Started</Link>
+          <Link to="/sign-up" className="btn btn-base btn-g-blue-veronica text-base">Get Started</Link>
         </div>
 
         {/* Info Cards */}
@@ -77,7 +77,7 @@ function Home() {
                 <img src={createIcon} alt="Create" />
                 <h3 className="info-item-title">Account Setup</h3>
                 <p className="text-base text info-item-text">Create your MesoflixLabs account and verify your identity in minutes to start trading.</p>
-                <Link to="/buy-sell" className="flex-inline items-center btn-link">
+                <Link to="/sign-up" className="flex-inline items-center btn-link">
                   <span className="link-text text-lavender text text-base">Get Started</span>
                   <img src={arrowIcon} className="link-icon" alt="Arrow" />
                 </Link>
@@ -130,7 +130,7 @@ function Home() {
             <div className="title-wrapper">
               <h2 className="large-title">A crypto trading platform that invests in you.</h2>
               <p className="text text-base">Experience the next generation of digital asset management with MesoflixLabs. We provide the tools and security you need to excel in the crypto markets.</p>
-              <Link to="/buy-sell" className="btn btn-base btn-g-blue-veronica text-base">Start Trading</Link>
+              <Link to="/sign-up" className="btn btn-base btn-g-blue-veronica text-base">Start Trading</Link>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ function Home() {
                             <img src={coin.graph} className="graph-img" alt="Graph" />
                           </td>
                           <td>
-                            <Link to="/buy-sell" className="table-link">
+                            <Link to="/sign-up" className="table-link">
                               <span className="link-text no-wrap text-base">Trade Now</span>
                               <img src={arrowWhiteIcon} className="link-icon" alt="Arrow" />
                             </Link>
