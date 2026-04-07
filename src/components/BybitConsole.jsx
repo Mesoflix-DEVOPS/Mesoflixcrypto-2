@@ -38,9 +38,6 @@ function BybitConsole() {
       setError(`Wait! Connection Failed: ${syncError.replace(/_/g, ' ')}`);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    // 3. Fetch current status
-    fetchManagedAccount();
   }, []);
   
   const API_BASE_URL = import.meta.env.MODE === 'development' 
@@ -54,6 +51,8 @@ function BybitConsole() {
   }, [userId, isTestnet, isDemo]);
 
   const fetchManagedAccount = async () => {
+    if (!userId) return; // Safety guard
+    
     try {
       const env = isDemo ? 'DEMO' : isTestnet ? 'TESTNET' : 'REAL';
       const res = await fetch(`${API_BASE_URL}/api/broker/account/${userId}?environment=${env}`);
