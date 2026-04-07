@@ -90,8 +90,8 @@ function Support() {
     setLoading(true);
 
     const API_BASE_URL = import.meta.env.MODE === 'development' 
-      ? '' 
-      : 'https://mesoflixcrypto-2.onrender.com';
+    ? 'http://localhost:3001' 
+    : 'https://mesoflixlabs.com';
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/contact`, {

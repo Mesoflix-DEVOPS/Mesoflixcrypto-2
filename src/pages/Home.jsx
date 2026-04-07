@@ -32,7 +32,7 @@ function Home() {
       try {
         const API_BASE_URL = import.meta.env.MODE === 'development' 
           ? 'http://localhost:3001' 
-          : 'https://mesoflixcrypto-2.onrender.com';
+          : 'https://mesoflixlabs.com';
         const response = await fetch(`${API_BASE_URL}/api/market/coins?limit=8`);
         if (!response.ok) throw new Error('Proxy response was not ok');
         const json = await response.json();
