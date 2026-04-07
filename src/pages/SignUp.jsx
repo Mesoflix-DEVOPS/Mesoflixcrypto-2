@@ -27,8 +27,8 @@ function SignUp() {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('staff_token', data.token);
-        localStorage.setItem('staff_user', JSON.stringify(data.user));
+        localStorage.setItem('user_token', data.token);
+        localStorage.setItem('user_profile', JSON.stringify(data.user));
         navigate('/broker/api/test'); // Redirect to connectivity hub
       } else {
         setError(data.error || 'Registration failed.');

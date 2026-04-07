@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 function BybitConsole() {
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
-  const [isTestnet, setIsTestnet] = useState(true);
+  const [isTestnet, setIsTestnet] = useState(false); // Default to MAINNET as requested
   const [isDemo, setIsDemo] = useState(false);
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -14,8 +14,8 @@ function BybitConsole() {
   const [isOnboarding, setIsOnboarding] = useState(false);
   
   const navigate = useNavigate();
-  const staffUser = JSON.parse(localStorage.getItem('staff_user') || '{}');
-  const userId = staffUser.id;
+  const userProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+  const userId = userProfile.id;
   
   const API_BASE_URL = import.meta.env.MODE === 'development' 
     ? 'http://localhost:3001' 
@@ -42,36 +42,12 @@ function BybitConsole() {
     }
   };
 
-  const startOnboarding = async () => {
-    if (!userId) {
-      setError('You must be logged in as staff to activate broker features.');
-      return;
-    }
-
+  const startOnboarding = () => {
+    if (!userId) return;
     setIsOnboarding(true);
-    setError('');
-    setSuccessMsg('');
-
-    try {
-      const env = isDemo ? 'DEMO' : isTestnet ? 'TESTNET' : 'REAL';
-      const res = await fetch(`${API_BASE_URL}/api/broker/onboard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, environment: env })
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
-        setSuccessMsg('Institutional account created successfully!');
-        fetchManagedAccount();
-      } else {
-        setError(data.error || 'Failed to activate institutional account.');
-      }
-    } catch (err) {
-      setError('Network error during onboarding.');
-    } finally {
-      setIsOnboarding(false);
-    }
+    
+    // Official Broker OAuth Redirection
+    window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${userId}`;
   };
 
   const loginWithManagedAccount = () => {
@@ -212,18 +188,28 @@ function BybitConsole() {
               </button>
             </div>
           ) : (
-            <div className="managed-status-box onboarding">
-              <div className="status-info">
-                <span className="status-label">SEAMLESS CONNECTIVITY</span>
-                <p>Generate an institucional sub-account automatically via the Mesoflix Broker ID.</p>
+            <div className="managed-onboarding">
+              <div className="onboarding-header">
+                <h3>Institutional Bybit Connectivity</h3>
+                <p>Mesoflix is an official Bybit Broker Partner. Connect your account securely via OAuth.</p>
               </div>
-              <button 
-                onClick={startOnboarding} 
-                disabled={isOnboarding}
-                className="activate-btn"
-              >
-                {isOnboarding ? 'Activating...' : 'Activate Managed Account'}
-              </button>
+              
+              <div className="onboarding-actions">
+                <button 
+                  className="btn btn-g-blue-veronica btn-base text-base"
+                  onClick={startOnboarding}
+                  disabled={isOnboarding}
+                >
+                  <img src="/bybit-logo-small.svg" alt="Bybit" className="btn-icon" style={{ height: '20px', marginRight: '8px' }} />
+                  {isOnboarding ? 'Redirecting to Bybit...' : 'Connect with Bybit'}
+                </button>
+              </div>
+
+              <div className="onboarding-footer">
+                <p>✓ No API keys manual entry required</p>
+                <p>✓ Official Institutional Sub-account System</p>
+                <p>✓ AES-256 Military Grade Encryption</p>
+              </div>
             </div>
           )}
         </div>

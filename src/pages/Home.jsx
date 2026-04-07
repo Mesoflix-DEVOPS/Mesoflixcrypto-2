@@ -30,8 +30,11 @@ function Home() {
   React.useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const response = await fetch('https://api.coincap.io/v2/assets?limit=8');
-        if (!response.ok) throw new Error('Network response was not ok');
+        const API_BASE_URL = import.meta.env.MODE === 'development' 
+          ? 'http://localhost:3001' 
+          : 'https://mesoflixcrypto-2.onrender.com';
+        const response = await fetch(`${API_BASE_URL}/api/market/coins?limit=8`);
+        if (!response.ok) throw new Error('Proxy response was not ok');
         const json = await response.json();
         
         const mappedCoins = json.data.map((item, index) => ({

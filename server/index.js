@@ -10,6 +10,11 @@ import { createOrder, getWalletBalance } from './bybitService.js';
 import brokerService from './brokerService.js';
 import encryption from './encryption.js';
 
+// --- Broker OAuth Config ---
+const BYBIT_CLIENT_ID = process.env.BYBIT_CLIENT_ID || 'oUR2aPlwXyuH';
+const BYBIT_CLIENT_SECRET = process.env.BYBIT_CLIENT_SECRET || 'JI3UB8NnO04T3w3EnzX41VogA';
+const REDIRECT_URI = process.env.REDIRECT_URI || 'https://mesoflixlabs.com/api/auth/bybit/callback';
+
 // Load environment variables
 dotenv.config();
 
@@ -744,6 +749,115 @@ app.post('/api/broker/onboard', async (req, res) => {
   } catch (error) {
     console.error('Broker onboarding catastrophic failure:', error);
     res.status(500).json({ error: 'An unexpected error occurred during broker integration.' });
+  }
+});
+
+// --- MARKET DATA PROXY (Fixes CoinCap DNS Issues) ---
+app.get('/api/market/coins', async (req, res) => {
+  try {
+    const limit = req.query.limit || 8;
+    const response = await fetch(`https://api.coincap.io/v2/assets?limit=${limit}`);
+    
+    if (!response.ok) {
+      throw new Error('CoinCap Backend Fetch Failed');
+    }
+    
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Market Proxy Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch live market data from institutional providers.' });
+  }
+});
+
+// --- BYBIT BROKER OAUTH ROUTES ---
+
+// 1. Authorize: Redirect user to Bybit
+app.get('/api/auth/bybit/authorize', (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return res.status(400).json({ error: 'User ID is required for authorization.' });
+
+  const state = userId; // Using userId as state for correlation
+  const authorizeUrl = `https://www.bybit.com/en/oauth?client_id=${BYBIT_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openapi&state=${state}`;
+  
+  res.redirect(authorizeUrl);
+});
+
+// 2. Callback: Handle redirect back from Bybit
+app.get('/api/auth/bybit/callback', async (req, res) => {
+  const { code, state: userId, error } = req.query;
+
+  if (error) {
+    console.error('Bybit OAuth error:', error);
+    return res.redirect(`/broker/api/test?error=${error}`);
+  }
+
+  if (!code || !userId) {
+    return res.redirect('/broker/api/test?error=missing_parameters');
+  }
+
+  try {
+    // 3. Exchange code for access_token
+    console.log(`[OAUTH] Exchanging code for token for userId: ${userId}`);
+    const tokenRes = await fetch('https://api2.bybit.com/oauth/v1/public/access_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: BYBIT_CLIENT_ID,
+        client_secret: BYBIT_CLIENT_SECRET,
+        code: code
+      })
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      console.error('Token exchange failed:', tokenData);
+      return res.redirect(`/broker/api/test?error=token_exchange_failed`);
+    }
+
+    const accessToken = tokenData.access_token;
+
+    // 4. Retrieve User's API Keys (Institutional Broker Path)
+    console.log(`[OAUTH] Retrieving OpenAPI keys for userId: ${userId}`);
+    const keyRes = await fetch('https://api2.bybit.com/oauth/v1/resource/restrict/openapi', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    const keyData = await keyRes.json();
+    if (keyData.ret_code !== 0 || !keyData.result) {
+      console.error('Key retrieval failed:', keyData);
+      return res.redirect(`/broker/api/test?error=key_retrieval_failed`);
+    }
+
+    const { api_key: apiKey, api_secret: apiSecret } = keyData.result;
+
+    // 5. Encrypt and store keys in Supabase
+    const encryptedKey = encryption.encrypt(apiKey);
+    const encryptedSecret = encryption.encrypt(apiSecret);
+
+    const { error: dbError } = await supabase
+      .from('user_broker_accounts')
+      .upsert([{
+        user_id: userId,
+        bybit_sub_uid: 'OAUTH_SYNCED', // Marker for OAuth retrieved keys
+        bybit_username: 'Bybit Authorized',
+        encrypted_api_key: encryptedKey,
+        encrypted_api_secret: encryptedSecret,
+        environment: 'REAL' // OAuth always targets Real accounts
+      }], { onConflict: 'user_id, environment' });
+
+    if (dbError) {
+      console.error('Database Error storing OAuth keys:', dbError);
+      return res.redirect(`/broker/api/test?error=db_storage_failed`);
+    }
+
+    console.log(`[OAUTH] Successfully synced Bybit keys for userId: ${userId}`);
+    res.redirect('/broker/api/test?success=true');
+
+  } catch (err) {
+    console.error('Catastrophic OAuth Failure:', err);
+    res.redirect(`/broker/api/test?error=server_error`);
   }
 });
 
