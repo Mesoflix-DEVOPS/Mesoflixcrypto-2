@@ -77,6 +77,8 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
   const handleConnectBybit = () => {
     if (!user) return;
     const API_BASE_URL = import.meta.env.MODE === 'development' 
