@@ -874,27 +874,12 @@ app.get('/api/auth/bybit/authorize', async (req, res) => {
   }
 });
 
-// 2. Callback: Handle redirect back from Bybit with Full Security Validation
+// 2. Callback: Handle redirect back from Bybit (Documented Institutional Flow)
 app.get('/api/auth/bybit/callback', async (req, res) => {
-  const { 
-    code, 
-    state: stateRaw, 
-    error: bybitError,
-    // Support variations of direct key delivery
-    api_key, api_secret,
-    apiKey, apiSecret,
-    sub_uid, sub_member_id
-  } = req.query;
-
-  let decodedState = null;
+  const { code, state: stateJwt, error: bybitError } = req.query;
   let oauthSession = null;
   let userId = null;
   let jti = null;
-
-  // Normalize keys
-  const directApiKey = api_key || apiKey;
-  const directApiSecret = api_secret || apiSecret;
-  const directSubUid = sub_uid || sub_member_id;
 
   try {
     // 1. Initial Handshake Validation
@@ -903,128 +888,111 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=bybit_error&details=${encodeURIComponent(bybitError)}`);
     }
 
-    if (!code && !directApiKey && !stateRaw) {
-      console.error('[OAUTH_CALLBACK] Missing requirements');
+    if (!code || !stateJwt) {
+      console.error('[OAUTH_CALLBACK] Missing requirements (code or state)');
       return res.redirect('https://www.mesoflixlabs.com/auth/error?code=missing_parameters');
     }
 
-    // 2. Robust State Verification
-    // We try to verify as JWT first, then fallback to raw userId for legacy/fast-connect flows
+    // 2. Verify Signed State JWT (Security Gate)
     try {
-      decodedState = jwt.verify(stateRaw, OAUTH_STATE_SECRET);
+      const decodedState = jwt.verify(stateJwt, OAUTH_STATE_SECRET);
       if (decodedState.type !== 'oauth_state') throw new Error('Invalid token type');
       userId = decodedState.userId;
       jti = decodedState.jti;
     } catch (err) {
-      // Logic fallback: If not a JWT, treat as raw userId (less secure but compatible)
-      console.warn('[OAUTH_CALLBACK] State is not a valid JWT, treating as raw userId:', stateRaw);
-      userId = stateRaw;
-      jti = 'direct_bypass_' + userId; // Synthetic JTI for logging
+      console.error('[OAUTH_CALLBACK] State Verification Failed:', err.message);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=invalid_state');
     }
 
-    if (!userId) {
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=unauthenticated_state');
+    // 3. One-Time Session Validation & Anti-Replay
+    const { data: session, error: sessionFetchErr } = await supabase
+      .from('oauth_sessions')
+      .select('*')
+      .eq('jti', jti)
+      .eq('user_id', userId)
+      .single();
+
+    if (sessionFetchErr || !session) {
+      console.error('[OAUTH_CALLBACK] Session lookup failed:', jti);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=invalid_session');
     }
 
-    // 3. Session Validation (Only if JTI is real)
-    // For direct bypass, we might not have a session record if initiated differently
-    if (jti && !jti.startsWith('direct_bypass')) {
-      const { data: session, error: sessionFetchErr } = await supabase
-        .from('oauth_sessions')
-        .select('*')
-        .eq('jti', jti)
-        .eq('user_id', userId)
-        .single();
+    oauthSession = session;
 
-      if (session && !sessionFetchErr) {
-        oauthSession = session;
-        if (session.status !== 'issued') {
-          return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_already_consumed');
-        }
-        if (new Date(session.expires_at) < new Date()) {
-          return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_expired');
-        }
-        // Audit: Track callback arrival
-        await addAuditLog({ sessionId: session.id, userId, eventType: 'CALLBACK', status: 'SUCCESS' });
-      }
+    if (session.status !== 'issued') {
+      console.error('[OAUTH_CALLBACK] Session already consumed:', jti);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_already_consumed');
     }
 
-    let finalApiKey = directApiKey;
-    let finalApiSecret = directApiSecret;
-    let finalSubUid = directSubUid;
-
-    // 4. Conditional Credential Retrieval
-    if (directApiKey && directApiSecret) {
-      // PATH A: Direct Key Delivery (Fast Connect)
-      console.log(`[OAUTH] Received direct keys for userId: ${userId}`);
-      if (!finalSubUid) finalSubUid = 'direct_auth_' + Date.now();
-    } else if (code) {
-      // PATH B: Standard OAuth Code Exchange
-      console.log(`[OAUTH] Exchanging code for token for userId: ${userId}`);
-      const tokenRes = await fetch('https://api2.bybit.com/oauth/v1/public/access_token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: BYBIT_CLIENT_ID,
-          client_secret: BYBIT_CLIENT_SECRET,
-          code: code
-        })
-      });
-
-      const tokenData = await tokenRes.json().catch(() => ({ error: 'Invalid JSON' }));
-
-      if (!tokenData.access_token) {
-        if (oauthSession) await addAuditLog({ sessionId: oauthSession.id, userId, eventType: 'TOKEN_EXCHANGE', status: 'FAILURE', metadata: tokenData });
-        return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=token_exchange_failed`);
-      }
-
-      const accessToken = tokenData.access_token;
-
-      // Retrieve User's API Keys
-      console.log(`[OAUTH] Retrieving OpenAPI keys for userId: ${userId}`);
-      const keyRes = await fetch('https://api2.bybit.com/oauth/v1/resource/restrict/openapi', {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-
-      const keyData = await keyRes.json().catch(() => ({ ret_code: -1 }));
-
-      if (keyData.ret_code !== 0 || !keyData.result) {
-        return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=key_retrieval_failed`);
-      }
-
-      finalApiKey = keyData.result.api_key;
-      finalApiSecret = keyData.result.api_secret;
-      finalSubUid = keyData.result.sub_member_id;
-    } else {
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=missing_credentials');
+    if (new Date(session.expires_at) < new Date()) {
+      console.error('[OAUTH_CALLBACK] Session expired:', jti);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_expired');
     }
 
-    // 5. Security & Persistence (Unified for both paths)
-    if (!finalApiKey || !finalApiSecret) {
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=credential_extraction_failed');
+    // Capture Callback Success in Audit
+    await addAuditLog({ sessionId: session.id, userId, eventType: 'CALLBACK', status: 'SUCCESS' });
+
+    // 4. Exchange Code for Access Token (Documented Institutional Step)
+    console.log(`[OAUTH] Exchanging auth_code for access_token for userId: ${userId}`);
+    const tokenRes = await fetch('https://api2.bybit.com/oauth/v1/public/access_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: BYBIT_CLIENT_ID,
+        client_secret: BYBIT_CLIENT_SECRET,
+        grant_type: 'authorization_code',
+        code: code
+      })
+    });
+
+    const tokenData = await tokenRes.json().catch(() => ({ error: 'Invalid JSON response from Bybit' }));
+
+    if (!tokenData.access_token) {
+      console.error('[OAUTH] Token exchange failed:', tokenData);
+      await addAuditLog({ sessionId: session.id, userId, eventType: 'TOKEN_EXCHANGE', status: 'FAILURE', metadata: tokenData });
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=token_exchange_failed');
     }
 
-    // Duplicate Check
+    const accessToken = tokenData.access_token;
+    await addAuditLog({ sessionId: session.id, userId, eventType: 'TOKEN_EXCHANGE', status: 'SUCCESS' });
+
+    // 5. Retrieve Permanent OpenAPI Credentials (The "Permanent" Keys)
+    console.log(`[OAUTH] Retrieving permanent OpenAPI keys for userId: ${userId}`);
+    const keyRes = await fetch('https://api2.bybit.com/oauth/v1/resource/restrict/openapi', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    const keyData = await keyRes.json().catch(() => ({ ret_code: -1 }));
+
+    if (keyData.ret_code !== 0 || !keyData.result) {
+      console.error('[OAUTH] Key retrieval failed:', keyData);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=key_retrieval_failed');
+    }
+
+    const { api_key: apiKey, api_secret: apiSecret, sub_member_id: subUid } = keyData.result;
+
+    // 6. Security Check & Persistence
+    // Prevent account swapping/duplicate linking
     const { data: existingAccount } = await supabase
       .from('user_broker_accounts')
       .select('user_id')
-      .eq('bybit_sub_uid', finalSubUid.toString())
+      .eq('bybit_sub_uid', subUid.toString())
       .single();
 
     if (existingAccount && existingAccount.user_id !== userId) {
       return res.redirect('https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere');
     }
 
-    // Store Keys
-    const encryptedKey = encryption.encrypt(finalApiKey);
-    const encryptedSecret = encryption.encrypt(finalApiSecret);
+    // Encrypt and save to database
+    const encryptedKey = encryption.encrypt(apiKey);
+    const encryptedSecret = encryption.encrypt(apiSecret);
 
     const { error: dbError } = await supabase
       .from('user_broker_accounts')
       .upsert([{
         user_id: userId,
-        bybit_sub_uid: finalSubUid.toString(),
+        bybit_sub_uid: subUid.toString(),
         bybit_username: 'Bybit Authorized',
         encrypted_api_key: encryptedKey,
         encrypted_api_secret: encryptedSecret,
@@ -1032,22 +1000,20 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       }], { onConflict: 'user_id, environment' });
 
     if (dbError) {
-      console.error('[OAUTH] DB Error:', dbError);
+      console.error('[OAUTH] DB Persistence Error:', dbError);
       return res.redirect('https://www.mesoflixlabs.com/auth/error?code=db_storage_failed');
     }
 
-    // 6. Finalization
-    if (oauthSession) {
-      await supabase.from('oauth_sessions').update({ status: 'consumed', consumed_at: new Date().toISOString() }).eq('id', oauthSession.id);
-      await addAuditLog({ sessionId: oauthSession.id, userId, eventType: 'DB_UPSERT', status: 'SUCCESS', metadata: { subUid: finalSubUid } });
-    }
+    // 7. Cleanup & Audit logging
+    await supabase.from('oauth_sessions').update({ status: 'consumed', consumed_at: new Date().toISOString() }).eq('id', session.id);
+    await addAuditLog({ sessionId: session.id, userId, eventType: 'DB_UPSERT', status: 'SUCCESS', metadata: { subUid } });
 
-    console.log(`[OAUTH] Successfully synchronized account for userId: ${userId}`);
+    console.log(`[OAUTH] Synchronization complete for userId: ${userId}`);
     res.redirect('https://www.mesoflixlabs.com/auth/complete?success=true');
 
   } catch (err) {
     console.error('[OAUTH_CALLBACK_CRITICAL]', err);
-    res.redirect(`https://www.mesoflixlabs.com/auth/error?code=server_error`);
+    res.redirect('https://www.mesoflixlabs.com/auth/error?code=server_error');
   }
 });
 
