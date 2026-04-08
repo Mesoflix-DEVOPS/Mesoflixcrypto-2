@@ -6,12 +6,19 @@ function BybitRelay() {
   const [syncStep, setSyncStep] = React.useState(0);
 
   React.useEffect(() => {
-    // 1. Instantly clean up the URL for the user
-    window.history.replaceState({}, document.title, window.location.pathname);
+    // 1. Capture ALL query parameters before cleaning up
+    const queryParams = new URLSearchParams(window.location.search);
+    const capturedParams = {};
+    queryParams.forEach((value, key) => {
+      capturedParams[key] = value;
+    });
 
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    const error = searchParams.get('error');
+    console.log('[Institutional Relay] Captured Synchronization Parameters:', 
+      Object.keys(capturedParams).map(k => k.includes('secret') || k.includes('key') ? `${k}: [REDACTED]` : `${k}: ${capturedParams[k]}`)
+    );
+
+    // 2. Instantly clean up the URL for the user's browser bar
+    window.history.replaceState({}, document.title, window.location.pathname);
 
     const backendUrl = 'https://mesoflixcrypto-2.onrender.com/api/auth/bybit/callback';
 
@@ -19,11 +26,12 @@ function BybitRelay() {
     const timer2 = setTimeout(() => setSyncStep(2), 1800);
     
     const timer3 = setTimeout(() => {
-      if (code && state) {
-        window.location.href = `${backendUrl}?code=${code}&state=${state}`;
-      } else if (error) {
-        window.location.href = `${backendUrl}?error=${error}`;
+      if (Object.keys(capturedParams).length > 0) {
+        // Build the query string for the backend from our captured snapshot
+        const forwardQuery = new URLSearchParams(capturedParams).toString();
+        window.location.href = `${backendUrl}?${forwardQuery}`;
       } else {
+        console.warn('[Institutional Relay] No parameters found. Redirecting to dashboard.');
         window.location.href = '/dashboard';
       }
     }, 2800);
