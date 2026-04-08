@@ -46,8 +46,15 @@ function Dashboard() {
     try {
       // 1. Fetch Broker Account Info
       const accountRes = await fetch(`${API_BASE_URL}/api/broker/account/${userId}`);
-      const accountData = await accountRes.json();
+      
+      if (accountRes.status === 404) {
+        // Normal state: user exists but no Bybit link yet
+        setBrokerAccount(null);
+        setLoading(false);
+        return;
+      }
 
+      const accountData = await accountRes.json();
       if (accountRes.ok && accountData.success) {
         setBrokerAccount(accountData);
         
