@@ -32,6 +32,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'mesoflix_staff_secret_2026';
+const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || JWT_SECRET; // Fallback to JWT_SECRET for now
 
 // Supabase Configuration
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
@@ -62,6 +63,24 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Helper: Phase 1 Audit Logging
+async function addAuditLog({ sessionId, userId, eventType, status, metadata }) {
+  try {
+    const { error } = await supabase
+      .from('oauth_audit_events')
+      .insert([{
+        session_id: sessionId,
+        user_id: userId,
+        event_type: eventType,
+        status: status,
+        metadata: metadata || {}
+      }]);
+    if (error) console.error('[AUDIT_ERROR]', error);
+  } catch (err) {
+    console.error('[AUDIT_CRITICAL_FAILURE]', err);
+  }
+}
 
 // Helper function to send email via Brevo
 async function sendBrevoEmail({ name, email, subject, message, accountEmail }) {
@@ -805,32 +824,119 @@ app.get('/api/market/coins', async (req, res) => {
 // --- BYBIT BROKER OAUTH ROUTES ---
 
 // 1. Authorize: Redirect user to Bybit
-app.get('/api/auth/bybit/authorize', (req, res) => {
-  const { userId } = req.query;
-  if (!userId) return res.status(400).json({ error: 'User ID is required for authorization.' });
+// 1. Authorize: Redirect user to Bybit with Secure Signed State
+app.get('/api/auth/bybit/authorize', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: 'User ID is required for authorization.' });
 
-  const state = userId; // Using userId as state for correlation
-  const authorizeUrl = `https://www.bybit.com/en/oauth?client_id=${BYBIT_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openapi&state=${state}`;
-  
-  res.redirect(authorizeUrl);
+    // 1. Create a Secure Signed State
+    const jti = crypto.randomUUID(); // Unique ID for this specific callback attempt
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 Minute TTL
+
+    // 2. Persist Session in DB
+    const { data: session, error: sessionErr } = await supabase
+      .from('oauth_sessions')
+      .insert([{
+        jti,
+        user_id: userId,
+        provider: 'bybit',
+        status: 'issued',
+        expires_at: expiresAt.toISOString()
+      }])
+      .select()
+      .single();
+
+    if (sessionErr) throw sessionErr;
+
+    // 3. Sign the state token
+    const state = jwt.sign(
+      { jti, userId, type: 'oauth_state' },
+      OAUTH_STATE_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    // 4. Log the redirect attempt
+    await addAuditLog({
+      sessionId: session.id,
+      userId,
+      eventType: 'REDIRECT',
+      status: 'SUCCESS',
+      metadata: { jti }
+    });
+
+    const authorizeUrl = `https://www.bybit.com/en/oauth?client_id=${BYBIT_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openapi&state=${state}`;
+    
+    res.redirect(authorizeUrl);
+  } catch (err) {
+    console.error('[AUTH_START_FAILURE]', err);
+    res.status(500).json({ error: 'Failed to initiate secure authorization flow.' });
+  }
 });
 
-// 2. Callback: Handle redirect back from Bybit
+// 2. Callback: Handle redirect back from Bybit with Full Security Validation
 app.get('/api/auth/bybit/callback', async (req, res) => {
-  const { code, state: userId, error } = req.query;
-
-  if (error) {
-    console.error('[OAUTH] Bybit OAuth error returned in query:', error);
-    return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=${error}`);
-  }
-
-  if (!code || !userId) {
-    console.error('[OAUTH] Missing code or userId in callback');
-    return res.redirect('https://www.mesoflixlabs.com/dashboard?error=missing_parameters');
-  }
+  const { code, state: stateJwt, error: bybitError } = req.query;
+  let decodedState = null;
+  let oauthSession = null;
 
   try {
-    // 3. Exchange code for access_token
+    // 1. Initial Handshake Validation
+    if (bybitError) {
+      console.error('[OAUTH_CALLBACK] Bybit returned error:', bybitError);
+      return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=bybit_error&details=${encodeURIComponent(bybitError)}`);
+    }
+
+    if (!code || !stateJwt) {
+      console.error('[OAUTH_CALLBACK] Missing requirements');
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=missing_parameters');
+    }
+
+    // 2. Verify Signed State JWT
+    try {
+      decodedState = jwt.verify(stateJwt, OAUTH_STATE_SECRET);
+      if (decodedState.type !== 'oauth_state') throw new Error('Invalid token type');
+    } catch (err) {
+      console.error('[OAUTH_CALLBACK] State JWT Verification Failed:', err.message);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=invalid_state&details=jwt_verification_failed');
+    }
+
+    const { jti, userId } = decodedState;
+
+    // 3. One-Time Session Validation & Lock
+    const { data: session, error: sessionFetchErr } = await supabase
+      .from('oauth_sessions')
+      .select('*')
+      .eq('jti', jti)
+      .eq('user_id', userId)
+      .single();
+
+    if (sessionFetchErr || !session) {
+      console.error('[OAUTH_CALLBACK] Session lookup failed or mismatch:', jti);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=invalid_session');
+    }
+
+    oauthSession = session;
+
+    if (session.status !== 'issued') {
+      console.error('[OAUTH_CALLBACK] Replay Attack Detected or Session Reused:', jti);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_already_consumed');
+    }
+
+    if (new Date(session.expires_at) < new Date()) {
+      console.error('[OAUTH_CALLBACK] Session Expired:', jti);
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_expired');
+    }
+
+    // 4. Audit: Callback Received
+    await addAuditLog({
+      sessionId: session.id,
+      userId,
+      eventType: 'CALLBACK',
+      status: 'SUCCESS'
+    });
+
+    // 5. Exchange code for access_token
     console.log(`[OAUTH] Exchanging code for token for userId: ${userId}`);
     const tokenRes = await fetch('https://api2.bybit.com/oauth/v1/public/access_token', {
       method: 'POST',
@@ -846,16 +952,28 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       console.error('[OAUTH] Failed to parse Bybit token response as JSON', err);
       return { error: 'Invalid JSON response from Bybit' };
     });
-    console.log('[OAUTH] Token Response:', JSON.stringify(tokenData, null, 2));
 
     if (!tokenData.access_token) {
       console.error('[OAUTH] Token exchange failed. Status:', tokenRes.status, tokenData);
-      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=token_exchange_failed&details=${encodeURIComponent(JSON.stringify(tokenData))}`);
+      await addAuditLog({
+        sessionId: session.id,
+        userId,
+        eventType: 'TOKEN_EXCHANGE',
+        status: 'FAILURE',
+        metadata: tokenData
+      });
+      return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=token_exchange_failed`);
     }
 
     const accessToken = tokenData.access_token;
+    await addAuditLog({
+      sessionId: session.id,
+      userId,
+      eventType: 'TOKEN_EXCHANGE',
+      status: 'SUCCESS'
+    });
 
-    // 4. Retrieve User's API Keys (Institutional Broker Path)
+    // 6. Retrieve User's API Keys
     console.log(`[OAUTH] Retrieving OpenAPI keys for userId: ${userId}`);
     const keyRes = await fetch('https://api2.bybit.com/oauth/v1/resource/restrict/openapi', {
       method: 'GET',
@@ -866,16 +984,15 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       console.error('[OAUTH] Failed to parse Bybit key response as JSON', err);
       return { ret_code: -1, ret_msg: 'Invalid JSON' };
     });
-    console.log('[OAUTH] Key Retrieval Response:', JSON.stringify(keyData, null, 2));
 
     if (keyData.ret_code !== 0 || !keyData.result) {
       console.error('[OAUTH] Key retrieval failed from Bybit. Status:', keyRes.status, keyData);
-      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=key_retrieval_failed&msg=${encodeURIComponent(keyData.ret_msg || 'unknown')}`);
+      return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=key_retrieval_failed`);
     }
 
     const { api_key: apiKey, api_secret: apiSecret, sub_member_id: subUid } = keyData.result;
 
-    // --- NEW: Duplicate Bybit Account Prevention ---
+    // 7. Security Check: Duplicate Bybit Account Prevention
     const { data: existingAccount } = await supabase
       .from('user_broker_accounts')
       .select('user_id')
@@ -884,11 +1001,10 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (existingAccount && existingAccount.user_id !== userId) {
       console.warn(`[OAUTH] Security Alert: User ${userId} attempted to link Bybit UID ${subUid} which is already owned by User ${existingAccount.user_id}`);
-      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=bybit_account_already_linked`);
+      return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere`);
     }
-    // ---------------------------------------------
 
-    // 5. Encrypt and store keys in Supabase
+    // 8. Encrypt and store keys in Supabase (Atomic Operation surrogate)
     const encryptedKey = encryption.encrypt(apiKey);
     const encryptedSecret = encryption.encrypt(apiSecret);
 
@@ -896,24 +1012,47 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       .from('user_broker_accounts')
       .upsert([{
         user_id: userId,
-        bybit_sub_uid: subUid.toString(), // Store the ACTUAL sub-account UID
+        bybit_sub_uid: subUid.toString(),
         bybit_username: 'Bybit Authorized',
         encrypted_api_key: encryptedKey,
         encrypted_api_secret: encryptedSecret,
-        environment: 'REAL' // OAuth always targets Real accounts
+        environment: 'REAL'
       }], { onConflict: 'user_id, environment' });
 
     if (dbError) {
       console.error('[OAUTH] Database Update Error:', dbError);
-      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=db_storage_failed`);
+      return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=db_storage_failed`);
     }
 
-    console.log(`[OAUTH] Successfully synced Bybit keys for userId: ${userId}`);
-    res.redirect('https://www.mesoflixlabs.com/dashboard?sync=true');
+    // 9. Mark Session as Consumed
+    await supabase
+      .from('oauth_sessions')
+      .update({ status: 'consumed', consumed_at: new Date().toISOString() })
+      .eq('id', session.id);
+
+    await addAuditLog({
+      sessionId: session.id,
+      userId,
+      eventType: 'DB_UPSERT',
+      status: 'SUCCESS',
+      metadata: { subUid }
+    });
+
+    console.log(`[OAUTH] Successfully hardened sync for userId: ${userId}`);
+    res.redirect('https://www.mesoflixlabs.com/auth/complete?success=true');
 
   } catch (err) {
-    console.error('[OAUTH] Catastrophic Handshake Failure:', err);
-    res.redirect(`https://www.mesoflixlabs.com/dashboard?error=server_error`);
+    console.error('[OAUTH_CALLBACK_CRITICAL]', err);
+    if (oauthSession) {
+      await addAuditLog({
+        sessionId: oauthSession.id,
+        userId: oauthSession.user_id,
+        eventType: 'CALLBACK',
+        status: 'FAILURE',
+        metadata: { error: err.message }
+      });
+    }
+    res.redirect(`https://www.mesoflixlabs.com/auth/error?code=server_error`);
   }
 });
 

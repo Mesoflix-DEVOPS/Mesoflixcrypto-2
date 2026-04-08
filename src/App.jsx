@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import AuthComplete from './pages/AuthComplete';
+import AuthError from './pages/AuthError';
 import Invest from './pages/Invest';
 import Market from './pages/Market';
 import Ecosystem from './pages/Ecosystem';
@@ -30,6 +32,8 @@ function App() {
           {/* Main nav pages */}
           <Route index element={<Home />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="auth/complete" element={<AuthComplete />} />
+          <Route path="auth/error" element={<AuthError />} />
           <Route path="invest" element={<Invest />} />
           <Route path="market" element={<Market />} />
           <Route path="ecosystem" element={<Ecosystem />} />

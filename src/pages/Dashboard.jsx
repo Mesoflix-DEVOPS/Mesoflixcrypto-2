@@ -77,12 +77,89 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
-
   const handleConnectBybit = () => {
     if (!user) return;
-    window.location.href = `/api/auth/bybit/authorize?userId=${user.id}`;
+    const API_BASE_URL = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3001' 
+      : 'https://mesoflixcrypto-2.onrender.com';
+    window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${user.id}`;
   };
+
+  // --- ONBOARDING GATE UI ---
+  if (!loading && !brokerAccount) {
+    const API_BASE_URL = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3001' 
+      : 'https://mesoflixcrypto-2.onrender.com';
+
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        background: '#020617',
+        color: '#f8fafc',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <div style={{ 
+          maxWidth: '500px', 
+          width: '100%',
+          background: 'rgba(15, 23, 42, 0.4)', 
+          backdropFilter: 'blur(16px)', 
+          border: '1px solid rgba(255, 255, 255, 0.05)', 
+          borderRadius: '32px', 
+          padding: '48px 32px',
+          textAlign: 'center',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+        }}>
+          <div style={{ 
+            width: '80px', height: '80px', borderRadius: '24px', background: 'rgba(56, 189, 248, 0.05)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' 
+          }}>
+            <svg style={{ width: '40px', height: '40px', color: '#38bdf8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+
+          <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '16px', letterSpacing: '-0.02em' }}>
+            Dashboard Locked
+          </h1>
+          <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: '1.6', marginBottom: '32px' }}>
+            For your security, access to the trading command center is restricted until your Bybit Institutional account is successfully synchronized.
+          </p>
+
+          <button 
+            onClick={() => window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${user?.id}`}
+            style={{ 
+              width: '100%',
+              padding: '18px 24px', 
+              background: '#38bdf8', 
+              color: '#020617', 
+              border: 'none', 
+              borderRadius: '16px', 
+              fontWeight: '800', 
+              fontSize: '16px',
+              cursor: 'pointer',
+              boxShadow: '0 10px 15px -3px rgba(56, 189, 248, 0.3)',
+              transition: 'transform 0.2s'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            Connect Bybit Account
+          </button>
+          
+          <button 
+             onClick={() => navigate('/support')}
+             style={{ marginTop: '24px', background: 'none', border: 'none', color: '#475569', fontSize: '14px', cursor: 'pointer' }}
+          >
+            Need help? Contact support
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -166,67 +243,37 @@ function Dashboard() {
               Exchange Connectivity
             </h3>
             
-            {brokerAccount ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Connected UID</p>
-                  <p style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px' }}>{brokerAccount.sub_uid}</p>
-                </div>
-                <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Exchange Provider</p>
-                  <p style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#f7a600' }}>Bybit</span> Institutional
-                  </p>
-                </div>
-                <button 
-                  onClick={handleConnectBybit}
-                  style={{ 
-                    marginTop: '8px',
-                    padding: '14px',
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#94a3b8',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
-                >
-                  Reconnect Exchange
-                </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Connected UID</p>
+                <p style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px' }}>{brokerAccount?.sub_uid}</p>
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <div style={{ 
-                  width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(56, 189, 248, 0.05)', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' 
-                }}>
-                  <svg style={{ width: '32px', height: '32px', color: '#38bdf8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.826L10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 10-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <p style={{ color: '#94a3b8', marginBottom: '32px' }}>No exchange account connected to your profile.</p>
-                <button 
-                  onClick={handleConnectBybit}
-                  style={{ 
-                    padding: '16px 32px', 
-                    background: '#38bdf8', 
-                    color: '#020617', 
-                    border: 'none', 
-                    borderRadius: '14px', 
-                    fontWeight: '700', 
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    boxShadow: '0 10px 15px -3px rgba(56, 189, 248, 0.3)'
-                  }}
-                >
-                  Connect Bybit Account
-                </button>
+              <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Exchange Provider</p>
+                <p style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#f7a600' }}>Bybit</span> Institutional
+                </p>
               </div>
-            )}
+              <button 
+                onClick={handleConnectBybit}
+                style={{ 
+                  marginTop: '8px',
+                  padding: '14px',
+                  width: '100%',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#94a3b8',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
+              >
+                Reconnect Exchange
+              </button>
+            </div>
           </div>
 
           {/* Balance Card */}
