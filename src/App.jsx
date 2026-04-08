@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import Brokerage from './pages/Brokerage';
+import Dashboard from './pages/Dashboard';
 import Invest from './pages/Invest';
 import Market from './pages/Market';
 import Ecosystem from './pages/Ecosystem';
@@ -29,17 +29,12 @@ function App() {
         <Route path="/" element={<Layout />}>
           {/* Main nav pages */}
           <Route index element={<Home />} />
-          <Route path="brokerage" element={<Brokerage />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="invest" element={<Invest />} />
           <Route path="market" element={<Market />} />
           <Route path="ecosystem" element={<Ecosystem />} />
           <Route path="support" element={<Support />} />
           
-          {/* Broker Tracking & Testing Portal */}
-          <Route path="broker/api/test">
-            <Route index element={<BybitTester />} />
-            <Route path="dashboard" element={<BybitDashboard />} />
-          </Route>
 
           {/* Footer pages */}
           <Route path="about" element={<About />} />

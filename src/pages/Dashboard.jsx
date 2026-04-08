@@ -1,0 +1,302 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+
+function Dashboard() {
+  const [searchParams] = useSearchParams();
+  const [user, setUser] = useState(null);
+  const [brokerAccount, setBrokerAccount] = useState(null);
+  const [balance, setBalance] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // 1. Get user from localStorage
+    const savedUser = localStorage.getItem('user_profile');
+    if (!savedUser) {
+      navigate('/sign-in');
+      return;
+    }
+    const parsedUser = JSON.parse(savedUser);
+    setUser(parsedUser);
+
+    // 2. Check for sync status in URL
+    if (searchParams.get('sync') === 'true') {
+      setSyncSuccess(true);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    const urlError = searchParams.get('error');
+    if (urlError) {
+      setError(`Connection Error: ${urlError.replace(/_/g, ' ')}`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    fetchDashboardData(parsedUser.id);
+  }, [searchParams, navigate]);
+
+  const fetchDashboardData = async (userId) => {
+    setLoading(true);
+    try {
+      // 1. Fetch Broker Account Info
+      const accountRes = await fetch(`/api/broker/account/${userId}`);
+      const accountData = await accountRes.json();
+
+      if (accountRes.ok && accountData.success) {
+        setBrokerAccount(accountData);
+        
+        // 2. Fetch Balance if connected
+        const balanceRes = await fetch(`/api/bybit/balance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            accountType: 'UNIFIED', 
+            apiConfig: accountData.apiConfig 
+          })
+        });
+        const balanceData = await balanceRes.json();
+        if (balanceRes.ok && balanceData.result) {
+          setBalance(balanceData.result.list[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnectBybit = () => {
+    if (!user) return;
+    window.location.href = `/api/auth/bybit/authorize?userId=${user.id}`;
+  };
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#020617',
+      color: '#f8fafc',
+      padding: '40px 24px',
+      fontFamily: 'Inter, sans-serif'
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px' }}>
+          <div>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>
+              Trading <span style={{ color: '#38bdf8' }}>Dashboard</span>
+            </h1>
+            <p style={{ color: '#94a3b8', margin: 0 }}>Manage your institutional connections and live balances.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+             <div style={{ 
+               padding: '8px 16px', 
+               background: 'rgba(56, 189, 248, 0.1)', 
+               border: '1px solid rgba(56, 189, 248, 0.2)', 
+               borderRadius: '12px',
+               fontSize: '14px',
+               color: '#38bdf8',
+               fontWeight: '600'
+             }}>
+               Institutional Node
+             </div>
+          </div>
+        </header>
+
+        {syncSuccess && (
+          <div style={{ 
+            padding: '16px 24px', 
+            background: 'rgba(16, 185, 129, 0.1)', 
+            border: '1px solid rgba(16, 185, 129, 0.3)', 
+            color: '#34d399', 
+            borderRadius: '16px', 
+            marginBottom: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            animation: 'fadeIn 0.5s ease-out'
+          }}>
+            <svg style={{ width: '20px', height: '20px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Account synchronized successfully with Bybit.
+          </div>
+        )}
+
+        {error && (
+          <div style={{ 
+            padding: '16px 24px', 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.3)', 
+            color: '#ef4444', 
+            borderRadius: '16px', 
+            marginBottom: '32px',
+            animation: 'fadeIn 0.5s ease-out'
+          }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
+          
+          {/* Connection Status Card */}
+          <div style={{ 
+            background: 'rgba(15, 23, 42, 0.6)', 
+            backdropFilter: 'blur(12px)', 
+            border: '1px solid rgba(255, 255, 255, 0.05)', 
+            borderRadius: '24px', 
+            padding: '32px' 
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: brokerAccount ? '#10b981' : '#64748b', boxShadow: brokerAccount ? '0 0 12px #10b981' : 'none' }}></div>
+              Exchange Connectivity
+            </h3>
+            
+            {brokerAccount ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Connected UID</p>
+                  <p style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px' }}>{brokerAccount.sub_uid}</p>
+                </div>
+                <div style={{ padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Exchange Provider</p>
+                  <p style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#f7a600' }}>Bybit</span> Institutional
+                  </p>
+                </div>
+                <button 
+                  onClick={handleConnectBybit}
+                  style={{ 
+                    marginTop: '8px',
+                    padding: '14px',
+                    width: '100%',
+                    background: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#94a3b8',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
+                >
+                  Reconnect Exchange
+                </button>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div style={{ 
+                  width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(56, 189, 248, 0.05)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' 
+                }}>
+                  <svg style={{ width: '32px', height: '32px', color: '#38bdf8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.826L10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 10-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <p style={{ color: '#94a3b8', marginBottom: '32px' }}>No exchange account connected to your profile.</p>
+                <button 
+                  onClick={handleConnectBybit}
+                  style={{ 
+                    padding: '16px 32px', 
+                    background: '#38bdf8', 
+                    color: '#020617', 
+                    border: 'none', 
+                    borderRadius: '14px', 
+                    fontWeight: '700', 
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 15px -3px rgba(56, 189, 248, 0.3)'
+                  }}
+                >
+                  Connect Bybit Account
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Balance Card */}
+          <div style={{ 
+            background: 'rgba(15, 23, 42, 0.6)', 
+            backdropFilter: 'blur(12px)', 
+            border: '1px solid rgba(255, 255, 255, 0.05)', 
+            borderRadius: '24px', 
+            padding: '32px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px' }}>Asset Overview</h3>
+            
+            {loading ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', opacity: 0.5 }}>
+                 <div style={{ height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
+                 <div style={{ height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
+              </div>
+            ) : balance ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div>
+                  <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '8px' }}>Total Equity (USDT)</p>
+                  <p style={{ fontSize: '36px', fontWeight: '800', letterSpacing: '-0.03em' }}>
+                    ${parseFloat(balance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }}></div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Available Balance</p>
+                    <p style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>
+                      ${parseFloat(balance.totalAvailableBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Account Wallet</p>
+                    <p style={{ fontSize: '18px', fontWeight: '700', color: '#f1f5f9' }}>
+                      ${parseFloat(balance.totalWalletBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  marginTop: '16px',
+                  padding: '16px', 
+                  background: 'rgba(56, 189, 248, 0.05)', 
+                  borderRadius: '16px', 
+                  border: '1px solid rgba(56, 189, 248, 0.1)',
+                  fontSize: '12px',
+                  color: '#94a3b8',
+                  lineHeight: '1.5'
+                }}>
+                  <strong style={{ color: '#38bdf8', display: 'block', marginBottom: '4px' }}>System Note</strong>
+                  Balances are retrieved in real-time from Bybit via encrypted institutional relay.
+                </div>
+              </div>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <p style={{ color: '#64748b' }}>Connect your exchange to view live balances.</p>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.8; }
+        }
+      `}} />
+    </div>
+  );
+}
+
+export default Dashboard;

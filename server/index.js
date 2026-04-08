@@ -813,12 +813,13 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
   const { code, state: userId, error } = req.query;
 
   if (error) {
-    console.error('Bybit OAuth error:', error);
-    return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=${error}`);
+    console.error('[OAUTH] Bybit OAuth error returned in query:', error);
+    return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=${error}`);
   }
 
   if (!code || !userId) {
-    return res.redirect('https://www.mesoflixlabs.com/brokerage?error=missing_parameters');
+    console.error('[OAUTH] Missing code or userId in callback');
+    return res.redirect('https://www.mesoflixlabs.com/dashboard?error=missing_parameters');
   }
 
   try {
@@ -835,9 +836,11 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     });
 
     const tokenData = await tokenRes.json();
+    console.log('[OAUTH] Token Response:', JSON.stringify(tokenData, null, 2));
+
     if (!tokenData.access_token) {
-      console.error('Token exchange failed:', tokenData);
-      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=token_exchange_failed`);
+      console.error('[OAUTH] Token exchange failed:', tokenData);
+      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=token_exchange_failed`);
     }
 
     const accessToken = tokenData.access_token;
@@ -850,9 +853,11 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     });
 
     const keyData = await keyRes.json();
+    console.log('[OAUTH] Key Retrieval Response:', JSON.stringify(keyData, null, 2));
+
     if (keyData.ret_code !== 0 || !keyData.result) {
-      console.error('Key retrieval failed:', keyData);
-      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=key_retrieval_failed`);
+      console.error('[OAUTH] Key retrieval failed from Bybit:', keyData);
+      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=key_retrieval_failed`);
     }
 
     const { api_key: apiKey, api_secret: apiSecret, sub_member_id: subUid } = keyData.result;
@@ -866,7 +871,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (existingAccount && existingAccount.user_id !== userId) {
       console.warn(`[OAUTH] Security Alert: User ${userId} attempted to link Bybit UID ${subUid} which is already owned by User ${existingAccount.user_id}`);
-      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=bybit_account_already_linked`);
+      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=bybit_account_already_linked`);
     }
     // ---------------------------------------------
 
@@ -878,7 +883,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       .from('user_broker_accounts')
       .upsert([{
         user_id: userId,
-        bybit_sub_uid: 'OAUTH_SYNCED', // Marker for OAuth retrieved keys
+        bybit_sub_uid: subUid.toString(), // Store the ACTUAL sub-account UID
         bybit_username: 'Bybit Authorized',
         encrypted_api_key: encryptedKey,
         encrypted_api_secret: encryptedSecret,
@@ -886,16 +891,16 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       }], { onConflict: 'user_id, environment' });
 
     if (dbError) {
-      console.error('Database Error storing OAuth keys:', dbError);
-      return res.redirect(`https://www.mesoflixlabs.com/brokerage?error=db_storage_failed`);
+      console.error('[OAUTH] Database Update Error:', dbError);
+      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=db_storage_failed`);
     }
 
     console.log(`[OAUTH] Successfully synced Bybit keys for userId: ${userId}`);
-    res.redirect('https://www.mesoflixlabs.com/brokerage?sync=true');
+    res.redirect('https://www.mesoflixlabs.com/dashboard?sync=true');
 
   } catch (err) {
-    console.error('Catastrophic OAuth Failure:', err);
-    res.redirect(`https://www.mesoflixlabs.com/brokerage?error=server_error`);
+    console.error('[OAUTH] Catastrophic Handshake Failure:', err);
+    res.redirect(`https://www.mesoflixlabs.com/dashboard?error=server_error`);
   }
 });
 

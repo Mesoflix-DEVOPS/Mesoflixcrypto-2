@@ -37,7 +37,7 @@ function Navbar() {
             <img src={closeIcon} alt="Close" />
           </button>
           <li className="nav-item">
-            <NavLink to="/brokerage" className={({ isActive }) => `nav-link text-base no-wrap${isActive ? ' active' : ''}`}>Brokerage</NavLink>
+            <NavLink to="/dashboard" className={({ isActive }) => `nav-link text-base no-wrap${isActive ? ' active' : ''}`}>Dashboard</NavLink>
           </li>
           <li className="nav-item">
             <NavLink to="/invest" className={({ isActive }) => `nav-link text-base no-wrap${isActive ? ' active' : ''}`}>Invest</NavLink>

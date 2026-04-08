@@ -24,7 +24,7 @@ function BybitRelay() {
       } else if (error) {
         window.location.href = `${backendUrl}?error=${error}`;
       } else {
-        window.location.href = '/brokerage';
+        window.location.href = '/dashboard';
       }
     }, 2800);
 

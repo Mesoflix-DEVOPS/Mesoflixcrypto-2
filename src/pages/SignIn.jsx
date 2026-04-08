@@ -28,7 +28,7 @@ function SignIn() {
       if (response.ok) {
         localStorage.setItem('user_token', data.token);
         localStorage.setItem('user_profile', JSON.stringify(data.user));
-        navigate('/brokerage'); // Redirect to main trading dashboard
+        navigate('/dashboard'); // Redirect to main trading dashboard
       } else {
         setError(data.error || 'Authentication failed.');
       }
