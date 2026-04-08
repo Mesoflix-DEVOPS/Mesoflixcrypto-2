@@ -970,17 +970,30 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       return res.redirect('https://www.mesoflixlabs.com/auth/error?code=key_retrieval_failed');
     }
 
-    const { api_key: apiKey, api_secret: apiSecret, sub_member_id: subUid } = keyData.result;
+    // Defensive Extraction & Normalization
+    const result = keyData.result;
+    const apiKey = result.api_key;
+    const apiSecret = result.api_secret;
+    const rawSubUid = result.sub_member_id || result.sub_uid || result.user_id;
+
+    if (!apiKey || !apiSecret || !rawSubUid) {
+      console.error('[OAUTH] Incomplete credentials received from Bybit:', result);
+      if (oauthSession) await addAuditLog({ sessionId: oauthSession.id, userId, eventType: 'KEY_RETRIEVAL', status: 'FAILURE', metadata: result });
+      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=incomplete_credentials');
+    }
+
+    const subUidStr = rawSubUid.toString();
 
     // 6. Security Check & Persistence
     // Prevent account swapping/duplicate linking
     const { data: existingAccount } = await supabase
       .from('user_broker_accounts')
       .select('user_id')
-      .eq('bybit_sub_uid', subUid.toString())
+      .eq('bybit_sub_uid', subUidStr)
       .single();
 
     if (existingAccount && existingAccount.user_id !== userId) {
+      console.warn(`[OAUTH] Security Alert: Bybit UID ${subUidStr} already linked to User ${existingAccount.user_id}`);
       return res.redirect('https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere');
     }
 
@@ -992,7 +1005,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       .from('user_broker_accounts')
       .upsert([{
         user_id: userId,
-        bybit_sub_uid: subUid.toString(),
+        bybit_sub_uid: subUidStr,
         bybit_username: 'Bybit Authorized',
         encrypted_api_key: encryptedKey,
         encrypted_api_secret: encryptedSecret,
