@@ -15,6 +15,13 @@ const BYBIT_CLIENT_ID = process.env.BYBIT_CLIENT_ID || 'oUR2aPlwXyuH';
 const BYBIT_CLIENT_SECRET = process.env.BYBIT_CLIENT_SECRET || 'JI3UB8NnO04T3w3EnzX41VogA';
 const REDIRECT_URI = process.env.REDIRECT_URI || 'https://www.mesoflixlabs.com/callback/bybit';
 
+if (!process.env.BYBIT_CLIENT_ID || process.env.BYBIT_CLIENT_ID === 'oUR2aPlwXyuH') {
+  console.warn('[CONFIG] Warning: Using default or possibly incorrect BYBIT_CLIENT_ID');
+}
+if (!process.env.BYBIT_CLIENT_SECRET || process.env.BYBIT_CLIENT_SECRET === 'JI3UB8NnO04T3w3EnzX41VogA') {
+  console.warn('[CONFIG] Warning: Using default or possibly incorrect BYBIT_CLIENT_SECRET');
+}
+
 // Load environment variables
 dotenv.config();
 
@@ -835,12 +842,15 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       })
     });
 
-    const tokenData = await tokenRes.json();
+    const tokenData = await tokenRes.json().catch(err => {
+      console.error('[OAUTH] Failed to parse Bybit token response as JSON', err);
+      return { error: 'Invalid JSON response from Bybit' };
+    });
     console.log('[OAUTH] Token Response:', JSON.stringify(tokenData, null, 2));
 
     if (!tokenData.access_token) {
-      console.error('[OAUTH] Token exchange failed:', tokenData);
-      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=token_exchange_failed`);
+      console.error('[OAUTH] Token exchange failed. Status:', tokenRes.status, tokenData);
+      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=token_exchange_failed&details=${encodeURIComponent(JSON.stringify(tokenData))}`);
     }
 
     const accessToken = tokenData.access_token;
@@ -852,12 +862,15 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 
-    const keyData = await keyRes.json();
+    const keyData = await keyRes.json().catch(err => {
+      console.error('[OAUTH] Failed to parse Bybit key response as JSON', err);
+      return { ret_code: -1, ret_msg: 'Invalid JSON' };
+    });
     console.log('[OAUTH] Key Retrieval Response:', JSON.stringify(keyData, null, 2));
 
     if (keyData.ret_code !== 0 || !keyData.result) {
-      console.error('[OAUTH] Key retrieval failed from Bybit:', keyData);
-      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=key_retrieval_failed`);
+      console.error('[OAUTH] Key retrieval failed from Bybit. Status:', keyRes.status, keyData);
+      return res.redirect(`https://www.mesoflixlabs.com/dashboard?error=key_retrieval_failed&msg=${encodeURIComponent(keyData.ret_msg || 'unknown')}`);
     }
 
     const { api_key: apiKey, api_secret: apiSecret, sub_member_id: subUid } = keyData.result;

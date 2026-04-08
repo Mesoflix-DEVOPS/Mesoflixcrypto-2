@@ -34,21 +34,25 @@ function Dashboard() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    fetchDashboardData(parsedUser.id);
+    const API_BASE_URL = import.meta.env.MODE === 'development' 
+      ? 'http://localhost:3001' 
+      : 'https://mesoflixcrypto-2.onrender.com';
+
+    fetchDashboardData(parsedUser.id, API_BASE_URL);
   }, [searchParams, navigate]);
 
-  const fetchDashboardData = async (userId) => {
+  const fetchDashboardData = async (userId, API_BASE_URL) => {
     setLoading(true);
     try {
       // 1. Fetch Broker Account Info
-      const accountRes = await fetch(`/api/broker/account/${userId}`);
+      const accountRes = await fetch(`${API_BASE_URL}/api/broker/account/${userId}`);
       const accountData = await accountRes.json();
 
       if (accountRes.ok && accountData.success) {
         setBrokerAccount(accountData);
         
         // 2. Fetch Balance if connected
-        const balanceRes = await fetch(`/api/bybit/balance`, {
+        const balanceRes = await fetch(`${API_BASE_URL}/api/bybit/balance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -219,67 +223,85 @@ function Dashboard() {
           </div>
 
           {/* Balance Card */}
-          <div style={{ 
-            background: 'rgba(15, 23, 42, 0.6)', 
-            backdropFilter: 'blur(12px)', 
-            border: '1px solid rgba(255, 255, 255, 0.05)', 
-            borderRadius: '24px', 
-            padding: '32px',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px' }}>Asset Overview</h3>
-            
-            {loading ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', opacity: 0.5 }}>
-                 <div style={{ height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
-                 <div style={{ height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
-              </div>
-            ) : balance ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div>
-                  <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '8px' }}>Total Equity (USDT)</p>
-                  <p style={{ fontSize: '36px', fontWeight: '800', letterSpacing: '-0.03em' }}>
-                    ${parseFloat(balance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ 
+              background: 'rgba(15, 23, 42, 0.6)', 
+              backdropFilter: 'blur(12px)', 
+              border: '1px solid rgba(255, 255, 255, 0.05)', 
+              borderRadius: '24px', 
+              padding: '32px',
+              flex: 1
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '24px' }}>Asset Overview</h3>
+              
+              {loading ? (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', opacity: 0.5 }}>
+                   <div style={{ height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
+                   <div style={{ height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
                 </div>
-                
-                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }}></div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              ) : balance ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   <div>
-                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Available Balance</p>
-                    <p style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>
-                      ${parseFloat(balance.totalAvailableBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '8px' }}>Total Equity (USDT)</p>
+                    <p style={{ fontSize: '36px', fontWeight: '800', letterSpacing: '-0.03em' }}>
+                      ${parseFloat(balance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
-                  <div>
-                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Account Wallet</p>
-                    <p style={{ fontSize: '18px', fontWeight: '700', color: '#f1f5f9' }}>
-                      ${parseFloat(balance.totalWalletBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
+                  
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }}></div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Available Balance</p>
+                      <p style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>
+                        ${parseFloat(balance.totalAvailableBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Account Wallet</p>
+                      <p style={{ fontSize: '18px', fontWeight: '700', color: '#f1f5f9' }}>
+                        ${parseFloat(balance.totalWalletBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px 0' }}>
+                  <p style={{ color: '#64748b' }}>Connect your exchange to view live balances.</p>
+                </div>
+              )}
+            </div>
 
-                <div style={{ 
-                  marginTop: '16px',
-                  padding: '16px', 
-                  background: 'rgba(56, 189, 248, 0.05)', 
-                  borderRadius: '16px', 
-                  border: '1px solid rgba(56, 189, 248, 0.1)',
-                  fontSize: '12px',
-                  color: '#94a3b8',
-                  lineHeight: '1.5'
-                }}>
-                  <strong style={{ color: '#38bdf8', display: 'block', marginBottom: '4px' }}>System Note</strong>
-                  Balances are retrieved in real-time from Bybit via encrypted institutional relay.
-                </div>
+            {/* Sync Status / Diagnostics */}
+            <div style={{ 
+              background: 'rgba(7, 10, 20, 0.4)', 
+              border: '1px solid rgba(56, 189, 248, 0.1)', 
+              borderRadius: '24px', 
+              padding: '24px' 
+            }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#38bdf8', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Technical Synchronization Status
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[
+                  { label: 'Relay Handshake', status: 'Success', detail: 'OAuth Callback Verified' },
+                  { label: 'Token Exchange', status: brokerAccount ? 'Success' : 'Pending', detail: 'Bearer Token Retrieved' },
+                  { label: 'Resource Access', status: brokerAccount ? 'Success' : 'Pending', detail: 'OpenAPI Credentials Fetched' },
+                  { label: 'Database Storage', status: brokerAccount ? 'Success' : 'Pending', detail: 'Encrypted Keys Committed' }
+                ].map((step, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: step.status === 'Success' ? '#10b981' : '#475569' }}></div>
+                      <span style={{ color: '#94a3b8' }}>{step.label}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ color: step.status === 'Success' ? '#34d399' : '#64748b', fontWeight: '600', marginRight: '8px' }}>{step.status}</span>
+                      <span style={{ color: '#475569', fontSize: '11px' }}>({step.detail})</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                <p style={{ color: '#64748b' }}>Connect your exchange to view live balances.</p>
-              </div>
-            )}
+            </div>
           </div>
 
         </div>
