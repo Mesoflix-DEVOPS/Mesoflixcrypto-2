@@ -1304,6 +1304,24 @@ app.post('/api/dashboard/watchlist/add', authenticateToken, async (req, res) => 
   }
 });
 
+// GET /api/dashboard/messages - Fetch user support history
+app.get('/api/dashboard/messages', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.user;
+    const { data, error } = await supabase
+      .from('support_messages')
+      .select('*')
+      .eq('email', email)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Express API Server listening on port ${PORT}`);
 });
