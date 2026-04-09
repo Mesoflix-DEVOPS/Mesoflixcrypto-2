@@ -539,6 +539,8 @@ app.post('/api/staff/onboard', async (req, res) => {
 
 // GET: staff/team - Fetch current team members
 app.get('/api/staff/team/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
     if (!id) return res.status(400).json({ error: 'Staff ID is required.' });
 
     // 1. Get user's profile to find their team_id
