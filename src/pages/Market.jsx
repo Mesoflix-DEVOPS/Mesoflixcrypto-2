@@ -215,7 +215,7 @@ function Market() {
                         <td className="text-lg no-wrap">
                           {coin.name} <span className="text-lavender text-base" style={{ marginLeft: '8px' }}>{coin.ticker}</span>
                         </td>
-                        <td className="text-lg text-center"><span className={`price-cell ${coin.flash || ''}`}>{coin.displayPrice}</span></td>
+                        <td className="text-lg text-center"><span className={`price-CELL ${coin.flash || ''}`}>{coin.displayPrice}</span></td>
                         <td className={`text-lg text-center ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
                         <td className="text-base text-center no-wrap">{coin.cap}</td>
                         <td className="text-base text-center no-wrap">{coin.vol}</td>

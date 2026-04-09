@@ -18,10 +18,10 @@ import {
   News,
   NotFound,
 } from './pages/StaticPages';
-import BybitTester from './pages/BybitTester';
 import BybitDashboard from './pages/BybitDashboard';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import InstitutionalMarkets from './pages/InstitutionalMarkets';
 import BybitRelay from './pages/BybitRelay';
 import DashboardLayout from './components/DashboardLayout';
 import BotTrading from './pages/BotTrading';
@@ -65,7 +65,7 @@ function App() {
         {/* --- Institutional Dashboard Branch --- */}
         <Route path="/dashboard" element={<DashboardLayout user={{ full_name: 'Mesoflix Investor' }} balance={{ totalEquity: '0.00' }} />}>
           <Route index element={<BybitDashboard />} />
-          <Route path="markets" element={<BybitDashboard />} />
+          <Route path="markets" element={<InstitutionalMarkets />} />
           <Route path="trade" element={<BybitDashboard />} />
           <Route path="portfolio" element={<BybitDashboard />} /> 
           <Route path="analytics" element={<BybitDashboard />} /> 

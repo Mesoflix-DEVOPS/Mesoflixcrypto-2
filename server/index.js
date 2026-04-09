@@ -1297,6 +1297,7 @@ app.get('/api/dashboard/assets', async (req, res) => {
       .order('is_featured', { ascending: false });
 
     if (error) throw error;
+    res.setHeader('Content-Type', 'application/json');
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch assets' });
@@ -1313,6 +1314,7 @@ app.get('/api/dashboard/watchlist', authenticateToken, async (req, res) => {
       .eq('user_id', id);
 
     if (error) throw error;
+    res.setHeader('Content-Type', 'application/json');
     res.status(200).json(data.map(item => item.symbol));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch watchlist' });
