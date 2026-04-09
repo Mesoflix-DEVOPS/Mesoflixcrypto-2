@@ -118,6 +118,26 @@ export async function createOrder(orderParams, config) {
 }
 
 /**
+ * Get active positions (Stateless)
+ * @param {object} queryParams { category, symbol }
+ * @param {object} config 
+ * @returns {Promise<object>}
+ */
+export async function getPositions(queryParams = { category: 'linear' }, config) {
+  return await bybitRequest('GET', '/v5/position/list', queryParams, config);
+}
+
+/**
+ * Get closed PnL history
+ * @param {object} queryParams { category, symbol, limit }
+ * @param {object} config 
+ * @returns {Promise<object>}
+ */
+export async function getClosedPnL(queryParams = { category: 'linear', limit: 50 }, config) {
+  return await bybitRequest('GET', '/v5/position/closed-pnl', queryParams, config);
+}
+
+/**
  * Get wallet balance (Stateless)
  * @param {object} queryParams { accountType }
  * @param {object} config 
@@ -129,5 +149,7 @@ export async function getWalletBalance(queryParams = { accountType: 'UNIFIED' },
 
 export default {
   createOrder,
-  getWalletBalance
+  getWalletBalance,
+  getPositions,
+  getClosedPnL
 };

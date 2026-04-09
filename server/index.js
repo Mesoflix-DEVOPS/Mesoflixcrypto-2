@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createOrder, getWalletBalance } from './bybitService.js';
+import { createOrder, getWalletBalance, getPositions, getClosedPnL } from './bybitService.js';
 import brokerService from './brokerService.js';
 import encryption from './encryption.js';
 
@@ -1054,6 +1054,67 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     console.error('[OAUTH_CALLBACK_CRITICAL]', err);
     if (isJson) return res.status(500).json({ success: false, error: 'server_error' });
     res.redirect('https://www.mesoflixlabs.com/auth/error?code=server_error');
+  }
+});
+
+// GET: bybit/dashboard/:userId - Aggregated Dashboard Data
+app.get('/api/bybit/dashboard/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { environment } = req.query;
+    const finalEnv = environment || 'REAL';
+
+    // 1. Resolve Linked Account
+    const { data: account, error: dbError } = await supabase
+      .from('user_broker_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('environment', finalEnv)
+      .single();
+
+    if (dbError || !account) {
+      return res.status(404).json({ error: 'No linked Bybit account found. Please connect your account first.' });
+    }
+
+    // 2. Decrypt Credentials
+    const apiKey = encryption.decrypt(account.encrypted_api_key);
+    const apiSecret = encryption.decrypt(account.encrypted_api_secret);
+    const config = {
+      apiKey,
+      apiSecret,
+      isTestnet: finalEnv === 'TESTNET' || finalEnv === 'DEMO',
+      isDemo: finalEnv === 'DEMO'
+    };
+
+    // 3. Concurrent Data Aggregation
+    console.log(`[DASHBOARD] Aggregating data for User: ${userId} (${finalEnv})`);
+    const [balanceRes, positionsRes, historyRes] = await Promise.all([
+      getWalletBalance({ accountType: 'UNIFIED' }, config),
+      getPositions({ category: 'linear' }, config), // Defaulting to linear for institutional trading
+      getClosedPnL({ category: 'linear', limit: 20 }, config)
+    ]);
+
+    // 4. Transform & Return
+    res.status(200).json({
+      success: true,
+      account: {
+        uid: account.bybit_sub_uid,
+        username: account.bybit_username,
+        environment: finalEnv
+      },
+      summary: balanceRes.result?.list?.[0] || null,
+      positions: positionsRes.result?.list || [],
+      history: historyRes.result?.list || [],
+      raw: {
+        balance: balanceRes,
+        positions: positionsRes,
+        history: historyRes
+      }
+    });
+
+  } catch (err) {
+    console.error('[DASHBOARD_ERROR]', err);
+    res.status(500).json({ error: 'Failed to aggregate dashboard data.', details: err.message });
   }
 });
 

@@ -23,6 +23,7 @@ import BybitDashboard from './pages/BybitDashboard';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import BybitRelay from './pages/BybitRelay';
+import DashboardLayout from './components/DashboardLayout';
 
 function App() {
   return (
@@ -58,10 +59,20 @@ function App() {
           {/* Institutional Relay (Catch messy Bybit links) */}
           <Route path="callback/bybit" element={<BybitRelay />} />
           <Route path="api/auth/bybit/callback" element={<BybitRelay />} />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
         </Route>
+
+        {/* --- Institutional Dashboard Branch --- */}
+        <Route path="/dashboard" element={<DashboardLayout user={{ full_name: 'Mesoflix Investor' }} balance={{ totalEquity: '0.00' }} />}>
+          <Route index element={<BybitDashboard />} />
+          <Route path="markets" element={<Market />} />
+          <Route path="positions" element={<BybitDashboard />} /> {/* For now, reuse same dashboard or specific position view */}
+          <Route path="history" element={<BybitDashboard />} />
+          <Route path="bots" element={<BybitDashboard />} />
+          <Route path="settings" element={<div>Settings Component Coming Soon</div>} />
+        </Route>
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
