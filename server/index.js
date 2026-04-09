@@ -9,7 +9,14 @@ import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createOrder, getWalletBalance, getPositions, getClosedPnL } from './bybitService.js';
+import { 
+  createOrder, 
+  getWalletBalance, 
+  getPositions, 
+  getClosedPnL,
+  getTickers,
+  getInstruments 
+} from './bybitService.js';
 import brokerService from './brokerService.js';
 import encryption from './encryption.js';
 
@@ -1349,17 +1356,6 @@ app.get('/api/dashboard/messages', authenticateToken, async (req, res) => {
   }
 });
 
-import { 
-  createOrder, 
-  getWalletBalance, 
-  getPositions, 
-  getClosedPnL, 
-  getTickers,
-  getInstruments 
-} from './bybitService.js';
-
-// ... (existing code)
-
 // GET /api/market/all-symbols - Get all active USDT pairs
 app.get('/api/market/all-symbols', async (req, res) => {
   try {
@@ -1373,6 +1369,7 @@ app.get('/api/market/all-symbols', async (req, res) => {
           base: p.baseCoin,
           quote: p.quoteCoin
         }));
+      res.setHeader('Content-Type', 'application/json');
       res.status(200).json(pairs);
     } else {
       res.status(500).json({ error: 'Failed to fetch instruments' });
@@ -1390,6 +1387,7 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
     
     if (tickerRes.retCode === 0 && tickerRes.result?.list?.[0]) {
       const t = tickerRes.result.list[0];
+      res.setHeader('Content-Type', 'application/json');
       res.status(200).json({
         symbol: t.symbol,
         lastPrice: t.lastPrice,
