@@ -1349,6 +1349,39 @@ app.get('/api/dashboard/messages', authenticateToken, async (req, res) => {
   }
 });
 
+import { 
+  createOrder, 
+  getWalletBalance, 
+  getPositions, 
+  getClosedPnL, 
+  getTickers,
+  getInstruments 
+} from './bybitService.js';
+
+// ... (existing code)
+
+// GET /api/market/all-symbols - Get all active USDT pairs
+app.get('/api/market/all-symbols', async (req, res) => {
+  try {
+    const data = await getInstruments({ category: 'linear' });
+    if (data.retCode === 0) {
+      // Filter for USDT pairs and active status
+      const pairs = data.result.list
+        .filter(p => p.quoteCoin === 'USDT' && p.status === 'Trading')
+        .map(p => ({
+          symbol: p.symbol,
+          base: p.baseCoin,
+          quote: p.quoteCoin
+        }));
+      res.status(200).json(pairs);
+    } else {
+      res.status(500).json({ error: 'Failed to fetch instruments' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Market data failure' });
+  }
+});
+
 // GET /api/market/ticker/:symbol - Real-time Price Tickers
 app.get('/api/market/ticker/:symbol', async (req, res) => {
   try {
@@ -1356,7 +1389,15 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
     const tickerRes = await getTickers({ category: 'linear', symbol });
     
     if (tickerRes.retCode === 0 && tickerRes.result?.list?.[0]) {
-      res.status(200).json(tickerRes.result.list[0]);
+      const t = tickerRes.result.list[0];
+      res.status(200).json({
+        symbol: t.symbol,
+        lastPrice: t.lastPrice,
+        price24hPcnt: t.price24hPcnt,
+        highPrice24h: t.highPrice24h,
+        lowPrice24h: t.lowPrice24h,
+        volume24h: t.volume24h
+      });
     } else {
       res.status(404).json({ error: 'Ticker not found' });
     }

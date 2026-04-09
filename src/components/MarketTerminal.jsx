@@ -1,0 +1,306 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Star, TrendingUp, Activity, ChevronRight, X, Pin } from 'lucide-react';
+
+const RECOMMENDED_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
+
+function MarketTerminal({ onSelectSymbol }) {
+  const [allSymbols, setAllSymbols] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+  const [prices, setPrices] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        
+        // 1. Fetch available symbols for search
+        const symbolsRes = await fetch('/api/market/all-symbols');
+        if (symbolsRes.ok) setAllSymbols(await symbolsRes.json());
+
+        // 2. Fetch User Watchlist
+        if (token) {
+          const watchRes = await fetch('/api/dashboard/watchlist', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (watchRes.ok) setWatchlist(await watchRes.json());
+        }
+      } catch (err) {
+        console.error('Market init failed', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, []);
+
+  // Fetch prices for all visible symbols
+  useEffect(() => {
+    const visibleSymbols = [...new Set([...RECOMMENDED_SYMBOLS, ...watchlist])];
+    if (visibleSymbols.length === 0) return;
+
+    const fetchPrices = async () => {
+      const priceMap = { ...prices };
+      await Promise.all(visibleSymbols.map(async (symbol) => {
+        try {
+          const res = await fetch(`/api/market/ticker/${symbol}`);
+          if (res.ok) {
+            const data = await res.json();
+            priceMap[symbol] = data;
+          }
+        } catch (e) {}
+      }));
+      setPrices(priceMap);
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 15000); // 15s refresh
+    return () => clearInterval(interval);
+  }, [watchlist]);
+
+  const handleSearch = (e) => {
+    const query = e.target.value.toUpperCase();
+    setSearchQuery(query);
+    if (query.length > 1) {
+      const filtered = allSymbols
+        .filter(s => s.symbol.includes(query))
+        .slice(0, 10);
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const toggleWatchlist = async (symbol) => {
+    try {
+      const token = localStorage.getItem('token');
+      const isPinned = watchlist.includes(symbol);
+      
+      const res = await fetch('/api/dashboard/watchlist/add', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ symbol })
+      });
+
+      if (res.ok) {
+        if (isPinned) {
+          setWatchlist(prev => prev.filter(s => s !== symbol));
+        } else {
+          setWatchlist(prev => [...prev, symbol]);
+        }
+      }
+    } catch (err) {
+      console.error('Toggle watchlist failed', err);
+    }
+  };
+
+  return (
+    <div className="market-terminal">
+      {/* 1. SEARCH BAR */}
+      <div className="discovery-search">
+        <div className="search-box">
+          <Search size={18} className="search-icon" />
+          <input 
+            type="text" 
+            placeholder="Search crypto pairs (e.g. BTC, SOL)"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+          {searchQuery && <X size={16} className="clear-icon" onClick={() => setSearchQuery('')} />}
+        </div>
+        
+        {suggestions.length > 0 && (
+          <div className="search-suggestions glass-card">
+            {suggestions.map(s => (
+              <div key={s.symbol} className="suggestion-item" onClick={() => { onSelectSymbol(s.symbol); setSearchQuery(''); }}>
+                <span className="s-symbol">{s.symbol}</span>
+                <span className="s-base">{s.base} Trading</span>
+                <ChevronRight size={14} className="s-arrow" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 2. RECOMMENDED SECTION */}
+      <div className="market-section">
+        <div className="section-header">
+          <TrendingUp size={16} className="section-icon green" />
+          <h3>Recommended Pairs</h3>
+        </div>
+        <div className="symbol-cards-scroll">
+          {RECOMMENDED_SYMBOLS.map(symbol => (
+             <SymbolCard 
+               key={symbol} 
+               symbol={symbol} 
+               data={prices[symbol]} 
+               isPinned={watchlist.includes(symbol)}
+               onTogglePin={() => toggleWatchlist(symbol)}
+               onSelect={() => onSelectSymbol(symbol)}
+             />
+          ))}
+        </div>
+      </div>
+
+      {/* 3. WATCHLIST SECTION */}
+      <div className="market-section">
+        <div className="section-header">
+          <Star size={16} className="section-icon yellow" />
+          <h3>Your Watchlist</h3>
+        </div>
+        {watchlist.length > 0 ? (
+          <div className="watchlist-list">
+            {watchlist.map(symbol => (
+              <WatchlistItem 
+                key={symbol}
+                symbol={symbol}
+                data={prices[symbol]}
+                onSelect={() => onSelectSymbol(symbol)}
+                onRemove={() => toggleWatchlist(symbol)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-watchlist glass-card">
+            <Star size={24} />
+            <p>Your watchlist is empty</p>
+            <span>Search and star pairs to track them here</span>
+          </div>
+        )}
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .market-terminal { display: flex; flex-direction: column; gap: 32px; }
+        
+        .discovery-search { position: relative; max-width: 500px; }
+        .search-box { 
+          display: flex; align-items: center; background: rgba(22, 27, 44, 0.6); 
+          border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 16px;
+          gap: 12px; transition: 0.3s;
+        }
+        .search-box:focus-within { border-color: #34d399; background: rgba(22, 27, 44, 0.8); box-shadow: 0 0 20px rgba(52, 211, 153, 0.1); }
+        .search-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 14px; }
+        .search-icon { color: #64748b; }
+        .clear-icon { color: #64748b; cursor: pointer; }
+
+        .search-suggestions { 
+          position: absolute; top: calc(100% + 8px); left: 0; width: 100%; z-index: 100;
+          background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+          max-height: 300px; overflow-y: auto; padding: 8px;
+        }
+        .suggestion-item { 
+          padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+          border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .suggestion-item:hover { background: rgba(255, 255, 255, 0.04); }
+        .s-symbol { color: #fff; font-weight: 700; font-size: 14px; }
+        .s-base { color: #64748b; font-size: 12px; }
+        .s-arrow { color: #2d3748; }
+
+        .market-section { display: flex; flex-direction: column; gap: 16px; }
+        .section-header { display: flex; align-items: center; gap: 10px; }
+        .section-header h3 { color: #fff; font-size: 15px; font-weight: 700; margin: 0; }
+        .section-icon.green { color: #34d399; }
+        .section-icon.yellow { color: #fbbf24; }
+
+        .symbol-cards-scroll { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+        .symbol-cards-scroll::-webkit-scrollbar { display: none; }
+
+        .symbol-card { 
+          min-width: 220px; background: rgba(22, 27, 44, 0.4); border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px; padding: 16px; cursor: pointer; transition: 0.3s; position: relative;
+        }
+        .symbol-card:hover { border-color: rgba(52, 211, 153, 0.3); background: rgba(22, 27, 44, 0.6); transform: translateY(-2px); }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .c-symbol { color: #fff; font-weight: 800; font-size: 16px; }
+        .pin-btn { background: transparent; border: none; color: #475569; padding: 4px; cursor: pointer; transition: 0.2s; }
+        .pin-btn:hover { color: #fff; }
+        .pin-btn.active { color: #34d399; }
+        .c-price { display: block; color: #fff; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+        .c-change { font-size: 12px; font-weight: 700; }
+        .c-change.up { color: #34d399; }
+        .c-change.down { color: #ef4444; }
+
+        .watchlist-list { display: flex; flex-direction: column; gap: 10px; }
+        .watchlist-item { 
+          display: flex; align-items: center; justify-content: space-between;
+          background: rgba(22, 27, 44, 0.4); border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px; padding: 12px 20px; cursor: pointer; transition: 0.2s;
+        }
+        .watchlist-item:hover { background: rgba(22, 27, 44, 0.6); border-color: rgba(255, 255, 255, 0.1); }
+        .w-info { display: flex; align-items: center; gap: 16px; }
+        .w-symbol { color: #fff; font-weight: 700; font-size: 14px; }
+        .w-price { color: #34d399; font-weight: 700; font-size: 14px; }
+        .w-actions { display: flex; align-items: center; gap: 12px; }
+        .w-remove { color: #475569; padding: 4px; cursor: pointer; transition: 0.2s; }
+        .w-remove:hover { color: #ef4444; }
+
+        .empty-watchlist { 
+          padding: 40px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;
+          color: #475569; background: rgba(22, 27, 44, 0.2);
+        }
+        .empty-watchlist p { color: #fff; font-weight: 700; margin: 0; }
+        .empty-watchlist span { font-size: 12px; }
+
+        @media (max-width: 768px) {
+          .symbol-card { min-width: 180px; }
+        }
+      `}} />
+    </div>
+  );
+}
+
+function SymbolCard({ symbol, data, isPinned, onTogglePin, onSelect }) {
+  const price = data ? parseFloat(data.lastPrice).toLocaleString() : '...';
+  const change = data ? (parseFloat(data.price24hPcnt) * 100).toFixed(2) : '0.00';
+  const isUp = parseFloat(change) >= 0;
+
+  return (
+    <div className="symbol-card shadow-lg" onClick={onSelect}>
+      <div className="card-top">
+        <span className="c-symbol">{symbol}</span>
+        <button 
+          className={`pin-btn ${isPinned ? 'active' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
+        >
+          <Pin size={16} />
+        </button>
+      </div>
+      <span className="c-price">${price}</span>
+      <span className={`c-change ${isUp ? 'up' : 'down'}`}>
+        {isUp ? '▲' : '▼'} {change}%
+      </span>
+    </div>
+  );
+}
+
+function WatchlistItem({ symbol, data, onSelect, onRemove }) {
+  const price = data ? parseFloat(data.lastPrice).toLocaleString() : '...';
+  const change = data ? (parseFloat(data.price24hPcnt) * 100).toFixed(2) : '0.00';
+  const isUp = parseFloat(change) >= 0;
+
+  return (
+    <div className="watchlist-item" onClick={onSelect}>
+      <div className="w-info">
+        <span className="w-symbol">{symbol}</span>
+        <span className={`c-change ${isUp ? 'up' : 'down'}`} style={{fontSize: '11px'}}>
+          {isUp ? '▲' : '▼'} {change}%
+        </span>
+      </div>
+      <div className="w-actions">
+        <span className="w-price">${price}</span>
+        <div className="w-remove" onClick={(e) => { e.stopPropagation(); onRemove(); }}>
+          <X size={14} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default MarketTerminal;

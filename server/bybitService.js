@@ -123,6 +123,23 @@ export async function getTickers(params = { category: 'linear' }) {
   }
 }
 
+/**
+ * Public Market Instruments Request (Get list of active symbols)
+ */
+export async function getInstruments(params = { category: 'linear' }) {
+  const baseUrl = 'https://api.bybit.com';
+  const queryString = new URLSearchParams(params).toString();
+  const url = `${baseUrl}/v5/market/instruments-info?${queryString}`;
+  
+  try {
+    const response = await fetch(url);
+    return await response.json();
+  } catch (err) {
+    console.error('[BYBIT_INSTRUMENTS_ERROR]', err);
+    return { retCode: -1, retMsg: err.message };
+  }
+}
+
 
 /**
  * Create a new order (Stateless)
@@ -169,5 +186,6 @@ export default {
   getWalletBalance,
   getPositions,
   getClosedPnL,
-  getTickers
+  getTickers,
+  getInstruments
 };
