@@ -8,7 +8,7 @@ function DashboardHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activePopup, setActivePopup] = useState(null); 
   const [loading, setLoading] = useState(true);
-  const [marketPrice, setMarketPrice] = useState('64,520.10'); // Connected to live price logic
+  const [marketPrice, setMarketPrice] = useState('0.00'); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,7 +32,30 @@ function DashboardHeader() {
       }
     };
 
+    const fetchPrice = async () => {
+      try {
+        const res = await fetch('/api/market/ticker/BTCUSDT');
+        if (res.ok) {
+          const data = await res.json();
+          setMarketPrice(parseFloat(data.lastPrice).toLocaleString(undefined, { minimumFractionDigits: 2 }));
+        }
+      } catch (err) {
+        console.warn('Ticker fetch failed', err);
+      }
+    };
+
+    // Initial fetch
     fetchData();
+    fetchPrice();
+
+    // Intervals
+    const priceInterval = setInterval(fetchPrice, 10000); // 10s for price
+    const profileInterval = setInterval(fetchData, 30000); // 30s for balance/msgs
+
+    return () => {
+      clearInterval(priceInterval);
+      clearInterval(profileInterval);
+    };
   }, []);
 
   const unreadNotifCount = notifications.filter(n => !n.is_read).length;
@@ -72,7 +95,7 @@ function DashboardHeader() {
           </div>
           <div className="status-pill">
             <span className="pill-label">Total Equity</span>
-            <span className="pill-value">${profile?.equity?.toLocaleString() || '0'}</span>
+            <span className="pill-value">${profile?.equity?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</span>
           </div>
         </div>
 
@@ -152,7 +175,6 @@ function DashboardHeader() {
         .popup-overlay { position: fixed; inset: 0; z-index: 999; }
         .popup-trigger { position: relative; }
 
-        /* Popup Box Styles */
         .popup-box {
           position: absolute; top: calc(100% + 15px); left: 50%; transform: translateX(-50%) scale(0.95);
           width: 280px; background: rgba(10, 15, 29, 0.85); backdrop-filter: blur(20px);
@@ -173,7 +195,6 @@ function DashboardHeader() {
         .item-desc, .item-sub { color: #64748b; font-size: 11px; }
         .empty-state { padding: 30px 20px; text-align: center; color: #475569; font-size: 13px; }
 
-        /* Profile Specific Popup */
         .popup-profile-info { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .prof-email { color: #64748b; font-size: 12px; }
         .popup-nav { padding: 8px; }
@@ -186,7 +207,6 @@ function DashboardHeader() {
         .nav-link.logout { color: #ef4444; }
         .nav-divider { height: 1px; background: rgba(255, 255, 255, 0.05); margin: 8px; }
 
-        /* Search & General Styles */
         .search-container { position: relative; width: 320px; transition: 0.3s; }
         .search-box-wrapper { position: relative; display: flex; align-items: center; }
         .search-icon { position: absolute; left: 16px; color: #475569; cursor: pointer; z-index: 10; }
@@ -208,7 +228,6 @@ function DashboardHeader() {
         .profile-role { color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-align: right; }
         .profile-avatar { width: 36px; height: 36px; background: #10b981; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-        /* Responsive */
         @media (max-width: 1024px) {
           .header-modern { padding: 0 20px; } .desktop-only { display: none; }
           .search-container:not(.mobile-expanded) { width: 0; overflow: hidden; opacity: 0; pointer-events: none; }

@@ -106,6 +106,23 @@ export async function bybitRequest(method, endpoint, params = {}, config = {}) {
   }
 }
 
+/**
+ * Public Market Data Request (No signature required)
+ */
+export async function getTickers(params = { category: 'linear' }) {
+  const baseUrl = 'https://api.bybit.com';
+  const queryString = new URLSearchParams(params).toString();
+  const url = `${baseUrl}/v5/market/tickers?${queryString}`;
+  
+  try {
+    const response = await fetch(url);
+    return await response.json();
+  } catch (err) {
+    console.error('[BYBIT_PUBLIC_ERROR]', err);
+    return { retCode: -1, retMsg: err.message };
+  }
+}
+
 
 /**
  * Create a new order (Stateless)
@@ -151,5 +168,6 @@ export default {
   createOrder,
   getWalletBalance,
   getPositions,
-  getClosedPnL
+  getClosedPnL,
+  getTickers
 };

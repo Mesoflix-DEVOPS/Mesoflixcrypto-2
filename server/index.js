@@ -1191,14 +1191,41 @@ app.get('/api/dashboard/profile', authenticateToken, async (req, res) => {
 
     if (userError || !user) throw new Error('User not found');
 
-    // 2. Fetch Latest Equity (Optional)
-    const { data: equity } = await supabase
-      .from('equity_snapshots')
-      .select('total_equity')
-      .eq('user_id', id)
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .single();
+    let realEquity = 0;
+
+    // 2. Fetch Live Bybit Balance (Real-Mode Activation)
+    try {
+      const { data: account } = await supabase
+        .from('user_broker_accounts')
+        .select('*')
+        .eq('user_id', id)
+        .eq('environment', 'REAL')
+        .single();
+
+      if (account) {
+        const apiKey = encryption.decrypt(account.encrypted_api_key);
+        const apiSecret = encryption.decrypt(account.encrypted_api_secret);
+        const balanceRes = await getWalletBalance({ accountType: 'UNIFIED' }, { apiKey, apiSecret });
+        
+        if (balanceRes.retCode === 0) {
+          realEquity = parseFloat(balanceRes.result?.list?.[0]?.totalEquity || 0);
+        }
+      }
+    } catch (e) {
+      console.warn('[REAL_MODE_SYNC_WARN] Could not fetch live balance:', e.message);
+    }
+
+    // 3. Fallback to latest snapshot if exhange call failed or not linked
+    if (realEquity === 0) {
+      const { data: equity } = await supabase
+        .from('equity_snapshots')
+        .select('total_equity')
+        .eq('user_id', id)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+      realEquity = equity?.total_equity || 0;
+    }
 
     res.status(200).json({
       success: true,
@@ -1206,9 +1233,9 @@ app.get('/api/dashboard/profile', authenticateToken, async (req, res) => {
         id: user.id,
         fullName: user.full_name,
         email: user.email,
-        role: 'INSTITUTIONAL', // Hardcoded status for this tier
+        role: 'INSTITUTIONAL',
         joinedAt: user.created_at,
-        equity: equity?.total_equity || 0
+        equity: realEquity
       }
     });
 
@@ -1319,6 +1346,22 @@ app.get('/api/dashboard/messages', authenticateToken, async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// GET /api/market/ticker/:symbol - Real-time Price Tickers
+app.get('/api/market/ticker/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const tickerRes = await getTickers({ category: 'linear', symbol });
+    
+    if (tickerRes.retCode === 0 && tickerRes.result?.list?.[0]) {
+      res.status(200).json(tickerRes.result.list[0]);
+    } else {
+      res.status(404).json({ error: 'Ticker not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Market data failure' });
   }
 });
 
