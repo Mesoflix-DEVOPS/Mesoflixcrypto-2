@@ -993,7 +993,7 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     const apiSecret = result.api_secret;
     const rawSubUid = result.sub_member_id || result.sub_uid || result.user_id;
 
-    if (!apiKey || !apiSecret || !rawSubUid) {
+    if (!apiKey || !apiSecret) {
       console.error('[OAUTH] Incomplete credentials received from Bybit:', result);
       if (oauthSession) await addAuditLog({ sessionId: oauthSession.id, userId, eventType: 'KEY_RETRIEVAL', status: 'FAILURE', metadata: result });
       const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=incomplete_credentials';
@@ -1001,21 +1001,23 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
       return res.redirect(errUrl);
     }
 
-    const subUidStr = rawSubUid.toString();
+    const subUidStr = rawSubUid ? rawSubUid.toString() : null;
 
     // 6. Security Check & Persistence
-    // Prevent account swapping/duplicate linking
-    const { data: existingAccount } = await supabase
-      .from('user_broker_accounts')
-      .select('user_id')
-      .eq('bybit_sub_uid', subUidStr)
-      .single();
+    // Prevent account swapping/duplicate linking (Only if UID is present)
+    if (subUidStr) {
+      const { data: existingAccount } = await supabase
+        .from('user_broker_accounts')
+        .select('user_id')
+        .eq('bybit_sub_uid', subUidStr)
+        .single();
 
-    if (existingAccount && existingAccount.user_id !== userId) {
-      console.warn(`[OAUTH] Security Alert: Bybit UID ${subUidStr} already linked to User ${existingAccount.user_id}`);
-      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere';
-      if (isJson) return res.status(403).json({ success: false, error: 'account_already_linked_elsewhere', redirect: errUrl });
-      return res.redirect(errUrl);
+      if (existingAccount && existingAccount.user_id !== userId) {
+        console.warn(`[OAUTH] Security Alert: Bybit UID ${subUidStr} already linked to User ${existingAccount.user_id}`);
+        const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere';
+        if (isJson) return res.status(403).json({ success: false, error: 'account_already_linked_elsewhere', redirect: errUrl });
+        return res.redirect(errUrl);
+      }
     }
 
     // Encrypt and save to database
