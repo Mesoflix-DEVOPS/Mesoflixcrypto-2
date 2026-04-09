@@ -12,57 +12,105 @@ import {
   Settings as SettingsIcon,
   Search,
   Bell,
-  MessageSquare
+  MessageSquare,
+  Star,
+  Pin
 } from 'lucide-react';
 
 function BybitDashboard() {
   const [activeSide, setActiveSide] = useState('BUY');
+  const [assets, setAssets] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const [assetsRes, watchRes] = await Promise.all([
+          fetch('/api/dashboard/assets'),
+          fetch('/api/dashboard/watchlist', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        if (assetsRes.ok) setAssets(await assetsRes.json());
+        if (watchRes.ok) setWatchlist(await watchRes.json());
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const handleToggleWatchlist = async (symbol) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/dashboard/watchlist/add', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ symbol })
+      });
+
+      if (response.ok) {
+        setWatchlist(prev => 
+          prev.includes(symbol) ? prev.filter(s => s !== symbol) : [...prev, symbol]
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update watchlist', err);
+    }
+  };
+
+  // Determine which assets to show in the top row (Featured or Watchlist)
+  const displayAssets = assets.length > 0 ? assets.slice(0, 4) : [
+    { symbol: 'BTCUSDT', name: 'Bitcoin' },
+    { symbol: 'ETHUSDT', name: 'Ethereum' }
+  ];
 
   return (
     <div className="dashboard-container">
       {/* Top Row: Sparkline Cards */}
       <div className="ticker-grid">
-        <div className="ticker-card">
-          <div className="ticker-header">
-            <div className="ticker-icon-container btc">
-              <BitcoinIcon size={20} />
-            </div>
-            <div className="ticker-names">
-              <span className="ticker-symbol">BTC/USDT</span>
-              <span className="ticker-full-name">BTC/USDT</span>
-            </div>
-            <div className="ticker-chart">
-               <svg width="60" height="24" viewBox="0 0 60 24" fill="none">
-                  <path d="M1 18C10 18 15 2 30 10C45 18 50 4 59 4" stroke="#34d399" strokeWidth="2" strokeLinecap="round"/>
-               </svg>
-            </div>
-            <div className="ticker-price-info">
-              <span className="ticker-price">333.50</span>
-              <span className="ticker-percent green">+3.83%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="ticker-card">
-          <div className="ticker-header">
-            <div className="ticker-icon-container eth">
-              <EthereumIcon size={20} />
-            </div>
-            <div className="ticker-names">
-              <span className="ticker-symbol">ETH/USDT</span>
-              <span className="ticker-full-name">ETH/USDT</span>
-            </div>
-            <div className="ticker-chart">
-               <svg width="60" height="24" viewBox="0 0 60 24" fill="none">
-                  <path d="M1 12C10 20 20 4 30 12C40 20 50 8 59 12" stroke="#34d399" strokeWidth="2" strokeLinecap="round"/>
-               </svg>
-            </div>
-            <div className="ticker-price-info">
-              <span className="ticker-price">38.55</span>
-              <span className="ticker-percent green">+2.56%</span>
+        {displayAssets.map((asset) => (
+          <div className="ticker-card" key={asset.symbol}>
+            <div className="ticker-header">
+              <div className={`ticker-icon-container ${asset.symbol.toLowerCase().includes('btc') ? 'btc' : asset.symbol.toLowerCase().includes('eth') ? 'eth' : 'other'}`}>
+                {asset.symbol.includes('BTC') ? <BitcoinIcon size={20} /> : <EthereumIcon size={20} />}
+              </div>
+              <div className="ticker-names">
+                <span className="ticker-symbol">{asset.symbol}</span>
+                <span className="ticker-full-name">{asset.name}</span>
+              </div>
+              <div className="ticker-chart">
+                 <svg width="60" height="24" viewBox="0 0 60 24" fill="none">
+                    <path d="M1 18C10 18 15 2 30 10C45 18 50 4 59 4" stroke="#34d399" strokeWidth="2" strokeLinecap="round"/>
+                 </svg>
+              </div>
+              <div className="ticker-actions">
+                <button 
+                  className={`pin-btn ${watchlist.includes(asset.symbol) ? 'active' : ''}`}
+                  onClick={() => handleToggleWatchlist(asset.symbol)}
+                  title="Pin to Dashboard"
+                >
+                  <Pin size={14} />
+                </button>
+                <div className="ticker-price-info">
+                  <span className="ticker-price">$0.00</span>
+                  <span className="ticker-percent green">+0.00%</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Main Content Area */}
@@ -84,18 +132,15 @@ function BybitDashboard() {
             </div>
             <div className="chart-viewport">
               <div className="chart-info-overlay">
-                <span className="chart-pair">Dtcoraatès - 1D - I •</span>
-                <span className="chart-indicator">Moving AA MSB 20:23.28</span>
+                <span className="chart-pair">TradingView Live Connectivity Ready •</span>
+                <span className="chart-indicator">Awaiting Bybit Whitelist Activation</span>
               </div>
               <div className="chart-svg-container">
                 <svg width="100%" height="100%" viewBox="0 0 800 400" preserveAspectRatio="none">
-                  <path d="M0 300 L100 320 L200 280 L300 310 L400 250 L500 220 L600 200 L700 180 L800 150" stroke="#f59e0b" strokeWidth="2" fill="none" />
-                  {/* Candlestick Mockup */}
-                  <rect x="150" y="280" width="10" height="40" fill="#34d399" />
-                  <rect x="250" y="300" width="10" height="20" fill="#ef4444" />
-                  <rect x="350" y="240" width="10" height="70" fill="#34d399" />
-                  <rect x="450" y="210" width="10" height="40" fill="#34d399" />
-                  <rect x="550" y="180" width="10" height="50" fill="#34d399" />
+                  <path d="M0 300 Q 150 250, 300 300 T 600 200 T 800 150" stroke="#f59e0b" strokeWidth="2" fill="none" />
+                  <rect x="150" y="280" width="10" height="40" fill="#34d399" opacity="0.6"/>
+                  <rect x="250" y="300" width="10" height="20" fill="#ef4444" opacity="0.6"/>
+                  <rect x="350" y="240" width="10" height="70" fill="#34d399" opacity="0.6"/>
                 </svg>
               </div>
             </div>
@@ -117,11 +162,8 @@ function BybitDashboard() {
                 </div>
                 <div className="equity-stats">
                    <p className="total-equity-label">Total Equity</p>
-                   <h2 className="equity-value">$10,976.52</h2>
-                   <p className="equity-change green">▲ 110.38%</p>
-                </div>
-                <div className="equity-progress-bg">
-                   <div className="equity-progress-fill" style={{width: '35%'}}></div>
+                   <h2 className="equity-value">$0.00</h2>
+                   <p className="equity-change green">▲ Stable</p>
                 </div>
               </div>
             </div>
@@ -133,35 +175,11 @@ function BybitDashboard() {
                 <button className="dot-btn">···</button>
               </div>
               <div className="card-body">
-                <table className="positions-table">
-                  <thead>
-                    <tr>
-                      <th>Asset</th>
-                      <th>Size</th>
-                      <th>Entry</th>
-                      <th>Price</th>
-                      <th>Prof/Los</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="pos-row">
-                      <td>
-                        <div className="asset-cell">
-                          <BitcoinIcon size={14} />
-                          <div className="asset-meta">
-                             <span className="asset-sym">BTC</span>
-                             <span className="asset-pair">USDT</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>2.0k</td>
-                      <td>$1.300</td>
-                      <td>$1.920</td>
-                      <td className="green">+$13.00</td>
-                    </tr>
-                    {/* Additional rows */}
-                  </tbody>
-                </table>
+                <div className="empty-positions">
+                  <Activity size={32} className="empty-icon" />
+                  <p>No active positions found.</p>
+                  <span>Connect your Bybit account to start trading.</span>
+                </div>
               </div>
             </div>
           </div>
@@ -203,9 +221,9 @@ function BybitDashboard() {
               <div className="form-group">
                 <label className="form-label">Quantity</label>
                 <div className="number-input-wrapper">
-                  <input type="text" className="form-input" value="10" readOnly />
+                  <input type="text" className="form-input" defaultValue="0" />
                   <div className="input-arrows">
-                    <ChevronDown size={14} className="arrow-up" />
+                    <ChevronDown size={14} className="arrow-up" style={{transform: 'rotate(180deg)'}} />
                     <ChevronDown size={14} className="arrow-down" />
                   </div>
                 </div>
@@ -214,14 +232,14 @@ function BybitDashboard() {
               <div className="form-group">
                 <label className="form-label">Price</label>
                 <div className="price-input-wrapper">
-                  <span className="price-val">$100.00</span>
+                  <span className="price-val">$0.00</span>
                   <span className="price-denom">USDT</span>
                 </div>
                 <div className="range-slider-container">
                     <div className="slider-track-dots">
                       <span></span><span></span><span></span><span></span><span></span>
                     </div>
-                    <input type="range" className="range-slider" />
+                    <input type="range" className="range-slider" min="0" max="100" defaultValue="0" />
                 </div>
               </div>
 
@@ -229,44 +247,30 @@ function BybitDashboard() {
                 <div className="label-with-info">
                   <label className="form-label">Leverage</label>
                   <Info size={12} className="label-info-icon" />
-                  <span className="label-sub">4 - 100</span>
+                  <span className="label-sub">1x - 100x</span>
                 </div>
-                <input type="range" className="range-slider-themed" />
-              </div>
-
-              <div className="form-group">
-                <div className="label-with-info">
-                  <label className="form-label">Stop Loss</label>
-                  <Info size={12} className="label-info-icon" />
-                  <span className="label-sub">1.5</span>
-                </div>
-                <input type="range" className="range-slider-themed" />
+                <input type="range" className="range-slider-themed" min="1" max="100" defaultValue="1" />
               </div>
 
               <div className="risk-mgmt-section">
                  <h4 className="section-subtitle">Risk Management</h4>
                  <div className="risk-item">
-                   <span className="risk-label">Take-Profit</span>
+                   <span className="risk-label">Take-Profit (%)</span>
                    <div className="risk-input-box">
-                     15 <ChevronDown size={14} />
+                     10 <ChevronDown size={14} />
                    </div>
                  </div>
                  <div className="risk-item">
-                   <span className="risk-label">Take-Profit</span>
-                   <div className="custom-toggle active"></div>
-                 </div>
-                 <div className="risk-item">
-                   <span className="risk-label">Take-Profit</span>
-                   <div className="custom-toggle active"></div>
-                 </div>
-                 <div className="risk-item">
-                   <span className="risk-label">Stop Loss</span>
+                   <span className="risk-label">Stop-Loss (%)</span>
                    <div className="risk-input-box">
                      5 <ChevronDown size={14} />
                    </div>
                  </div>
-                 {/* ... other toggles */}
               </div>
+
+              <button className={`submit-order-btn ${activeSide === 'BUY' ? 'buy' : 'sell'}`}>
+                {activeSide} ASSET
+              </button>
             </div>
           </div>
         </div>
@@ -281,9 +285,9 @@ function BybitDashboard() {
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
-        /* Ticker Row */
         .ticker-grid {
-          display: flex;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
           gap: 20px;
           margin-bottom: 24px;
         }
@@ -293,81 +297,42 @@ function BybitDashboard() {
           border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: 16px;
           padding: 12px 20px;
-          flex: 0 0 320px;
         }
 
-        .ticker-header {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .ticker-icon-container {
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+        .ticker-header { display: flex; align-items: center; gap: 16px; position: relative; }
+        .ticker-icon-container { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .ticker-icon-container.btc { background: rgba(247, 147, 26, 0.1); color: #f7931a; }
         .ticker-icon-container.eth { background: rgba(98, 126, 234, 0.1); color: #627eea; }
+        .ticker-icon-container.other { background: rgba(52, 211, 153, 0.1); color: #34d399; }
 
         .ticker-names { display: flex; flex-direction: column; }
         .ticker-symbol { color: #fff; font-weight: 700; font-size: 14px; }
         .ticker-full-name { font-size: 11px; opacity: 0.5; }
 
-        .ticker-price-info { margin-left: auto; text-align: right; }
+        .ticker-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+        .pin-btn { background: transparent; border: none; color: #475569; cursor: pointer; transition: 0.2s; padding: 4px; }
+        .pin-btn:hover { color: #fff; }
+        .pin-btn.active { color: #34d399; transform: rotate(-45deg); }
+
+        .ticker-price-info { text-align: right; }
         .ticker-price { display: block; color: #fff; font-weight: 700; font-size: 15px; }
         .ticker-percent { font-size: 12px; font-weight: 600; }
 
-        /* Main Grid */
-        .dashboard-main-grid {
-          display: grid;
-          grid-template-columns: 1fr 360px;
-          gap: 24px;
-        }
-
+        .dashboard-main-grid { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
         .dashboard-left-col { display: flex; flex-direction: column; gap: 24px; }
 
-        .main-chart-card {
-          background: #0d121f;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 20px;
-          height: 520px;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-
-        .chart-toolbar {
-          padding: 12px 20px;
-          display: flex;
-          justify-content: space-between;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-          background: #0a0f1d;
-        }
+        .main-chart-card { background: #0d121f; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; height: 520px; display: flex; flex-direction: column; overflow: hidden; }
+        .chart-toolbar { padding: 12px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.03); background: #0a0f1d; }
         .toolbar-btn { background: transparent; border: none; color: #475569; padding: 4px 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .toolbar-btn.active { color: #3b82f6; }
+        .toolbar-btn.active { color: #34d399; }
 
         .chart-viewport { flex: 1; padding: 24px; position: relative; }
         .chart-info-overlay { margin-bottom: 20px; }
         .chart-pair { color: #fff; font-weight: 700; font-size: 16px; margin-right: 12px; }
-        .chart-indicator { color: #fbbf24; font-size: 13px; }
-        .chart-svg-container { position: absolute; bottom: 40px; left: 40px; right: 40px; top: 100px; }
+        .chart-indicator { color: #34d399; font-size: 13px; font-weight: 600; }
 
-        .bottom-info-grid {
-          display: grid;
-          grid-template-columns: 320px 1fr;
-          gap: 24px;
-        }
-
-        .silver-glass {
-          background: rgba(22, 27, 44, 0.4);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 20px;
-        }
+        .bottom-info-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+        .silver-glass { background: rgba(22, 27, 44, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 20px; }
 
         .card-header { padding: 20px 24px 12px; display: flex; justify-content: space-between; align-items: center; }
         .card-title { color: #fff; font-weight: 700; font-size: 15px; }
@@ -376,69 +341,41 @@ function BybitDashboard() {
 
         .card-body { padding: 0 24px 24px; }
         .equity-value { font-size: 34px; font-weight: 800; color: #fff; margin: 8px 0; }
-        .equity-progress-bg { height: 4px; background: #1e293b; border-radius: 10px; margin-top: 16px; }
-        .equity-progress-fill { height: 100%; background: #34d399; border-radius: 10px; box-shadow: 0 0 10px rgba(52, 211, 153, 0.4); }
+        
+        .empty-positions { padding: 40px 0; text-align: center; color: #475569; }
+        .empty-icon { margin-bottom: 16px; opacity: 0.2; }
+        .empty-positions p { color: #fff; font-weight: 700; margin-bottom: 4px; }
+        .empty-positions span { font-size: 12px; }
 
-        .positions-table { width: 100%; border-collapse: collapse; }
-        .positions-table th { text-align: left; font-size: 12px; color: #475569; font-weight: 600; padding-bottom: 12px; }
-        .asset-cell { display: flex; align-items: center; gap: 10px; }
-        .asset-meta { line-height: 1.2; }
-        .asset-sym { display: block; color: #fff; font-weight: 700; font-size: 13px; }
-        .asset-pair { font-size: 10px; opacity: 0.5; }
-        .pos-row td { padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, 0.02); color: #fff; font-weight: 600; font-size: 13px; }
-
-        /* Order Sidebar */
-        .order-card { padding-bottom: 24px; }
-        .order-header { margin-bottom: 16px; }
         .order-tabs { display: flex; padding: 0 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 24px; }
         .order-tab { flex: 1; border: none; background: transparent; padding: 12px; font-weight: 800; font-size: 14px; cursor: pointer; color: #475569; }
         .order-tab.buy.active { color: #34d399; border-bottom: 2px solid #34d399; }
         .order-tab.sell.active { color: #ef4444; border-bottom: 2px solid #ef4444; }
 
         .order-form { padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
-        .form-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px; }
         .type-toggle-group { display: flex; background: #0a0f1d; border-radius: 8px; padding: 4px; gap: 4px; }
-        .type-toggle-btn { flex: 1; border: none; background: transparent; color: #475569; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .type-toggle-btn { flex: 1; border: none; background: transparent; color: #475569; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 6px; cursor: pointer; }
         .type-toggle-btn.active { background: #1e293b; color: #fff; }
 
         .number-input-wrapper { background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .form-input { background: transparent; border: none; color: #fff; font-weight: 700; width: 60%; font-size: 15px; }
-        .input-arrows { display: flex; flex-direction: column; color: #475569; gap: 4px; }
-
+        .form-input { background: transparent; border: none; color: #fff; font-weight: 700; width: 60%; font-size: 15px; outline: none; }
         .price-input-wrapper { background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; }
-        .price-val { color: #475569; font-weight: 700; font-size: 15px; }
-        .price-denom { font-size: 11px; font-weight: 800; color: #475569; }
-
-        .range-slider-container { margin-top: 12px; position: relative; }
-        .slider-track-dots { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 6px; }
-        .slider-track-dots span { width: 4px; height: 4px; background: #334155; border-radius: 50%; }
-        .range-slider { width: 100%; -webkit-appearance: none; background: #1e293b; height: 2px; outline: none; }
-        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; cursor: pointer; }
-
-        .range-slider-themed { width: 100%; -webkit-appearance: none; background: #1e293b; height: 2px; outline: none; }
-        .range-slider-themed::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #34d399; border-radius: 50%; cursor: pointer; box-shadow: 0 0 8px rgba(52, 211, 153, 0.5); }
-
-        .label-with-info { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-        .label-info-icon { color: #475569; }
-        .label-sub { margin-left: auto; font-size: 13px; font-weight: 700; color: #fff; }
-
-        .risk-mgmt-section { padding: 16px; background: #0a1121; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-        .section-subtitle { font-size: 14px; font-weight: 700; color: #475569; margin: 0 0 4px; }
-        .risk-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
-        .risk-input-box { background: #161b2c; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 6px 12px; color: #fff; display: flex; align-items: center; gap: 8px; }
-        .custom-toggle { width: 32px; height: 16px; background: #1e293b; border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s; }
-        .custom-toggle.active { background: #34d399; }
-        .custom-toggle::after { content: ''; position: absolute; left: 3px; top: 3px; width: 10px; height: 10px; background: #fff; border-radius: 50%; transition: 0.3s; }
-        .custom-toggle.active::after { left: 19px; }
+        
+        .submit-order-btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 800; color: #000; cursor: pointer; transition: 0.3s; margin-top: 10px; text-transform: uppercase; }
+        .submit-order-btn.buy { background: #34d399; box-shadow: 0 4px 14px rgba(52, 211, 153, 0.3); }
+        .submit-order-btn.sell { background: #ef4444; color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3); }
 
         .green { color: #34d399; }
-        .red { color: #ef4444; }
+        
+        @media (max-width: 1200px) {
+          .dashboard-main-grid { grid-template-columns: 1fr; }
+          .bottom-info-grid { grid-template-columns: 1fr; }
+        }
       `}} />
     </div>
   );
 }
 
-// Minimal Icons to match screenshot
 function BitcoinIcon({ size }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">

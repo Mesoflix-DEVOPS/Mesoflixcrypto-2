@@ -48,5 +48,47 @@ CREATE INDEX IF NOT EXISTS idx_equity_user_time ON equity_snapshots(user_id, tim
 CREATE INDEX IF NOT EXISTS idx_trades_user_time ON trade_history(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_bots_user_status ON trading_bots(user_id, status);
 
--- 5. Seed initial bots for first-time users (Optional function)
--- This can be handled by the backend during first login/link.
+-- 5. Platform Assets Registry
+CREATE TABLE IF NOT EXISTS platform_assets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    symbol TEXT UNIQUE NOT NULL, -- 'BTCUSDT', 'ETHUSDT'
+    name TEXT NOT NULL,
+    asset_type TEXT DEFAULT 'CRYPTO', -- 'CRYPTO' | 'FOREX'
+    is_featured BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. User Watchlist (Personalized Markets)
+CREATE TABLE IF NOT EXISTS user_watchlists (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    symbol TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, symbol)
+);
+
+-- 7. Notifications System
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    type TEXT DEFAULT 'SYSTEM', -- 'SYSTEM' | 'TRADE' | 'SECURITY'
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. Indexes for Navbar Performance
+CREATE INDEX IF NOT EXISTS idx_watchlist_user ON user_watchlists(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE is_read = FALSE;
+
+-- Seed initial assets for Bybit
+INSERT INTO platform_assets (symbol, name, is_featured) 
+VALUES 
+('BTCUSDT', 'Bitcoin', TRUE),
+('ETHUSDT', 'Ethereum', TRUE),
+('SOLUSDT', 'Solana', TRUE),
+('BNBUSDT', 'Binance Coin', FALSE),
+('XRPUSDT', 'Ripple', FALSE)
+ON CONFLICT (symbol) DO NOTHING;

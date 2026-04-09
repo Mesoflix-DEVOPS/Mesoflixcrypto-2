@@ -64,6 +64,22 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// --- AUTHENTICATION MIDDLEWARE ---
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid or expired token.' });
+  }
+};
+
 // Helper: Phase 1 Audit Logging
 async function addAuditLog({ sessionId, userId, eventType, status, metadata }) {
   try {
@@ -1156,6 +1172,135 @@ app.get('/api/broker/account/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching broker account:', error);
     res.status(500).json({ error: 'Failed to retrieve connection security keys.' });
+  }
+});
+
+// --- INSTITUTIONAL DASHBOARD ENDPOINTS ---
+
+// GET /api/dashboard/profile - Real user profile data
+app.get('/api/dashboard/profile', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.user;
+    
+    // 1. Fetch User Base Info
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, full_name, email, created_at')
+      .eq('id', id)
+      .single();
+
+    if (userError || !user) throw new Error('User not found');
+
+    // 2. Fetch Latest Equity (Optional)
+    const { data: equity } = await supabase
+      .from('equity_snapshots')
+      .select('total_equity')
+      .eq('user_id', id)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single();
+
+    res.status(200).json({
+      success: true,
+      profile: {
+        id: user.id,
+        fullName: user.full_name,
+        email: user.email,
+        role: 'INSTITUTIONAL', // Hardcoded status for this tier
+        joinedAt: user.created_at,
+        equity: equity?.total_equity || 0
+      }
+    });
+
+  } catch (error) {
+    console.error('[PROFILE_ERROR]', error);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// GET /api/dashboard/notifications - Fetch unread notifications
+app.get('/api/dashboard/notifications', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// POST /api/dashboard/notifications/read - Mark as read
+app.post('/api/dashboard/notifications/read', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { notificationId } = req.body;
+
+    const query = supabase.from('notifications').update({ is_read: true }).eq('user_id', id);
+    if (notificationId) query.eq('id', notificationId);
+
+    const { error } = await query;
+    if (error) throw error;
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update notification' });
+  }
+});
+
+// GET /api/dashboard/assets - List platform offerings
+app.get('/api/dashboard/assets', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('platform_assets')
+      .select('*')
+      .eq('is_active', true)
+      .order('is_featured', { ascending: false });
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch assets' });
+  }
+});
+
+// GET /api/dashboard/watchlist - Get user's pinned assets
+app.get('/api/dashboard/watchlist', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { data, error } = await supabase
+      .from('user_watchlists')
+      .select('symbol')
+      .eq('user_id', id);
+
+    if (error) throw error;
+    res.status(200).json(data.map(item => item.symbol));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch watchlist' });
+  }
+});
+
+// POST /api/dashboard/watchlist/add - Pin an asset
+app.post('/api/dashboard/watchlist/add', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { symbol } = req.body;
+
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+
+    const { error } = await supabase
+      .from('user_watchlists')
+      .upsert([{ user_id: id, symbol }], { onConflict: 'user_id, symbol' });
+
+    if (error) throw error;
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add to watchlist' });
   }
 });
 
