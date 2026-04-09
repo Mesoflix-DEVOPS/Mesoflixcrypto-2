@@ -11,6 +11,16 @@ process.on('uncaughtException', (err) => {
   console.error('[CRITICAL_UNCAUGHT_EXCEPTION]', err);
 });
 
+// Lifecycle loggers for Render/Linux stability
+process.on('SIGTERM', () => {
+  console.log('[SYSTEM] SIGTERM received. Graceful shutdown initiated.');
+  process.exit(0);
+});
+process.on('SIGINT', () => {
+  console.log('[SYSTEM] SIGINT received. Manual interruption detected.');
+  process.exit(0);
+});
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
@@ -169,6 +179,11 @@ async function sendBrevoEmail({ name, email, subject, message, accountEmail }) {
 }
 
 // Help check for Render deployment
+app.get('/', (req, res) => {
+  console.log('[HEALTH] Root ping received.');
+  res.status(200).send('Mesoflix Institutional API: Real-Mode Engine Active');
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'Healthy', timestamp: new Date().toISOString() });
 });

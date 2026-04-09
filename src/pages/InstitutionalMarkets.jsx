@@ -23,10 +23,15 @@ function InstitutionalMarkets() {
         
         // 1. Fetch all available USDT symbols from Bybit Proxy
         const symbolsRes = await fetch(getApiUrl('/api/market/all-symbols'));
-        if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
+        
+        const symbolsType = symbolsRes.headers.get('content-type');
+        if (symbolsRes.ok && symbolsType?.includes('application/json')) {
           const data = await symbolsRes.json();
           setAllSymbols(data);
           setFilteredSymbols(data.slice(0, 50)); 
+        } else {
+          console.warn('[MARKET_SYNC] Expected JSON, received:', symbolsType);
+          // Don't flip loading to false yet, wait for retry or show error
         }
 
         // 2. Fetch User's DB Watchlist
@@ -34,14 +39,15 @@ function InstitutionalMarkets() {
           const watchRes = await fetch(getApiUrl('/api/dashboard/watchlist'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
+          const watchType = watchRes.headers.get('content-type');
+          if (watchRes.ok && watchType?.includes('application/json')) {
             setWatchlist(await watchRes.json());
           }
         }
       } catch (err) {
         console.error('Market init failed', err);
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 800); // Smooth transition
       }
     };
 
@@ -59,7 +65,8 @@ function InstitutionalMarkets() {
       await Promise.all(pollList.map(async (symbol) => {
         try {
           const res = await fetch(getApiUrl(`/api/market/ticker/${symbol}`));
-          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+          const type = res.headers.get('content-type');
+          if (res.ok && type?.includes('application/json')) {
             priceMap[symbol] = await res.json();
           }
         } catch (e) {}
