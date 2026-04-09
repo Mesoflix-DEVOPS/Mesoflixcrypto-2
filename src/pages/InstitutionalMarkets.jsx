@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Star, TrendingUp, Activity, BarChart2, Info, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 
 /**
  * Institutional Markets Page for the Dashboard
@@ -21,8 +22,8 @@ function InstitutionalMarkets() {
         const token = localStorage.getItem('token');
         
         // 1. Fetch all available USDT symbols from Bybit Proxy
-        const symbolsRes = await fetch('/api/market/all-symbols');
-        if (symbolsRes.ok) {
+        const symbolsRes = await fetch(getApiUrl('/api/market/all-symbols'));
+        if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
           const data = await symbolsRes.json();
           setAllSymbols(data);
           setFilteredSymbols(data.slice(0, 50)); 
@@ -30,10 +31,12 @@ function InstitutionalMarkets() {
 
         // 2. Fetch User's DB Watchlist
         if (token) {
-          const watchRes = await fetch('/api/dashboard/watchlist', {
+          const watchRes = await fetch(getApiUrl('/api/dashboard/watchlist'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (watchRes.ok) setWatchlist(await watchRes.json());
+          if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
+            setWatchlist(await watchRes.json());
+          }
         }
       } catch (err) {
         console.error('Market init failed', err);
@@ -55,8 +58,8 @@ function InstitutionalMarkets() {
       
       await Promise.all(pollList.map(async (symbol) => {
         try {
-          const res = await fetch(`/api/market/ticker/${symbol}`);
-          if (res.ok) {
+          const res = await fetch(getApiUrl(`/api/market/ticker/${symbol}`));
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
             priceMap[symbol] = await res.json();
           }
         } catch (e) {}
@@ -82,7 +85,7 @@ function InstitutionalMarkets() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const res = await fetch('/api/dashboard/watchlist/add', {
+      const res = await fetch(getApiUrl('/api/dashboard/watchlist/add'), {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -200,17 +203,26 @@ function InstitutionalMarkets() {
           </tbody>
         </table>
 
-        {(loading || filteredSymbols.length === 0) && (
+         {loading || filteredSymbols.length === 0 ? (
           <div className="empty-state-wrap">
              {loading ? (
-               <RefreshCw size={48} className="animate-spin empty-icon-lg" />
+               <div className="flex flex-col items-center">
+                 <div className="relative w-16 h-16 mb-4">
+                    <div className="absolute inset-0 border-4 border-emerald-500/10 rounded-full" />
+                    <div className="absolute inset-0 border-t-4 border-emerald-500 rounded-full animate-spin" />
+                 </div>
+                 <p className="text-xl font-bold text-white mb-2">Syncing Market Engine</p>
+                 <p className="text-slate-400 text-sm">Connecting to high-frequency institutional feed...</p>
+               </div>
              ) : (
-               <Activity size={48} className="empty-icon-lg" />
+               <>
+                 <Activity size={48} className="empty-icon-lg" />
+                 <p className="text-xl font-bold text-white mb-2">No symbols found</p>
+                 <p>Try searching for a different pair</p>
+               </>
              )}
-             <p className="text-xl font-bold text-white mb-2">{loading ? 'Connecting to Bybit...' : 'No symbols found'}</p>
-             <p>{loading ? 'Initializing institutional price feed' : 'Try searching for a different pair'}</p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

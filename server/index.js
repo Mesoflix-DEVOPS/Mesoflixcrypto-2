@@ -1406,6 +1406,17 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
   }
 });
 
+// --- UNIVERSAL API SAFETY NET ---
+// Ensures all /api/* requests ALWAYS return JSON, never HTML
+app.all('/api/*', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(404).json({ 
+    error: 'Institutional endpoint not found', 
+    path: req.originalUrl,
+    timestamp: new Date().toISOString() 
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Express API Server listening on port ${PORT}`);
 });

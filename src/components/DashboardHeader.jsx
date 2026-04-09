@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Search, User, MessageSquare, X, LogOut, Settings, CreditCard, ShieldCheck } from 'lucide-react';
+import { getApiUrl } from '../config/api';
 
 function DashboardHeader() {
   const [profile, setProfile] = useState(null);
@@ -17,9 +18,9 @@ function DashboardHeader() {
         if (!token) return;
 
         const [profileRes, notifyRes, msgRes] = await Promise.all([
-          fetch('/api/dashboard/profile', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/dashboard/notifications', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/dashboard/messages', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(getApiUrl('/api/dashboard/profile'), { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(getApiUrl('/api/dashboard/notifications'), { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(getApiUrl('/api/dashboard/messages'), { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         if (profileRes.ok && profileRes.headers.get('content-type')?.includes('application/json')) {
@@ -43,7 +44,7 @@ function DashboardHeader() {
 
     const fetchPrice = async () => {
       try {
-        const res = await fetch('/api/market/ticker/BTCUSDT');
+        const res = await fetch(getApiUrl('/api/market/ticker/BTCUSDT'));
         const contentType = res.headers.get('content-type');
         
         if (res.ok && contentType && contentType.includes('application/json')) {
