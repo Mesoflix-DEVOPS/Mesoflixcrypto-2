@@ -3,6 +3,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 // Load environment variables IMMEDIATELY
 dotenv.config();
+// Catch unexpected runtime errors to prevent the status 2 exit on Render
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL_UNHANDLED_REJECTION]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL_UNCAUGHT_EXCEPTION]', err);
+});
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -532,29 +539,17 @@ app.post('/api/staff/onboard', async (req, res) => {
 
 // GET: staff/team - Fetch current team members
 app.get('/api/staff/team/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // 1. Get user's team ID
-    // 1. Check if email already exists
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
+    if (!id) return res.status(400).json({ error: 'Staff ID is required.' });
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'This email is already registered. Please sign in instead.' });
-    }
-
+    // 1. Get user's profile to find their team_id
     const { data: user, error: userError } = await supabase
-     .from('staff_profiles')
+      .from('staff_profiles')
       .select('team_id')
       .eq('id', id)
       .single();
     
-    if (userError || !user.team_id) {
-       return res.status(404).json({ error: 'No team found for this user.' });
+    if (userError || !user || !user.team_id) {
+       return res.status(404).json({ error: 'No team assignment found for this staff member.' });
     }
 
     // 2. Get all staff in that team
@@ -1334,6 +1329,7 @@ app.post('/api/dashboard/watchlist/add', authenticateToken, async (req, res) => 
       .upsert([{ user_id: id, symbol }], { onConflict: 'user_id, symbol' });
 
     if (error) throw error;
+    res.setHeader('Content-Type', 'application/json');
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to add to watchlist' });
@@ -1377,7 +1373,8 @@ app.get('/api/market/all-symbols', async (req, res) => {
       res.status(500).json({ error: 'Failed to fetch instruments' });
     }
   } catch (err) {
-    res.status(500).json({ error: 'Market data failure' });
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ error: 'Market data failure', details: err.message });
   }
 });
 
@@ -1402,7 +1399,8 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
       res.status(404).json({ error: 'Ticker not found' });
     }
   } catch (err) {
-    res.status(500).json({ error: 'Market data failure' });
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ error: 'Market data failure', details: err.message });
   }
 });
 
