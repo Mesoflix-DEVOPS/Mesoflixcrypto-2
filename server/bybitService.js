@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 dotenv.config();
 
@@ -72,14 +74,26 @@ export async function bybitRequest(method, endpoint, params = {}, config = {}) {
     'X-Referer': FINAL_BROKER_ID  // Backup redundancy for some endpoints
   };
 
+  const proxyUrl = process.env.BYBIT_PROXY_URL;
+  const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+
+  if (proxyUrl) {
+    console.log('[BYBIT_PROXY] Routing request through static IP proxy');
+  }
+
   try {
     const startTime = Date.now();
-    const response = await fetch(url, {
+    const fetchOptions = {
       method,
       headers,
       body: method === 'POST' ? data : undefined
-    });
+    };
 
+    if (agent) {
+      fetchOptions.agent = agent;
+    }
+
+    const response = await fetch(url, fetchOptions);
     const result = await response.json();
     
     // Internal Logging for Broker Verification
