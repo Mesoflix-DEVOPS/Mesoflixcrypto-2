@@ -5,53 +5,54 @@ import DashboardHeader from './DashboardHeader';
 
 function DashboardLayout({ user, balance }) {
   return (
-    <div className="dashboard-shell">
+    <div className="layout-shell">
       <DashboardSidebar />
       
-      <main className="dashboard-main">
+      <main className="layout-body">
         <DashboardHeader user={user} balance={balance} />
         
-        <div className="dashboard-view">
+        <section className="layout-content">
           <Outlet />
-        </div>
+        </section>
       </main>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .dashboard-shell {
+        .layout-shell {
           display: flex;
           min-height: 100vh;
-          background: #020617;
+          background: #060a14;
           color: #fff;
           font-family: 'Inter', sans-serif;
+          overflow: hidden;
         }
 
-        .dashboard-main {
+        .layout-body {
           flex: 1;
           display: flex;
           flex-direction: column;
-          min-width: 0; /* Prevent flex overflow */
-          background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
+          min-width: 0;
+          background: #0a0f1d;
         }
 
-        .dashboard-view {
+        .layout-content {
           flex: 1;
-          padding: 40px;
           overflow-y: auto;
+          position: relative;
         }
 
-        /* Institutional Scrollbar */
-        .dashboard-view::-webkit-scrollbar {
-          width: 6px;
+        /* Institutional Dark Scrollbar */
+        .layout-content::-webkit-scrollbar {
+          width: 5px;
         }
-        .dashboard-view::-webkit-scrollbar-track {
-          background: transparent;
+        .layout-content::-webkit-scrollbar-track {
+          background: #0a0f1d;
         }
-        .dashboard-view::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+        .layout-content::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.05);
           border-radius: 10px;
         }
-        .dashboard-view::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
+        .layout-content::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.1);
         }
       `}} />
     </div>

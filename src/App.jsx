@@ -65,43 +65,21 @@ function App() {
         {/* --- Institutional Dashboard Branch --- */}
         <Route path="/dashboard" element={<DashboardLayout user={{ full_name: 'Mesoflix Investor' }} balance={{ totalEquity: '0.00' }} />}>
           <Route index element={<BybitDashboard />} />
-          <Route path="markets" element={<Market />} />
-          <Route path="positions" element={<BybitDashboard />} /> 
-          <Route path="history" element={<BybitDashboard />} />
+          <Route path="markets" element={<BybitDashboard />} />
+          <Route path="trade" element={<BybitDashboard />} />
+          <Route path="portfolio" element={<BybitDashboard />} /> 
+          <Route path="analytics" element={<BybitDashboard />} /> 
+          <Route path="orders" element={<BybitDashboard />} /> 
           <Route path="bots" element={<BotTrading />} />
-          <Route path="settings" element={<div>Settings Component Coming Soon</div>} />
+          <Route path="config" element={<BybitDashboard />} />
+          <Route path="settings" element={<BybitDashboard />} />
+          <Route path="help" element={<BybitDashboard />} />
         </Route>
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
-  );
-}
-
-// Temporary auth stub until auth pages are built
-function AuthStub({ type }) {
-  return (
-    <div className="inner-page text-center" style={{ padding: '120px 0' }}>
-      <div className="container" style={{ maxWidth: '480px' }}>
-        <div className="inner-hero-badge">{type === 'signup' ? 'Get Started' : 'Welcome Back'}</div>
-        <h1 className="inner-hero-title" style={{ fontSize: '48px', marginBottom: '16px' }}>
-          {type === 'signup' ? 'Create Account' : 'Sign In'}
-        </h1>
-        <p className="text text-base" style={{ marginBottom: '40px' }}>
-          {type === 'signup'
-            ? 'Full authentication coming soon. Share your email below to join the waitlist.'
-            : 'Full authentication coming soon. Contact support for early access.'}
-        </p>
-        <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <input type="email" className="support-input" placeholder="Email address" style={{ textAlign: 'center' }} />
-          {type === 'signup' && <input type="password" className="support-input" placeholder="Choose a password" style={{ textAlign: 'center' }} />}
-          <button type="submit" className="btn btn-g-blue-veronica btn-base text-base">
-            {type === 'signup' ? 'Join Waitlist' : 'Sign In'}
-          </button>
-        </form>
-      </div>
-    </div>
   );
 }
 
