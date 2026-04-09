@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+// Load environment variables IMMEDIATELY
+dotenv.config();
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
@@ -21,9 +24,6 @@ if (!process.env.BYBIT_CLIENT_ID || process.env.BYBIT_CLIENT_ID === 'oUR2aPlwXyu
 if (!process.env.BYBIT_CLIENT_SECRET || process.env.BYBIT_CLIENT_SECRET === 'JI3UB8NnO04T3w3EnzX41VogA') {
   console.warn('[CONFIG] Warning: Using default or possibly incorrect BYBIT_CLIENT_SECRET');
 }
-
-// Load environment variables
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -882,15 +882,21 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
   let jti = null;
 
   try {
+    const isJson = req.headers.accept && req.headers.accept.includes('application/json');
+
     // 1. Initial Handshake Validation
     if (bybitError) {
       console.error('[OAUTH_CALLBACK] Bybit returned error:', bybitError);
-      return res.redirect(`https://www.mesoflixlabs.com/auth/error?code=bybit_error&details=${encodeURIComponent(bybitError)}`);
+      const errUrl = `https://www.mesoflixlabs.com/auth/error?code=bybit_error&details=${encodeURIComponent(bybitError)}`;
+      if (isJson) return res.status(400).json({ success: false, error: 'bybit_error', details: bybitError, redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     if (!code || !stateJwt) {
       console.error('[OAUTH_CALLBACK] Missing requirements (code or state)');
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=missing_parameters');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=missing_parameters';
+      if (isJson) return res.status(400).json({ success: false, error: 'missing_parameters', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     // 2. Verify Signed State JWT (Security Gate)
@@ -914,19 +920,25 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (sessionFetchErr || !session) {
       console.error('[OAUTH_CALLBACK] Session lookup failed:', jti);
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=invalid_session');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=invalid_session';
+      if (isJson) return res.status(400).json({ success: false, error: 'invalid_session', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     oauthSession = session;
 
     if (session.status !== 'issued') {
       console.error('[OAUTH_CALLBACK] Session already consumed:', jti);
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_already_consumed');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=session_already_consumed';
+      if (isJson) return res.status(400).json({ success: false, error: 'session_already_consumed', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     if (new Date(session.expires_at) < new Date()) {
       console.error('[OAUTH_CALLBACK] Session expired:', jti);
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=session_expired');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=session_expired';
+      if (isJson) return res.status(400).json({ success: false, error: 'session_expired', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     // Capture Callback Success in Audit
@@ -941,7 +953,8 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
         client_id: BYBIT_CLIENT_ID,
         client_secret: BYBIT_CLIENT_SECRET,
         grant_type: 'authorization_code',
-        code: code
+        code: code,
+        redirect_uri: REDIRECT_URI
       })
     });
 
@@ -950,7 +963,9 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     if (!tokenData.access_token) {
       console.error('[OAUTH] Token exchange failed:', tokenData);
       await addAuditLog({ sessionId: session.id, userId, eventType: 'TOKEN_EXCHANGE', status: 'FAILURE', metadata: tokenData });
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=token_exchange_failed');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=token_exchange_failed';
+      if (isJson) return res.status(400).json({ success: false, error: 'token_exchange_failed', details: tokenData, redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     const accessToken = tokenData.access_token;
@@ -967,7 +982,9 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (keyData.ret_code !== 0 || !keyData.result) {
       console.error('[OAUTH] Key retrieval failed:', keyData);
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=key_retrieval_failed');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=key_retrieval_failed';
+      if (isJson) return res.status(400).json({ success: false, error: 'key_retrieval_failed', details: keyData, redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     // Defensive Extraction & Normalization
@@ -979,7 +996,9 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
     if (!apiKey || !apiSecret || !rawSubUid) {
       console.error('[OAUTH] Incomplete credentials received from Bybit:', result);
       if (oauthSession) await addAuditLog({ sessionId: oauthSession.id, userId, eventType: 'KEY_RETRIEVAL', status: 'FAILURE', metadata: result });
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=incomplete_credentials');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=incomplete_credentials';
+      if (isJson) return res.status(400).json({ success: false, error: 'incomplete_credentials', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     const subUidStr = rawSubUid.toString();
@@ -994,7 +1013,9 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (existingAccount && existingAccount.user_id !== userId) {
       console.warn(`[OAUTH] Security Alert: Bybit UID ${subUidStr} already linked to User ${existingAccount.user_id}`);
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=account_already_linked_elsewhere';
+      if (isJson) return res.status(403).json({ success: false, error: 'account_already_linked_elsewhere', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     // Encrypt and save to database
@@ -1014,18 +1035,22 @@ app.get('/api/auth/bybit/callback', async (req, res) => {
 
     if (dbError) {
       console.error('[OAUTH] DB Persistence Error:', dbError);
-      return res.redirect('https://www.mesoflixlabs.com/auth/error?code=db_storage_failed');
+      const errUrl = 'https://www.mesoflixlabs.com/auth/error?code=db_storage_failed';
+      if (isJson) return res.status(500).json({ success: false, error: 'db_storage_failed', redirect: errUrl });
+      return res.redirect(errUrl);
     }
 
     // 7. Cleanup & Audit logging
     await supabase.from('oauth_sessions').update({ status: 'consumed', consumed_at: new Date().toISOString() }).eq('id', session.id);
-    await addAuditLog({ sessionId: session.id, userId, eventType: 'DB_UPSERT', status: 'SUCCESS', metadata: { subUid } });
+    await addAuditLog({ sessionId: session.id, userId, eventType: 'DB_UPSERT', status: 'SUCCESS', metadata: { subUid: subUidStr } });
 
     console.log(`[OAUTH] Synchronization complete for userId: ${userId}`);
+    if (isJson) return res.status(200).json({ success: true, redirect: '/auth/complete?success=true' });
     res.redirect('https://www.mesoflixlabs.com/auth/complete?success=true');
 
   } catch (err) {
     console.error('[OAUTH_CALLBACK_CRITICAL]', err);
+    if (isJson) return res.status(500).json({ success: false, error: 'server_error' });
     res.redirect('https://www.mesoflixlabs.com/auth/error?code=server_error');
   }
 });
