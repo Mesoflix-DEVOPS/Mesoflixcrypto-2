@@ -24,6 +24,7 @@ import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import BybitRelay from './pages/BybitRelay';
 import DashboardLayout from './components/DashboardLayout';
+import BotTrading from './pages/BotTrading';
 
 function App() {
   return (
@@ -65,9 +66,9 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout user={{ full_name: 'Mesoflix Investor' }} balance={{ totalEquity: '0.00' }} />}>
           <Route index element={<BybitDashboard />} />
           <Route path="markets" element={<Market />} />
-          <Route path="positions" element={<BybitDashboard />} /> {/* For now, reuse same dashboard or specific position view */}
+          <Route path="positions" element={<BybitDashboard />} /> 
           <Route path="history" element={<BybitDashboard />} />
-          <Route path="bots" element={<BybitDashboard />} />
+          <Route path="bots" element={<BotTrading />} />
           <Route path="settings" element={<div>Settings Component Coming Soon</div>} />
         </Route>
 
