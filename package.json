@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "start-server": "node server/index.js",
+    "server:start": "npm run start-server",
+    "awaken": "concurrently \"npm run server:start\" \"npm run dev\"",
     "dev-full": "concurrently \"npm run start-server\" \"npm run dev\"",
     "build": "vite build",
     "preview": "vite preview"

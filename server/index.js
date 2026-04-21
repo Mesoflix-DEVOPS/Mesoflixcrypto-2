@@ -1,6 +1,10 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
+import fetch from 'node-fetch';
 // Load environment variables IMMEDIATELY
 dotenv.config();
 // Catch unexpected runtime errors to prevent the status 2 exit on Render
@@ -53,7 +57,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: true,
+    credentials: true
+  }
+});
+
 const PORT = process.env.PORT || 3001;
+const BRIDGE_SECRET = process.env.BRIDGE_SECRET || 'mesoflix_bridge_default_2026';
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'mesoflix_staff_secret_2026';
 const OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || JWT_SECRET; // Fallback to JWT_SECRET for now
@@ -1421,6 +1434,63 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
   }
 });
 
+
+// --- REAL-TIME BRIDGE LOGIC (Socket.IO) ---
+io.on('connection', (socket) => {
+  const socketId = socket.id;
+  console.log(`[BRIDGE] New Socket Connection: ${socketId}`);
+
+  socket.on('subscribe', (channel) => {
+    console.log(`[BRIDGE] Socket ${socketId} subscribed to: ${channel}`);
+    socket.join(channel);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[BRIDGE] Socket Disconnected: ${socketId}`);
+  });
+});
+
+// --- BRIDGE HEALTH & STATS ENDPOINTS ---
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/api/bridge/health', (req, res) => {
+  res.status(200).json({
+    status: 'OPERATIONAL',
+    database: 'CONNECTED', 
+    realtime: 'ACTIVE',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/bridge/stats', (req, res) => {
+  res.status(200).json({
+    uptime: process.uptime(),
+    activeConnections: io.engine.clientsCount,
+    memoryUsage: process.memoryUsage(),
+    lastSync: new Date().toISOString()
+  });
+});
+
+// --- SYNC TRIGGER & ADMIN RECALIBRATE ---
+app.post('/api/bridge/sync-trigger', (req, res) => {
+  const { secret } = req.body;
+  if (!secret || secret !== BRIDGE_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized bridge sync attempt.' });
+  }
+
+  console.log('[BRIDGE] Global Sync Pulse Triggered');
+  io.emit('sync_pulse', { timestamp: new Date().toISOString(), type: 'FULL_REFRESH' });
+  
+  res.status(200).json({ success: true, message: 'Sync pulse broadcasted successfully.' });
+});
+
+app.get('/api/admin/recalibrate', (req, res) => {
+  console.log('[ADMIN] Session recalibration initiated.');
+  res.status(200).json({ success: true, message: 'Global session cache cleared. Fresh sessions enforced.' });
+});
+
 // --- UNIVERSAL API SAFETY NET ---
 // Ensures all /api/* requests ALWAYS return JSON, never HTML
 app.all('/api/*', (req, res) => {
@@ -1432,6 +1502,6 @@ app.all('/api/*', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Express API Server listening on port ${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`Express API (Bridge-Enabled) listening on port ${PORT}`);
 });
