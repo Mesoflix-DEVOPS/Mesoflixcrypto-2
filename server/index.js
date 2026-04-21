@@ -1522,6 +1522,62 @@ app.get('/api/admin/recalibrate', (req, res) => {
   res.status(200).json({ success: true, message: 'Global session cache cleared. Fresh sessions enforced.' });
 });
 
+// POST /api/bybit/order - Execute live or demo trades
+app.post('/api/bybit/order', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.user;
+    const { symbol, side, qty, orderType, environment, leverage, price } = req.body;
+    const finalEnv = environment || 'REAL';
+
+    // 1. Fetch credentials for environment
+    const { data: account, error: accError } = await supabase
+      .from('user_broker_accounts')
+      .select('*')
+      .eq('email', email)
+      .eq('environment', finalEnv)
+      .single();
+
+    if (accError || !account) {
+      return res.status(404).json({ error: `Connection for ${finalEnv} mode not found.` });
+    }
+
+    const config = {
+      apiKey: account.bybit_api_key,
+      apiSecret: account.bybit_api_secret,
+      isTestnet: finalEnv === 'TESTNET' || finalEnv === 'DEMO',
+      isDemo: finalEnv === 'DEMO',
+      brokerId: 'Ef001038'
+    };
+
+    // 2. Preparation
+    const orderParams = {
+      category: 'linear',
+      symbol,
+      side: side === 'BUY' ? 'Buy' : 'Sell',
+      orderType: orderType || 'Market',
+      qty: qty.toString(),
+      price: orderType === 'Limit' ? price.toString() : undefined,
+      timeInForce: 'GTC',
+      isLeverage: 1
+    };
+
+    // 3. Set Leverage
+    try {
+      await bybitRequest('POST', '/v5/position/set-leverage', {
+        category: 'linear', symbol, buyLeverage: leverage.toString(), sellLeverage: leverage.toString()
+      }, config);
+    } catch (e) {}
+
+    // 4. Create Order
+    const result = await createOrder(orderParams, config);
+    if (result.retCode === 0) res.status(200).json({ success: true, data: result.result });
+    else res.status(400).json({ error: result.retMsg });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to place order', details: err.message });
+  }
+});
+
 // --- UNIVERSAL API SAFETY NET ---
 // Ensures all /api/* requests ALWAYS return JSON, never HTML
 app.all('/api/*', (req, res) => {

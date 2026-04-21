@@ -5,6 +5,7 @@ import DashboardHeader from './DashboardHeader';
 
 function DashboardLayout({ user, balance }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [tradingMode, setTradingMode] = useState('REAL'); // 'REAL' or 'DEMO'
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
@@ -24,10 +25,12 @@ function DashboardLayout({ user, balance }) {
           balance={balance} 
           onMenuClick={toggleSidebar} 
           sidebarOpen={sidebarOpen}
+          tradingMode={tradingMode}
+          setTradingMode={setTradingMode}
         />
         
         <section className="layout-content">
-          <Outlet />
+          <Outlet context={{ tradingMode, setTradingMode }} />
         </section>
       </main>
 

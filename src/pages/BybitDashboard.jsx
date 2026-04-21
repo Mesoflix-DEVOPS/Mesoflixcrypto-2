@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useOutletContext } from 'react-router-dom';
 import { 
   TrendingUp, 
   Activity, 
@@ -166,15 +166,22 @@ function CustomTradingChart({ symbol }) {
 
 function BybitDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { tradingMode } = useOutletContext();
   const paramSymbol = searchParams.get('symbol');
 
   const [activeSide, setActiveSide] = useState('BUY');
+  const [orderType, setOrderType] = useState('Market');
+  const [qty, setQty] = useState('0.1');
+  const [leverage, setLeverage] = useState('20');
+  
   const [activeSymbol, setActiveSymbol] = useState(paramSymbol || 'BTCUSDT');
   const [tickerData, setTickerData] = useState(null);
   const [priceColor, setPriceColor] = useState('');
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderStatus, setOrderStatus] = useState(null);
 
   // Sync state if URL param changes
   useEffect(() => {
@@ -190,11 +197,12 @@ function BybitDashboard() {
       setUser(parsed);
       fetchAccountData(parsed.id);
     }
-  }, []);
+  }, [tradingMode]); // Refetch when mode changes
 
   const fetchAccountData = async (userId) => {
+    setLoading(true);
     try {
-      const res = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${userId}`));
+      const res = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${userId}?environment=${tradingMode}`));
       if (res.ok) {
         const data = await res.json();
         setBalance(data.summary);
@@ -238,6 +246,43 @@ function BybitDashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handlePlaceOrder = async () => {
+    if (!user) return;
+    setOrderLoading(true);
+    setOrderStatus(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetchWithLogging(getApiUrl('/api/bybit/order'), {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          symbol: activeSymbol,
+          side: activeSide,
+          qty,
+          orderType,
+          leverage,
+          environment: tradingMode,
+          price: tickerData?.lastPrice
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOrderStatus({ success: true, msg: 'Order placed successfully!' });
+      } else {
+        setOrderStatus({ success: false, msg: data.error || 'Execution failed' });
+      }
+    } catch (err) {
+      setOrderStatus({ success: false, msg: 'Network error during execution' });
+    } finally {
+      setOrderLoading(false);
+      setTimeout(() => setOrderStatus(null), 3000);
+      fetchAccountData(user.id);
+    }
+  };
+
   const activePrice = parseFloat(tickerData?.lastPrice || 0);
 
   return (
@@ -251,18 +296,18 @@ function BybitDashboard() {
           0% { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
           100% { border-color: rgba(255, 255, 255, 0.05); background: #0a0f1d; }
         }
-        .price-up { animation: flashGreen 0.8s ease-out; color: #10b981 !important; }
-        .price-down { animation: flashRed 0.8s ease-out; color: #ef4444 !important; }
+        .price-up { color: #10b981 !important; }
+        .price-down { color: #ef4444 !important; }
         
         .dashboard-container { background: #070b14; min-height: 100vh; padding: 24px; color: #94a3b8; font-family: 'Inter', sans-serif; }
         .dashboard-main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
         .dashboard-left-col { display: flex; flex-direction: column; gap: 20px; }
 
-        /* Terminal Chart UI */
-        .main-chart-card { background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+        .panel-card { background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; overflow: hidden; }
+        .main-chart-card { min-height: 520px; display: flex; flex-direction: column; }
         .chart-header-bar { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: #0a0f1d; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
         .h-pair-info { display: flex; align-items: center; gap: 12px; }
-        .h-price { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 18px; color: #fff; }
+        .h-price { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 18px; color: #fff; transition: 0.3s; }
         .h-change { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
         .h-change.up { color: #10b981; background: rgba(16, 185, 129, 0.1); }
         .h-change.down { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
@@ -274,35 +319,44 @@ function BybitDashboard() {
 
         .chart-viewport { flex: 1; min-height: 480px; position: relative; background: #090e19; }
         
-        /* Execution Sidebar */
+        /* Execution Sidebar - Clean Fix */
         .order-sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .panel-card { background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; overflow: hidden; }
         .p-section { padding: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
         .p-title { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         
-        .side-toggle { display: grid; grid-template-columns: 1fr 1fr; background: #04080f; border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+        .side-toggle { display: grid; grid-template-columns: 1fr 1fr; background: #050914; border-radius: 12px; padding: 4px; margin-bottom: 16px; }
         .side-btn { border: none; background: transparent; color: #64748b; padding: 10px; font-size: 12px; font-weight: 800; cursor: pointer; border-radius: 8px; transition: 0.2s; }
         .side-btn.active.buy { background: #10b981; color: #000; }
         .side-btn.active.sell { background: #ef4444; color: #fff; }
 
-        .exec-form { display: flex; flex-direction: column; gap: 16px; }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .i-label { font-size: 11px; font-weight: 700; color: #475569; display: flex; justify-content: space-between; }
-        .i-wrap { background: #04080f; border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .i-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; width: 100%; outline: none; }
-        .i-unit { font-size: 11px; font-weight: 800; color: #475569; }
+        .exec-form { display: flex; flex-direction: column; gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .i-label-row { display: flex; justify-content: space-between; align-items: center; }
+        .i-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .i-sub { font-size: 10px; color: #475569; font-weight: 600; }
+        
+        .i-box { background: #060a14; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .i-box:focus-within { border-color: #10b981; background: #080d1a; }
+        .i-input { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; width: 100%; outline: none; }
+        .i-tag { font-size: 11px; font-weight: 800; color: #475569; }
 
-        .exec-btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; transition: 0.3s; margin-top: 8px; }
-        .exec-btn.buy { background: #10b981; color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15); }
-        .exec-btn.sell { background: #ef4444; color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15); }
+        .exec-btn { width: 100%; padding: 18px; border-radius: 12px; border: none; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .exec-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .exec-btn.buy { background: #10b981; color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1); }
+        .exec-btn.sell { background: #ef4444; color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1); }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { background: #04080f; border-radius: 10px; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.02); }
+        .stat-box { background: #050914; border-radius: 10px; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.03); }
         .s-val { display: block; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #cbd5e1; margin-top: 4px; }
 
-        .equity-mini-card { padding: 20px; background: linear-gradient(135deg, #0a0f1d 0%, #060a14 100%); }
+        .equity-mini-card { padding: 24px; background: #0a0f1d; }
+        .eq-row { display: flex; justify-content: space-between; align-items: flex-end; }
         .eq-label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        .eq-val { color: #fff; font-size: 24px; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+        .eq-val { color: #fff; font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+
+        .order-status-banner { padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; margin-bottom: 16px; }
+        .status-success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-fail { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 
         @media (max-width: 1200px) {
           .dashboard-main-grid { grid-template-columns: 1fr; }
@@ -316,7 +370,7 @@ function BybitDashboard() {
 
       <div className="dashboard-main-grid">
         <div className="dashboard-left-col">
-          <div className="main-chart-card">
+          <div className="panel-card main-chart-card">
             <div className="chart-header-bar">
               <div className="h-pair-info">
                 <span className="font-black text-white text-lg tracking-tighter">{activeSymbol}</span>
@@ -349,23 +403,23 @@ function BybitDashboard() {
           </div>
 
           <div className="panel-card equity-mini-card">
-             <div className="flex justify-between items-start">
+             <div className="eq-row">
                 <div>
-                   <span className="eq-label">Consolidated Institutional Equity</span>
+                   <span className="eq-label">Unified Node Equity ({tradingMode})</span>
                    <div className="eq-val">
                      {balance ? `$${parseFloat(balance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
                    </div>
                 </div>
-                <div className="flex gap-4 text-right">
+                <div className="flex gap-8 text-right">
                    <div>
                       <span className="eq-label">Available</span>
-                      <div className="text-emerald-400 font-bold font-mono">
+                      <div className="text-emerald-400 font-bold font-mono text-lg">
                         {balance ? `$${parseFloat(balance.totalAvailableBalance).toLocaleString()}` : '--'}
                       </div>
                    </div>
                    <div>
                       <span className="eq-label">Wallet</span>
-                      <div className="text-slate-400 font-bold font-mono">
+                      <div className="text-slate-400 font-bold font-mono text-lg">
                         {balance ? `$${parseFloat(balance.totalWalletBalance).toLocaleString()}` : '--'}
                       </div>
                    </div>
@@ -382,6 +436,12 @@ function BybitDashboard() {
                 Execution Terminal
               </div>
               
+              {orderStatus && (
+                <div className={`order-status-banner ${orderStatus.success ? 'status-success' : 'status-fail'}`}>
+                  {orderStatus.msg}
+                </div>
+              )}
+
               <div className="side-toggle">
                 <button 
                   className={`side-btn ${activeSide === 'BUY' ? 'active buy' : ''}`}
@@ -399,36 +459,77 @@ function BybitDashboard() {
 
               <div className="exec-form">
                 <div className="input-group">
-                   <div className="i-label">Order Mode <span>Institutional Routing</span></div>
+                   <div className="i-label-row">
+                      <span className="i-label">Order Mode</span>
+                      <span className="i-sub">Smart Routing</span>
+                   </div>
                    <div className="side-toggle" style={{ margin: 0 }}>
-                      <button className="side-btn active buy" style={{ background: '#1e293b', color: '#fff', fontSize: '10px' }}>LIMIT</button>
-                      <button className="side-btn" style={{ fontSize: '10px' }}>MARKET</button>
+                      <button 
+                        className={`side-btn ${orderType === 'Limit' ? 'active buy' : ''}`} 
+                        onClick={() => setOrderType('Limit')}
+                        style={{ fontSize: '10px' }}
+                      >
+                        LIMIT
+                      </button>
+                      <button 
+                        className={`side-btn ${orderType === 'Market' ? 'active buy' : ''}`} 
+                        onClick={() => setOrderType('Market')}
+                        style={{ fontSize: '10px' }}
+                      >
+                        MARKET
+                      </button>
                    </div>
                 </div>
 
                 <div className="input-group">
-                  <div className="i-label">Size <span>Available: {balance ? parseFloat(balance.totalAvailableBalance).toFixed(2) : '0.00'} USDT</span></div>
-                  <div className="i-wrap">
-                    <input type="text" className="i-field" defaultValue="0.1000" />
-                    <span className="i-unit">{activeSymbol.replace('USDT', '')}</span>
+                  <div className="i-label-row">
+                    <span className="i-label">Quantity</span>
+                    <span className="i-sub">Max: {balance ? (parseFloat(balance.totalAvailableBalance) / activePrice).toFixed(4) : '0'}</span>
+                  </div>
+                  <div className="i-box">
+                    <input 
+                      type="text" 
+                      className="i-input" 
+                      value={qty} 
+                      onChange={(e) => setQty(e.target.value)} 
+                    />
+                    <span className="i-tag">{activeSymbol.replace('USDT', '')}</span>
                   </div>
                 </div>
 
-                <div className="input-group">
-                  <div className="i-label">Price <span>Current Market</span></div>
-                  <div className="i-wrap">
-                    <input type="text" className="i-field" value={activePrice.toFixed(2)} readOnly />
-                    <span className="i-unit">USDT</span>
+                {orderType === 'Limit' && (
+                  <div className="input-group">
+                    <div className="i-label-row">
+                      <span className="i-label">Limit Price</span>
+                      <span className="i-sub">USDT</span>
+                    </div>
+                    <div className="i-box">
+                      <input type="text" className="i-input" defaultValue={activePrice.toFixed(2)} />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="input-group">
-                  <div className="i-label">Leverage <span>100x Isolated</span></div>
-                  <input type="range" className="range-slider-themed" min="1" max="100" defaultValue="20" />
+                  <div className="i-label-row">
+                    <span className="i-label">Leverage</span>
+                    <span className="i-sub">{leverage}x Isolated</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    className="range-slider-themed" 
+                    min="1" 
+                    max="100" 
+                    value={leverage} 
+                    onChange={(e) => setLeverage(e.target.value)}
+                  />
                 </div>
 
-                <button className={`exec-btn ${activeSide === 'BUY' ? 'buy' : 'sell'}`}>
-                   Place {activeSide === 'BUY' ? 'Long' : 'Short'} Order
+                <button 
+                  className={`exec-btn ${activeSide === 'BUY' ? 'buy' : 'sell'}`}
+                  onClick={handlePlaceOrder}
+                  disabled={orderLoading}
+                >
+                  {orderLoading ? 'Executing...' : `Place ${activeSide === 'BUY' ? 'Long' : 'Short'} Order`}
                 </button>
               </div>
             </div>
@@ -441,16 +542,8 @@ function BybitDashboard() {
                     <span className="s-val text-emerald-400">0.01 (0.00%)</span>
                  </div>
                  <div className="stat-box">
-                    <span className="m-label">Open Interest</span>
-                    <span className="s-val">842.5M</span>
-                 </div>
-                 <div className="stat-box">
                     <span className="m-label">Funding Rate</span>
                     <span className="s-val text-emerald-400">0.0100%</span>
-                 </div>
-                 <div className="stat-box">
-                    <span className="m-label">Liquidation</span>
-                    <span className="s-val text-rose-500">$1.2M (Short)</span>
                  </div>
               </div>
             </div>
@@ -459,14 +552,16 @@ function BybitDashboard() {
           <div className="panel-card p-4">
              <div className="flex items-center gap-2 mb-3">
                 <Globe size={14} className="text-blue-400" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Network Status</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Node Status</span>
              </div>
              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400">Bybit V5 Mainnet</span>
-                <span className="text-emerald-500 font-bold">CONNECTED</span>
+                <span className="text-slate-400">Environment</span>
+                <span className={tradingMode === 'REAL' ? 'text-emerald-500 font-bold' : 'text-amber-500 font-bold'}>
+                  {tradingMode}
+                </span>
              </div>
              <div className="flex justify-between items-center text-[11px] mt-2">
-                <span className="text-slate-400">Node Latency</span>
+                <span className="text-slate-400">Latency</span>
                 <span className="text-emerald-500 font-bold">~42ms</span>
              </div>
           </div>

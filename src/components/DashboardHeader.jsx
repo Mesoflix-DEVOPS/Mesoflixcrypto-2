@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Search, User, MessageSquare, X, LogOut, Settings, CreditCard, ShieldCheck, Menu } from 'lucide-react';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 
-function DashboardHeader({ onMenuClick, sidebarOpen }) {
+function DashboardHeader({ onMenuClick, sidebarOpen, tradingMode, setTradingMode }) {
   const [profile, setProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -110,6 +110,22 @@ function DashboardHeader({ onMenuClick, sidebarOpen }) {
 
       {/* META SECTION (Pills, Icons, Profile) */}
       <div className={`header-meta ${isSearchOpen ? 'hide-mobile' : ''}`}>
+        
+        {/* Mode Switcher */}
+        <div className="mode-switcher-header">
+           <button 
+             className={`ms-btn ${tradingMode === 'REAL' ? 'ms-real' : ''}`}
+             onClick={() => setTradingMode('REAL')}
+           >
+             LIVE
+           </button>
+           <button 
+             className={`ms-btn ${tradingMode === 'DEMO' ? 'ms-demo' : ''}`}
+             onClick={() => setTradingMode('DEMO')}
+           >
+             DEMO
+           </button>
+        </div>
         
         {/* Market Pills */}
         <div className="token-pills desktop-only">
@@ -227,6 +243,13 @@ function DashboardHeader({ onMenuClick, sidebarOpen }) {
         .pill-label { color: #64748b; }
         .pill-value { color: #fff; }
         .pill-value.green { color: #10b981; }
+
+        /* Mode Switcher CSS */
+        .mode-switcher-header { display: flex; background: #060a14; border-radius: 8px; padding: 4px; gap: 4px; border: 1px solid rgba(255,255,255,0.03); margin-right: 8px; }
+        .ms-btn { border: none; background: transparent; color: #475569; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: 0.2s; }
+        .ms-btn.ms-real { background: #10b981; color: #000; }
+        .ms-btn.ms-demo { background: #f59e0b; color: #000; }
+        .ms-btn:hover:not(.ms-real):not(.ms-demo) { color: #fff; background: rgba(255,255,255,0.03); }
 
         .header-actions { display: flex; align-items: center; gap: 8px; }
         .icon-btn { background: transparent; border: none; color: #64748b; padding: 10px; cursor: pointer; position: relative; display: flex; align-items: center; border-radius: 10px; transition: 0.2s; }
