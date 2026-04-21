@@ -64,11 +64,11 @@ function CustomTradingChart({ symbol }) {
       setIsInitializing(true);
       try {
         const chart = LWCharts.createChart(chartContainerRef.current, {
-          layout: { background: { color: '#030712' }, textColor: '#94a3b8', fontSize: 10, fontFamily: "'JetBrains Mono', monospace" },
+          layout: { background: { color: '#030712' }, textColor: '#94a3b8', fontSize: 11, fontFamily: "'JetBrains Mono', monospace" },
           grid: { vertLines: { color: '#111827' }, horzLines: { color: '#111827' } },
           crosshair: { mode: 0, vertLine: { color: '#10b981', width: 0.5, style: 2 }, horzLine: { color: '#10b981', width: 0.5, style: 2 } },
-          rightPriceScale: { borderColor: '#1f2937' },
-          timeScale: { borderColor: '#1f2937' },
+          rightPriceScale: { borderColor: '#1f2937', scaleMargins: { top: 0.1, bottom: 0.1 } },
+          timeScale: { borderColor: '#1f2937', barSpacing: 12 },
         });
 
         const candleSeries = chart.addCandlestickSeries({
@@ -216,34 +216,47 @@ export default function BybitDashboard() {
   const priceColor = parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400';
 
   return (
-    <div className="p-4 bg-[#02040a] min-h-screen text-slate-400 font-sans selection:bg-emerald-500/20 overflow-hidden">
+    <div className="p-4 bg-[#02040a] min-h-screen text-slate-400 font-sans selection:bg-emerald-500/20">
       <style dangerouslySetInnerHTML={{ __html: `
-        .main-scaffold { display: grid; grid-template-columns: 1fr 340px; gap: 16px; height: calc(100vh - 160px); max-height: calc(100vh - 160px); overflow: hidden; }
-        .col-left { display: flex; flex-direction: column; gap: 16px; height: 100%; min-width: 0; }
-        .col-right { width: 340px; height: 100%; flex-shrink: 0; }
+        .main-scaffold { display: grid; grid-template-columns: 1fr 340px; gap: 24px; min-height: 800px; }
+        .col-left { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+        .col-right { width: 340px; flex-shrink: 0; }
         
-        .box-panel { background: #0b111e; border: 1px solid #1f2937; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
-        .chart-section { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        @media (max-width: 1100px) {
+          .main-scaffold { grid-template-columns: 1fr; }
+          .col-right { width: 100%; order: 1; }
+          .col-left { order: 2; }
+        }
+
+        .box-panel { background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+        .chart-section { min-height: 650px; display: flex; flex-direction: column; }
         
-        .exec-tabs { display: flex; padding: 3px; background: #030712; border-radius: 6px; margin: 12px; border: 1px solid #1f2937; }
-        .tab-trigger { flex: 1; padding: 9px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.1s; }
-        .tab-buy.active { background: #10b981; color: #000; }
-        .tab-sell.active { background: #ef4444; color: #fff; }
+        .exec-tabs { display: flex; padding: 4px; background: #030712; border-radius: 8px; margin: 16px; border: 1px solid #1f2937; }
+        .tab-trigger { flex: 1; padding: 12px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.2s; }
+        .tab-buy.active { background: #10b981; color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2); }
+        .tab-sell.active { background: #ef4444; color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2); }
         
-        .exec-form { padding: 0 12px 12px 12px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
-        .input-wrap { background: #030712; border: 1px solid #1f2937; border-radius: 6px; padding: 0 12px; height: 44px; display: flex; align-items: center; }
-        .input-wrap:focus-within { border-color: #3b82f6; }
-        .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; width: 100%; outline: none; }
-        .label-text { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 5px; }
+        .exec-form { padding: 0 20px 20px 20px; display: flex; flex-direction: column; gap: 24px; flex: 1; }
+        .input-wrap { background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 0 16px; height: 50px; display: flex; align-items: center; }
+        .input-wrap:focus-within { border-color: #3b82f6; background: #050810; }
+        .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; width: 100%; outline: none; }
+        .label-text { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 6px; }
         
-        .primary-btn { width: 100%; padding: 14px; border-radius: 6px; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .primary-btn { width: 100%; padding: 18px; border-radius: 8px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-green { background: #10b981; color: #000; }
         .btn-red { background: #ef4444; color: #fff; }
-        .primary-btn:active { transform: scale(0.99); }
+        .primary-btn:active { transform: scale(0.98); }
 
-        .equity-footer { padding: 16px 24px; background: #0b111e; border: 1px solid #1f2937; border-radius: 8px; flex-shrink: 0; }
-        .chart-header { padding: 16px 20px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
-        .chart-box { flex: 1; padding: 8px; min-height: 0; }
+        .equity-footer { padding: 24px 32px; background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; }
+        .chart-header { padding: 20px 24px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+        .chart-box { flex: 1; padding: 12px; min-height: 550px; }
+
+        @media (max-width: 768px) {
+          .chart-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+          .chart-box { min-height: 450px; }
+          .equity-footer .justify-between { flex-direction: column; gap: 24px; align-items: flex-start; }
+          .equity-footer .flex-col.items-end { align-items: flex-start; border-left: none !important; padding-left: 0 !important; margin-top: 12px; }
+        }
       `}} />
 
       <MarketTerminal onSelectSymbol={handleSelectSymbol} />

@@ -137,12 +137,12 @@ function Home() {
                 <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-8">
                    <Activity className="text-emerald-500" size={24} />
                 </div>
-                <h2 className="text-5xl font-black text-white tracking-tighter mb-8 leading-tight">Institutional performance for every trader.</h2>
-                <p className="text-slate-400 text-lg mb-10 leading-relaxed">Stop trading on retail delays. MesoflixLabs provides the same sub-second order routing and deep book liquidity used by professional market makers.</p>
-                <Link to="/sign-up" className="btn btn-emerald-500 bg-emerald-500 text-black font-black px-12 py-4 rounded-xl text-sm uppercase tracking-widest hover:scale-105 transition-all">Start Trading Now</Link>
+                <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-8 leading-tight">Institutional performance for every trader.</h2>
+                <p className="text-slate-400 text-lg mb-10 leading-relaxed max-w-lg">Stop trading on retail delays. MesoflixLabs provides the same sub-second order routing and deep book liquidity used by professional market makers.</p>
+                <Link to="/sign-up" className="btn btn-emerald-500 bg-emerald-500 text-black font-black px-10 py-4 rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all inline-block text-center">Start Trading Now</Link>
              </div>
-             <div className="flex-1 bg-slate-900/20 border border-white/5 rounded-[40px] p-2 overflow-hidden shadow-2xl">
-                <div className="bg-[#0b111e] rounded-[32px] p-8">
+             <div className="flex-1 w-full bg-slate-900/20 border border-white/5 rounded-[32px] md:rounded-[40px] p-1 overflow-hidden shadow-2xl">
+                <div className="bg-[#0b111e] rounded-[28px] md:rounded-[32px] p-6 md:p-10">
                    <div className="flex justify-between items-center mb-10">
                       <h3 className="text-white font-bold text-lg">Market Performance</h3>
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full">Top Assets</span>
