@@ -107,13 +107,17 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+  if (!token) {
+    console.warn('[AUTH] Missing token in request to:', req.originalUrl);
+    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  }
 
   try {
     const verified = jwt.verify(token, JWT_SECRET);
     req.user = verified;
     next();
   } catch (err) {
+    console.error('[AUTH_FAILED] Token verification failed:', err.message, 'Secret used:', JWT_SECRET.substring(0, 4) + '...');
     res.status(401).json({ error: 'Invalid or expired token.' });
   }
 };
@@ -1114,15 +1118,27 @@ app.get('/api/bybit/dashboard/:userId', async (req, res) => {
     const finalEnv = environment || 'REAL';
 
     // 1. Resolve Linked Account
-    const { data: account, error: dbError } = await supabase
+    let { data: account, error: dbError } = await supabase
       .from('user_broker_accounts')
       .select('*')
       .eq('user_id', userId)
       .eq('environment', finalEnv)
       .single();
 
-    if (dbError || !account) {
-      return res.status(404).json({ error: 'No linked Bybit account found. Please connect your account first.' });
+    // FALLBACK: If DEMO account not found, try to use REAL account for Demo Trading
+    if ((dbError || !account) && finalEnv === 'DEMO') {
+      console.log(`[DASHBOARD] No DEMO keys found for ${userId}, falling back to REAL keys with isDemo:true`);
+      const { data: realAcc } = await supabase
+        .from('user_broker_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('environment', 'REAL')
+        .single();
+      account = realAcc;
+    }
+
+    if (!account) {
+      return res.status(404).json({ error: 'No linked Bybit account found for this mode. Please connect your REAL or DEMO account first.' });
     }
 
     // 2. Decrypt Credentials
@@ -1530,26 +1546,41 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
     const finalEnv = environment || 'REAL';
 
     // 1. Fetch credentials for environment
-    const { data: account, error: accError } = await supabase
+    let { data: account, error: accError } = await supabase
       .from('user_broker_accounts')
       .select('*')
       .eq('email', email)
       .eq('environment', finalEnv)
       .single();
 
-    if (accError || !account) {
-      return res.status(404).json({ error: `Connection for ${finalEnv} mode not found.` });
+    // FALLBACK: If DEMO account not found, try to use REAL account
+    if ((accError || !account) && finalEnv === 'DEMO') {
+       const { data: realAcc } = await supabase
+        .from('user_broker_accounts')
+        .select('*')
+        .eq('email', email)
+        .eq('environment', 'REAL')
+        .single();
+       account = realAcc;
     }
 
+    if (!account) {
+      return res.status(404).json({ error: `Connection for ${finalEnv} mode not found. Please sync your REAL keys.` });
+    }
+
+    // 2. Decrypt Credentials
+    const apiKey = encryption.decrypt(account.encrypted_api_key);
+    const apiSecret = encryption.decrypt(account.encrypted_api_secret);
+
     const config = {
-      apiKey: account.bybit_api_key,
-      apiSecret: account.bybit_api_secret,
+      apiKey,
+      apiSecret,
       isTestnet: finalEnv === 'TESTNET' || finalEnv === 'DEMO',
       isDemo: finalEnv === 'DEMO',
       brokerId: 'Ef001038'
     };
 
-    // 2. Preparation
+    // 3. Preparation
     const orderParams = {
       category: 'linear',
       symbol,

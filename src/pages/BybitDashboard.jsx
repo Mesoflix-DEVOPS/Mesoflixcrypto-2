@@ -247,11 +247,24 @@ function BybitDashboard() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!user) return;
+    if (!user) {
+      console.warn('[ORDER] No user profile found in state.');
+      return;
+    }
+    
     setOrderLoading(true);
     setOrderStatus(null);
+    
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setOrderStatus({ success: false, msg: 'Authentication token missing. Please sign in again.' });
+        setOrderLoading(false);
+        return;
+      }
+
+      console.log(`%c[ORDER_REQ] Executing ${activeSide} on ${activeSymbol} (${tradingMode})`, 'color: #f59e0b; font-weight: bold;');
+      
       const res = await fetchWithLogging(getApiUrl('/api/bybit/order'), {
         method: 'POST',
         headers: { 
@@ -268,6 +281,7 @@ function BybitDashboard() {
           price: tickerData?.lastPrice
         })
       });
+
       const data = await res.json();
       if (res.ok) {
         setOrderStatus({ success: true, msg: 'Order placed successfully!' });
@@ -275,10 +289,11 @@ function BybitDashboard() {
         setOrderStatus({ success: false, msg: data.error || 'Execution failed' });
       }
     } catch (err) {
+      console.error('[ORDER_FAIL]', err);
       setOrderStatus({ success: false, msg: 'Network error during execution' });
     } finally {
       setOrderLoading(false);
-      setTimeout(() => setOrderStatus(null), 3000);
+      setTimeout(() => setOrderStatus(null), 4000);
       fetchAccountData(user.id);
     }
   };
