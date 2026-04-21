@@ -36,7 +36,8 @@ import {
   getPositions, 
   getClosedPnL,
   getTickers,
-  getInstruments 
+  getInstruments,
+  getKlines
 } from './bybitService.js';
 import brokerService from './brokerService.js';
 import encryption from './encryption.js';
@@ -1431,6 +1432,30 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
   } catch (err) {
     res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ error: 'Market data failure', details: err.message });
+  }
+});
+
+// GET /api/market/kline/:symbol - Candlestick/OHLC Data
+app.get('/api/market/kline/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const { interval, limit } = req.query;
+    const klineRes = await getKlines({ 
+      category: 'linear', 
+      symbol, 
+      interval: interval || '15', 
+      limit: limit || '200' 
+    });
+
+    if (klineRes.retCode === 0) {
+      res.setHeader('Content-Type', 'application/json');
+      res.status(200).json(klineRes.result);
+    } else {
+      res.status(404).json({ error: 'Klines not found', details: klineRes.retMsg });
+    }
+  } catch (err) {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ error: 'Kline data failure', details: err.message });
   }
 });
 

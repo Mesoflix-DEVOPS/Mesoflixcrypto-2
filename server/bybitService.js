@@ -124,6 +124,24 @@ export async function getTickers(params = { category: 'linear' }) {
 }
 
 /**
+ * Public Kline/Candlestick Request
+ */
+export async function getKlines(params = { category: 'linear', interval: '15' }) {
+  const baseUrl = 'https://api.bybit.com';
+  const queryString = new URLSearchParams(params).toString();
+  const url = `${baseUrl}/v5/market/kline?${queryString}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.error('[BYBIT_KLINE_ERROR]', err);
+    return { retCode: -1, retMsg: err.message };
+  }
+}
+
+/**
  * Public Market Instruments Request (Get list of active symbols)
  */
 export async function getInstruments(params = { category: 'linear' }) {
@@ -187,5 +205,6 @@ export default {
   getPositions,
   getClosedPnL,
   getTickers,
-  getInstruments
+  getInstruments,
+  getKlines
 };

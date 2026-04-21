@@ -57,7 +57,7 @@ function InstitutionalMarkets() {
 
     const fetchPrices = async () => {
       const priceMap = { ...prices };
-      const pollList = filteredSymbols.slice(0, 20).map(s => s.symbol);
+      const pollList = filteredSymbols.slice(0, 50).map(s => s.symbol);
       
       await Promise.all(pollList.map(async (symbol) => {
         try {
@@ -71,7 +71,7 @@ function InstitutionalMarkets() {
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, 15000);
+    const interval = setInterval(fetchPrices, 5000);
     return () => clearInterval(interval);
   }, [filteredSymbols]);
 
