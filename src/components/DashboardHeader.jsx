@@ -287,7 +287,13 @@ function DashboardHeader({ onMenuClick, sidebarOpen }) {
           .search-container.mobile-expanded { position: absolute; left: 0; top: 0; width: 100% !important; height: 100%; background: #0a0f1d; padding: 0 16px; display: flex; align-items: center; z-index: 1001; }
           .mobile-expanded .search-box-wrapper { width: 100%; }
           .hide-mobile { opacity: 0; pointer-events: none; }
-          .popup-box { width: calc(100vw - 32px); position: fixed; top: 80px; left: 16px; transform: scale(0.95); transform-origin: top; }
+          .popup-box { 
+            width: calc(100vw - 32px); position: fixed; top: 12%; left: 16px; 
+            transform: scale(0.95); transform-origin: center; 
+          }
+          .popup-box.show { transform: scale(1); }
+          .popup-box.right-aligned { right: 16px; left: 16px; transform: scale(0.95); }
+          .popup-box.right-aligned.show { transform: scale(1); }
         }
       `}} />
     </header>

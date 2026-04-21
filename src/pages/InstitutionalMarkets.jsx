@@ -266,7 +266,7 @@ function AssetRow({ symbol, data, isStarred, onToggleStar }) {
         <span style={{ color: '#475569', fontSize: '13px' }}>${volume}</span>
       </td>
       <td style={{ textAlign: 'right' }}>
-        <Link to="/dashboard" className="btn-trade-action">
+        <Link to={`/dashboard?symbol=${symbol.symbol}`} className="btn-trade-action">
           Trade <BarChart2 size={14} />
         </Link>
       </td>

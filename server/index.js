@@ -1135,12 +1135,13 @@ app.get('/api/bybit/dashboard/:userId', async (req, res) => {
       isDemo: finalEnv === 'DEMO'
     };
 
-    // 3. Concurrent Data Aggregation
-    console.log(`[DASHBOARD] Aggregating data for User: ${userId} (${finalEnv})`);
+    // 3. Concurrent Data Aggregation (Safe Mode)
+    console.log(`[DASHBOARD] Safe Aggregation for User: ${userId} (${finalEnv})`);
+    
     const [balanceRes, positionsRes, historyRes] = await Promise.all([
-      getWalletBalance({ accountType: 'UNIFIED' }, config),
-      getPositions({ category: 'linear' }, config), // Defaulting to linear for institutional trading
-      getClosedPnL({ category: 'linear', limit: 20 }, config)
+      getWalletBalance({ accountType: 'UNIFIED' }, config).catch(e => ({ retCode: -1, result: null, error: e.message })),
+      getPositions({ category: 'linear' }, config).catch(e => ({ retCode: -1, result: null, error: e.message })),
+      getClosedPnL({ category: 'linear', limit: 20 }, config).catch(e => ({ retCode: -1, result: null, error: e.message }))
     ]);
 
     // 4. Transform & Return
@@ -1151,9 +1152,14 @@ app.get('/api/bybit/dashboard/:userId', async (req, res) => {
         username: account.bybit_username,
         environment: finalEnv
       },
-      summary: balanceRes.result?.list?.[0] || null,
-      positions: positionsRes.result?.list || [],
-      history: historyRes.result?.list || [],
+      summary: balanceRes?.result?.list?.[0] || null,
+      positions: positionsRes?.result?.list || [],
+      history: historyRes?.result?.list || [],
+      status: {
+        balance: balanceRes?.retCode === 0 ? 'OK' : 'FAIL',
+        positions: positionsRes?.retCode === 0 ? 'OK' : 'FAIL',
+        history: historyRes?.retCode === 0 ? 'OK' : 'FAIL'
+      },
       raw: {
         balance: balanceRes,
         positions: positionsRes,
@@ -1162,8 +1168,8 @@ app.get('/api/bybit/dashboard/:userId', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[DASHBOARD_ERROR]', err);
-    res.status(500).json({ error: 'Failed to aggregate dashboard data.', details: err.message });
+    console.error('[DASHBOARD_CRITICAL_FAILURE]', err);
+    res.status(500).json({ error: 'Catastrophic dashboard failure.', details: err.message });
   }
 });
 
