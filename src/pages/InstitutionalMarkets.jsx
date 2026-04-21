@@ -119,7 +119,7 @@ function InstitutionalMarkets() {
         .m-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 20px; }
         .m-search-box { position: relative; flex: 1; max-width: 480px; }
         .m-search-input { width: 100%; background: #0d121f; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 12px 18px 12px 48px; color: #fff; font-size: 14px; transition: 0.3s; }
-        .m-search-input:focus { border-color: #34d399; outline: none; background: #121826; box-shadow: 0 0 20px rgba(52, 211, 153, 0.05); }
+        .m-search-input:focus { border-color: #34d399; outline: none; background: #121826; }
         .m-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #475569; }
 
         .cat-group { display: flex; gap: 10px; }
@@ -145,7 +145,7 @@ function InstitutionalMarkets() {
         .pin-star.active { color: #fbbf24; fill: #fbbf24; }
 
         .btn-trade-action { background: #34d399; color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 800; text-decoration: none; font-size: 12px; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-trade-action:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2); }
+        .btn-trade-action:hover { transform: scale(1.05); }
 
         .empty-state-wrap { padding: 100px 40px; text-align: center; color: #475569; }
         .empty-icon-lg { margin-bottom: 20px; opacity: 0.1; }

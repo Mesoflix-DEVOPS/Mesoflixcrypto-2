@@ -1,272 +1,149 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import arrowWhiteIcon from '../assets/icons/arrow_white.svg';
-import graph1 from '../assets/images/small-graph1.png';
-import graph2 from '../assets/images/small-graph2.png';
-import graph3 from '../assets/images/small-graph3.png';
-import graph4 from '../assets/images/small-graph4.png';
-import graph5 from '../assets/images/small-graph5.png';
-
-const MOCK_ALL_COINS = [
-  { name: 'Bitcoin', ticker: 'BTC', price: '$66,290.30', change: '+1.68%', cap: '$1.3T', vol: '$48.2B', positive: true, graph: graph1, category: 'top' },
-  { name: 'Ethereum', ticker: 'ETH', price: '$3,490.30', change: '+4.25%', cap: '$419B', vol: '$21.1B', positive: true, graph: graph2, category: 'top' },
-  { name: 'Cardano', ticker: 'ADA', price: '$0.58', change: '+3.43%', cap: '$20B', vol: '$1.3B', positive: true, graph: graph3, category: 'altcoin' },
-  { name: 'Solana', ticker: 'SOL', price: '$188.20', change: '+9.21%', cap: '$83B', vol: '$7.9B', positive: true, graph: graph1, category: 'top' },
-  { name: 'Polkadot', ticker: 'DOT', price: '$9.22', change: '+7.56%', cap: '$13B', vol: '$1.8B', positive: true, graph: graph5, category: 'top' },
-  { name: 'Chainlink', ticker: 'LINK', price: '$18.86', change: '-1.34%', cap: '$11B', vol: '$920M', positive: false, graph: graph2, category: 'defi' },
-  { name: 'Uniswap', ticker: 'UNI', price: '$11.44', change: '+2.87%', cap: '$6.4B', vol: '$490M', positive: true, graph: graph3, category: 'defi' },
-];
-
-const categories = ['All', 'Top', 'DeFi', 'Altcoin'];
-
-const marketSentiment = [
-  { label: 'Bullish', pct: 67 },
-  { label: 'Neutral', pct: 18 },
-  { label: 'Bearish', pct: 15 },
-];
-
-const marketStats = [
-  { label: 'Global Market Cap', value: '$2.43T', change: '+3.4%', positive: true },
-  { label: '24h Volume', value: '$148B', change: '+12.1%', positive: true },
-  { label: 'BTC Dominance', value: '44.8%', change: '-0.6%', positive: false },
-  { label: 'Active Coins', value: '22,894', change: '+124', positive: true },
-];
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Activity, 
+  Zap, 
+  Globe, 
+  BarChart2, 
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight
+} from 'lucide-react';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function Market() {
-  const [coins, setCoins] = useState(MOCK_ALL_COINS);
+  const [topGainers, setTopGainers] = useState([]);
+  const [topLosers, setTopLosers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
-    // Initial fetch to get baseline data (caps, volumes, names)
-    const fetchPrices = async () => {
+    const fetchMovers = async () => {
       try {
-        const response = await fetch('https://api.coinlore.net/api/tickers/?start=0&limit=8');
-        if (!response.ok) throw new Error('API error');
+        const res = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
+        if (!res.ok) return;
+        const all = await res.json();
         
-        const data = await response.json();
-        const formattedCoins = data.data.map((coin, index) => ({
-          name: coin.name,
-          ticker: coin.symbol,
-          price: parseFloat(coin.price_usd),
-          displayPrice: `$${parseFloat(coin.price_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          change: `${parseFloat(coin.percent_change_24h).toFixed(2)}%`,
-          cap: `$${(parseFloat(coin.market_cap_usd) / 1e9).toFixed(1)}B`,
-          vol: `$${(parseFloat(coin.volume24) / 1e6).toFixed(1)}M`,
-          positive: parseFloat(coin.percent_change_24h) >= 0,
-          graph: [graph1, graph2, graph3, graph4, graph5][index % 5],
-          category: coin.symbol === 'BTC' || coin.symbol === 'ETH' || coin.symbol === 'SOL' ? 'top' : 'altcoin',
-          flash: null
+        // Polling tickers for a sample of symbols to find gainers/losers
+        // In a real app, the backend would provide a /movers endpoint
+        // For now, we take a balanced set and fetch their tickers
+        const sample = all.slice(0, 30);
+        const results = await Promise.all(sample.map(async (s) => {
+           const tRes = await fetch(getApiUrl(`/api/market/ticker/${s.symbol}`));
+           if (tRes.ok) return { symbol: s.symbol, ...(await tRes.json()) };
+           return null;
         }));
-        setCoins(formattedCoins);
+
+        const filtered = results.filter(r => r !== null);
+        const sorted = [...filtered].sort((a, b) => b.price24hPcnt - a.price24hPcnt);
+        
+        setTopGainers(sorted.slice(0, 5));
+        setTopLosers(sorted.reverse().slice(0, 5));
       } catch (err) {
-        // Fallback
-        setCoins(MOCK_ALL_COINS.map(c => ({...c, displayPrice: c.price, price: parseFloat(c.price.replace(/[^0-9.-]+/g,""))})));
+        console.error('Movers fetch failed', err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchPrices();
-
-    // Connect to live Binance WebSocket for real-time tick data
-    const ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setCoins(prevCoins => {
-        let updated = false;
-        const newCoins = prevCoins.map(coin => {
-          const tickerMatch = data.find(t => t.s === `${coin.ticker}USDT`);
-          if (tickerMatch) {
-            const newPrice = parseFloat(tickerMatch.c);
-            const oldPrice = coin.price;
-            
-            if (newPrice !== oldPrice && !isNaN(newPrice)) {
-              updated = true;
-              return {
-                ...coin,
-                price: newPrice,
-                displayPrice: `$${newPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: typeof newPrice === 'number' && newPrice < 1 ? 4 : 2 })}`,
-                change: `${parseFloat(tickerMatch.P).toFixed(2)}%`,
-                positive: parseFloat(tickerMatch.P) >= 0,
-                flash: newPrice > oldPrice ? 'flash-up' : 'flash-down'
-              };
-            }
-          }
-          // Clear flash after 1 tick
-          if (coin.flash) {
-            updated = true;
-            return { ...coin, flash: null };
-          }
-          return coin;
-        });
-        return updated ? newCoins : prevCoins;
-      });
-    };
-
-    return () => {
-      ws.close();
-    };
+    fetchMovers();
   }, []);
 
-  const filteredCoins = coins.filter((coin) => {
-    if (activeCategory === 'All') return true;
-    return coin.category && coin.category.toLowerCase() === activeCategory.toLowerCase();
-  });
-
-  const categories = ['All', 'Top', 'Altcoin'];
-  const filtered = coins.filter(c => activeCategory === 'All' || c.category === activeCategory.toLowerCase());
-
   return (
-    <div className="inner-page market-page">
-      <style>
-        {`
-          @keyframes flashGreen {
-            0% { background-color: rgba(56, 204, 141, 0.3); color: #fff; transform: scale(1.05); }
-            100% { background-color: transparent; transform: scale(1); }
-          }
-          @keyframes flashRed {
-            0% { background-color: rgba(255, 107, 107, 0.3); color: #fff; transform: scale(1.05); }
-            100% { background-color: transparent; transform: scale(1); }
-          }
-          .flash-up { animation: flashGreen 0.8s ease-out; border-radius: 6px; }
-          .flash-down { animation: flashRed 0.8s ease-out; border-radius: 6px; }
-          .price-cell { transition: color 0.2s ease, transform 0.2s ease; display: inline-block; padding: 4px 8px; }
-        `}
-      </style>
-      
-      {/* Hero */}
-      <section className="page-hero-inner flex items-center justify-center text-center">
-        <div className="container">
-          <div className="inner-hero-badge relative overflow-hidden">
-             Live Markets <div className="absolute top-0 left-0 w-full h-full bg-blue-500 opacity-20 animate-pulse"></div>
-          </div>
-          <h1 className="inner-hero-title">Crypto Market<br /><span className="gradient-text">At a Glance</span></h1>
-          <p className="text text-base inner-hero-desc">Real-time prices, market cap, and volume data for top cryptocurrencies — fully live feed.</p>
+    <div className="min-h-screen bg-[#02040a] p-10 text-slate-300">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-16">
+           <div className="flex items-center gap-2 mb-4">
+              <Globe className="text-emerald-500 animate-pulse" size={16} />
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Institutional Intelligence</span>
+           </div>
+           <h1 className="text-6xl font-black text-white tracking-tighter mb-6">Market Heatmap</h1>
+           <p className="text-lg text-slate-400 max-w-2xl">High-level overview of global liquidity shifts and sector performance across the Bybit derivatives ecosystem.</p>
         </div>
-      </section>
 
-      {/* Global Stats Bar */}
-      <section className="market-stats-bar">
-        <div className="container">
-          <div className="market-stats-row flex items-center justify-between overflow-x-auto gap-8 py-4">
-            {marketStats.map((s, i) => (
-              <div key={i} className="market-stat-item no-wrap">
-                <span className="market-stat-label text-gray text-base">{s.label}</span>
-                <div className="flex items-center" style={{ gap: '8px' }}>
-                  <span className="market-stat-value">{s.value}</span>
-                  <span className={`market-stat-change text-base ${s.positive ? 'text-mint' : 'text-light-red'}`}>{s.change}</span>
-                </div>
+        {/* Sentiment Gauge */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+           <div className="lg:col-span-1 bg-slate-900/40 border border-white/5 rounded-[40px] p-10 flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-8">Node Sentiment Index</span>
+              <div className="relative w-32 h-32 mb-8">
+                 <div className="absolute inset-0 border-8 border-white/5 rounded-full"></div>
+                 <div className="absolute inset-0 border-8 border-emerald-500 rounded-full" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 70%)' }}></div>
+                 <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <span className="text-3xl font-black text-white">68</span>
+                    <span className="text-[9px] font-bold text-emerald-500 uppercase">Greed</span>
+                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <p className="text-xs text-slate-500 leading-relaxed uppercase font-bold tracking-tighter">Market sentiment is currently Bullish on M15 timeframes.</p>
+           </div>
 
-      {/* Coins Table */}
-      <section className="section-padded section-dark-alt">
-        <div className="container">
-          <div className="section-header flex flex-wrap items-center justify-between gap-4">
-            <h2 className="large-title flex items-center gap-3">
-              All Assets
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-              </span>
-            </h2>
-            <div className="market-category-tabs flex overflow-x-auto">
-              {categories.map(c => (
-                <button
-                  key={c}
-                  className={`market-cat-tab text-base ${activeCategory === c ? 'active' : ''}`}
-                  onClick={() => setActiveCategory(c)}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="data-table-wrapper">
-            <div className="data-table">
-              {loading && coins.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-20">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-                  <p className="text-gray text-base">Connecting to live feed...</p>
-                </div>
-              ) : (
-                <table className="table market-table">
-                  <thead>
-                    <tr className="table-head-row">
-                      <th className="text-gray text-base text-center">#</th>
-                      <th className="text-gray text-base">Asset</th>
-                      <th className="text-gray text-base text-center">Price</th>
-                      <th className="text-gray text-base text-center">24h %</th>
-                      <th className="text-gray text-base text-center">Market Cap</th>
-                      <th className="text-gray text-base text-center no-wrap">Volume (24h)</th>
-                      <th className="text-gray text-base text-center hidden md:table-cell">Chart</th>
-                      <th className="text-gray text-base text-center">Trade</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((coin, idx) => (
-                      <tr key={coin.ticker}>
-                        <td className="text-gray text-base text-center">{idx + 1}</td>
-                        <td className="text-lg no-wrap">
-                          {coin.name} <span className="text-lavender text-base" style={{ marginLeft: '8px' }}>{coin.ticker}</span>
-                        </td>
-                        <td className="text-lg text-center"><span className={`price-CELL ${coin.flash || ''}`}>{coin.displayPrice}</span></td>
-                        <td className={`text-lg text-center ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change}</td>
-                        <td className="text-base text-center no-wrap">{coin.cap}</td>
-                        <td className="text-base text-center no-wrap">{coin.vol}</td>
-                        <td className="hidden md:table-cell">
-                          <div className="flex justify-center">
-                            <img src={coin.graph} className="graph-img" alt="chart" style={{ maxWidth: '100px' }} />
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex justify-center">
-                            <Link to="/buy-sell" className="table-link">
-                              <span className="link-text no-wrap text-base">Trade</span>
-                              <img src={arrowWhiteIcon} className="link-icon" alt="Go" />
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trending Section */}
-      <section className="section-padded">
-        <div className="container">
-          <div className="section-header text-center">
-            <h2 className="large-title">🔥 Trending Now</h2>
-            <p className="text text-base">Most watched assets in the last 24 hours</p>
-          </div>
-          <div className="trending-grid grid gap-8 mt-12">
-            {!loading && coins.slice(0, 4).map((coin, i) => (
-              <div key={i} className="trending-card">
-                <div className="trending-header flex items-center justify-between mb-4">
-                  <span className="trending-name font-bold text-lg">{coin.name}</span>
-                  <span className="text-lavender text-base">{coin.ticker}</span>
-                </div>
-                <div className="trending-price text-2xl font-bold mb-2"><span className={`price-cell ${coin.flash || ''}`}>{coin.displayPrice}</span></div>
-                <div className={`trending-change text-base font-semibold ${coin.positive ? 'text-mint' : 'text-light-red'}`}>{coin.change} (24h)</div>
-                <div className="mt-6">
-                  <img src={coin.graph} className="trending-graph w-full opacity-60" alt="chart" />
-                </div>
-                <Link to="/buy-sell" className="btn btn-g-blue-veronica text-base w-full" style={{ marginTop: '24px' }}>Trade Now</Link>
+           <div className="lg:col-span-3 bg-slate-900/20 border border-white/5 rounded-[40px] p-10">
+              <div className="flex justify-between items-center mb-10">
+                 <h3 className="text-xl font-black text-white tracking-tight">Institutional Volume Cloud</h3>
+                 <div className="flex gap-4">
+                    <span className="text-[10px] font-bold text-emerald-500 px-3 py-1 bg-emerald-500/10 rounded-full uppercase">Exchange Online</span>
+                 </div>
               </div>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-4">
+                 {['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOT', 'LINK', 'PEPE', 'BONK', 'ORDI', 'SUI', 'TIA'].map((t, idx) => (
+                   <div key={t} className="px-6 py-4 bg-white/5 border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all cursor-pointer flex flex-col items-center gap-1" style={{ fontSize: `${20 - idx}px`, opacity: `${1 - (idx * 0.05)}` }}>
+                      <span className="font-black text-white">{t}</span>
+                      <span className="text-[9px] font-mono text-slate-500">Vol: ${(Math.random() * 500).toFixed(1)}M</span>
+                   </div>
+                 ))}
+              </div>
+           </div>
         </div>
-      </section>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           {/* Top Gainers */}
+           <div className="bg-[#0b111e] border border-white/5 rounded-[40px] p-10">
+              <div className="flex items-center gap-3 mb-8">
+                 <TrendingUp className="text-emerald-500" size={20} />
+                 <h3 className="text-xl font-black text-white tracking-tight uppercase">Top Gainers (24h)</h3>
+              </div>
+              <div className="space-y-4">
+                 {topGainers.map((g, i) => (
+                   <Link key={i} to={`/dashboard?symbol=${g.symbol}`} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-transparent hover:border-emerald-500/20 transition-all">
+                      <span className="font-black text-white uppercase">{g.symbol}</span>
+                      <div className="flex items-center gap-4">
+                         <span className="font-mono text-slate-400 font-bold">${parseFloat(g.lastPrice).toLocaleString()}</span>
+                         <span className="text-emerald-500 font-black font-mono">+({(parseFloat(g.price24hPcnt) * 100).toFixed(2)}%)</span>
+                         <ArrowUpRight className="text-emerald-500" size={16} />
+                      </div>
+                   </Link>
+                 ))}
+                 {loading && <div className="p-10 text-center animate-pulse text-slate-600 font-bold uppercase tracking-widest text-xs">Scanning liquidity...</div>}
+              </div>
+           </div>
+
+           {/* Top Losers */}
+           <div className="bg-[#0b111e] border border-white/5 rounded-[40px] p-10">
+              <div className="flex items-center gap-3 mb-8">
+                 <TrendingDown className="text-rose-500" size={20} />
+                 <h3 className="text-xl font-black text-white tracking-tight uppercase">Top Losers (24h)</h3>
+              </div>
+              <div className="space-y-4">
+                 {topLosers.map((l, i) => (
+                   <Link key={i} to={`/dashboard?symbol=${l.symbol}`} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-transparent hover:border-rose-500/20 transition-all">
+                      <span className="font-black text-white uppercase">{l.symbol}</span>
+                      <div className="flex items-center gap-4">
+                         <span className="font-mono text-slate-400 font-bold">${parseFloat(l.lastPrice).toLocaleString()}</span>
+                         <span className="text-rose-500 font-black font-mono">({(parseFloat(l.price24hPcnt) * 100).toFixed(2)}%)</span>
+                         <ArrowDownRight className="text-rose-500" size={16} />
+                      </div>
+                   </Link>
+                 ))}
+                 {loading && <div className="p-10 text-center animate-pulse text-slate-600 font-bold uppercase tracking-widest text-xs">Scanning liquidity...</div>}
+              </div>
+           </div>
+        </div>
+
+        <div className="mt-16 text-center">
+           <Link to="/institutional-markets" className="inline-flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/5 rounded-2xl text-xs font-black uppercase tracking-[0.3em] text-slate-400 hover:text-emerald-500 hover:border-emerald-500/20 transition-all">
+              Launch Discovery Hub <BarChart2 size={16} />
+           </Link>
+        </div>
+      </div>
     </div>
   );
 }
