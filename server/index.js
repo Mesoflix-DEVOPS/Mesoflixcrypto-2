@@ -112,6 +112,8 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Access denied. Valid token required.' });
   }
 
+  console.log(`[AUTH_PROBE] URL: ${req.originalUrl} | Token Prefix: ${token.substring(0, 4)}...`);
+
   try {
     const verified = jwt.verify(token, JWT_SECRET);
     req.user = verified;

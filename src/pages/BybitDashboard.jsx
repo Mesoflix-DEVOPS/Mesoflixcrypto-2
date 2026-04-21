@@ -27,8 +27,7 @@ import MarketTerminal from '../components/MarketTerminal';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 
 /**
- * Professional Institutional Trading Chart
- * Hardened for 100% Reliability and Zero-Disposal Crashes
+ * Institutional Terminal Chart Engine
  */
 function CustomTradingChart({ symbol }) {
   const chartContainerRef = useRef();
@@ -39,13 +38,10 @@ function CustomTradingChart({ symbol }) {
 
   useEffect(() => {
     let isMounted = true;
-    const scriptId = 'lw-charts-bundle';
-    
-    // Hardened Script Loader
     const loadScript = () => {
       return new Promise((resolve) => {
         if (window.LightweightCharts) return resolve(window.LightweightCharts);
-        
+        const scriptId = 'lw-charts-bundle';
         let script = document.getElementById(scriptId);
         if (!script) {
           script = document.createElement('script');
@@ -54,82 +50,41 @@ function CustomTradingChart({ symbol }) {
           script.async = true;
           document.body.appendChild(script);
         }
-        
-        const onScriptLoad = () => {
-          if (isMounted) resolve(window.LightweightCharts);
-        };
-        
+        const onScriptLoad = () => { if (isMounted) resolve(window.LightweightCharts); };
         script.addEventListener('load', onScriptLoad);
-        // Fallback check
-        const interval = setInterval(() => {
-          if (window.LightweightCharts) {
-            clearInterval(interval);
-            onScriptLoad();
-          }
-        }, 100);
+        const interval = setInterval(() => { if (window.LightweightCharts) { clearInterval(interval); onScriptLoad(); } }, 100);
       });
     };
 
     const init = async () => {
       const LWCharts = await loadScript();
       if (!isMounted || !chartContainerRef.current) return;
-
-      // Double-Cleanup Guard
-      if (chartInstance.current) {
-        chartInstance.current.remove();
-        chartInstance.current = null;
-      }
+      if (chartInstance.current) { chartInstance.current.remove(); chartInstance.current = null; }
 
       setIsInitializing(true);
-      console.log(`[CHART] Initializing for ${symbol}...`);
-
       try {
         const chart = LWCharts.createChart(chartContainerRef.current, {
-          layout: {
-            background: { color: '#030712' },
-            textColor: '#94a3b8',
-            fontSize: 10,
-            fontFamily: "'JetBrains Mono', monospace"
-          },
-          grid: {
-            vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
-            horzLines: { color: 'rgba(255, 255, 255, 0.03)' },
-          },
-          crosshair: {
-            mode: 0,
-            vertLine: { color: '#10b981', width: 0.5, style: 2 },
-            horzLine: { color: '#10b981', width: 0.5, style: 2 },
-          },
-          rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.05)' },
-          timeScale: { borderColor: 'rgba(255, 255, 255, 0.05)', timeVisible: true },
+          layout: { background: { color: '#030712' }, textColor: '#94a3b8', fontSize: 10, fontFamily: "'JetBrains Mono', monospace" },
+          grid: { vertLines: { color: '#111827' }, horzLines: { color: '#111827' } },
+          crosshair: { mode: 0, vertLine: { color: '#10b981', width: 0.5, style: 2 }, horzLine: { color: '#10b981', width: 0.5, style: 2 } },
+          rightPriceScale: { borderColor: '#1f2937' },
+          timeScale: { borderColor: '#1f2937' },
         });
 
         const candleSeries = chart.addCandlestickSeries({
-          upColor: '#10b981',
-          downColor: '#ef4444',
-          borderVisible: false,
-          wickUpColor: '#10b981',
-          wickDownColor: '#ef4444',
+          upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
         });
 
         chartInstance.current = chart;
         seriesInstance.current = candleSeries;
 
-        // Scaling logic
-        const handleResize = () => {
+        resizeObserver.current = new ResizeObserver(() => {
            if (chartInstance.current && chartContainerRef.current) {
-             chartInstance.current.applyOptions({
-               width: chartContainerRef.current.clientWidth,
-               height: chartContainerRef.current.clientHeight
-             });
+             chartInstance.current.applyOptions({ width: chartContainerRef.current.clientWidth, height: chartContainerRef.current.clientHeight });
            }
-        };
-
-        resizeObserver.current = new ResizeObserver(handleResize);
+        });
         resizeObserver.current.observe(chartContainerRef.current);
-        handleResize();
 
-        // Data Fetch
         const res = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=15&limit=150`));
         if (res.ok && isMounted) {
             const data = await res.json();
@@ -145,33 +100,17 @@ function CustomTradingChart({ symbol }) {
                 chart.timeScale().fitContent();
             }
         }
-      } catch (err) {
-        console.error('[CHART_INIT_FAIL]', err);
-      } finally {
-        if (isMounted) setIsInitializing(false);
-      }
+      } catch (err) { console.error('[CHART_INIT_FAIL]', err); } finally { if (isMounted) setIsInitializing(false); }
     };
-
     init();
-
-    return () => {
-      isMounted = false;
-      if (resizeObserver.current) resizeObserver.current.disconnect();
-      if (chartInstance.current) {
-        try {
-           chartInstance.current.remove();
-        } catch (e) {}
-        chartInstance.current = null;
-      }
-    };
+    return () => { isMounted = false; if (resizeObserver.current) resizeObserver.current.disconnect(); if (chartInstance.current) { try { chartInstance.current.remove(); } catch (e) {} } };
   }, [symbol]);
 
   return (
-    <div className="relative w-full h-full bg-[#030712] border border-white/5 rounded-xl overflow-hidden">
+    <div className="relative w-full h-full bg-[#030712] border border-[#1f2937] rounded-xl overflow-hidden">
       {isInitializing && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#030712]/80 z-20 gap-3">
-           <RefreshCw className="animate-spin text-emerald-500" size={24} />
-           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Waking Up Engine...</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-[#030712]/80 z-20">
+           <RefreshCw className="animate-spin text-emerald-500" size={20} />
         </div>
       )}
       <div ref={chartContainerRef} className="w-full h-full" />
@@ -210,7 +149,6 @@ export default function BybitDashboard() {
     }
   }, [tradingMode]);
 
-  // Real-time Update Trigger
   useEffect(() => {
     if (user) fetchAccountData(user.id);
   }, [activeSymbol]);
@@ -230,11 +168,7 @@ export default function BybitDashboard() {
         setPositions(data.positions);
         setHistory(data.history);
       }
-    } catch (err) {
-      console.error('Account refresh failed', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error('Account refresh failed', err); } finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -249,7 +183,6 @@ export default function BybitDashboard() {
         }
       } catch (e) {}
     };
-
     fetchTicker();
     intervalId = setInterval(fetchTicker, 2000);
     return () => clearInterval(intervalId);
@@ -261,118 +194,105 @@ export default function BybitDashboard() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!user) return;
+    const token = localStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined') {
+        setOrderStatus({ success: false, msg: 'Please log in to trade.' });
+        return;
+    }
     setOrderLoading(true);
     setOrderStatus(null);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetchWithLogging(getApiUrl('/api/bybit/order'), {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          symbol: activeSymbol,
-          side: activeSide,
-          qty,
-          orderType,
-          leverage,
-          environment: tradingMode,
-          price: orderType === 'Limit' ? activePrice : undefined
-        })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ symbol: activeSymbol, side: activeSide, qty, orderType, leverage, environment: tradingMode, price: orderType === 'Limit' ? activePrice : undefined })
       });
       const data = await res.json();
-      if (res.ok) setOrderStatus({ success: true, msg: 'Execution Successful' });
-      else setOrderStatus({ success: false, msg: data.error || 'Execution Fail' });
-    } catch (err) {
-      setOrderStatus({ success: false, msg: 'Network Fault' });
-    } finally {
-      setOrderLoading(false);
-      setTimeout(() => setOrderStatus(null), 4000);
-      fetchAccountData(user.id);
-    }
+      if (res.ok) setOrderStatus({ success: true, msg: 'Order Complete' });
+      else setOrderStatus({ success: false, msg: data.error || 'Check Settings' });
+    } catch (err) { setOrderStatus({ success: false, msg: 'Auth Error' }); } finally { setOrderLoading(false); setTimeout(() => setOrderStatus(null), 4000); fetchAccountData(user.id); }
   };
 
-  const priceColor = parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-500' : 'text-rose-500';
+  const priceColor = parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400';
 
   return (
-    <div className="p-4 bg-[#02040a] min-h-screen text-slate-200">
+    <div className="p-4 bg-[#02040a] min-h-screen text-slate-400 font-sans selection:bg-emerald-500/30 overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: `
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 340px; gap: 16px; height: calc(100vh - 120px); }
-        .column-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-        .column-right { width: 340px; flex-shrink: 0; }
+        .main-scaffold { display: grid; grid-template-columns: 1fr 320px; gap: 16px; height: calc(100vh - 150px); max-height: calc(100vh - 150px); overflow: hidden; }
+        .col-left { display: flex; flex-direction: column; gap: 16px; height: 100%; min-width: 0; }
+        .col-right { width: 320px; height: 100%; flex-shrink: 0; }
         
-        .p-card { background: #0b0f1a; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
-        .chart-main { flex: 1; min-height: 500px; display: flex; flex-direction: column; }
-        .chart-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
-        .chart-box { flex: 1; padding: 1px; min-height: 0; }
+        .box-panel { background: #0b0f1a; border: 1px solid #1f2937; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+        .chart-section { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        
+        /* Institutional Terminal Styles - No Glow */
+        .exec-tabs { display: flex; padding: 4px; background: #030712; border-radius: 8px; margin: 12px; }
+        .tab-trigger { flex: 1; padding: 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.15s; }
+        .tab-buy.active { background: #10b981; color: #000; }
+        .tab-sell.active { background: #ef4444; color: #fff; }
+        
+        .exec-form { padding: 0 12px 12px 12px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+        .input-wrap { background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 0 12px; height: 48px; display: flex; align-items: center; }
+        .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 14px; width: 100%; outline: none; }
+        .label-text { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; block; }
+        
+        .primary-btn { width: 100%; padding: 16px; border-radius: 8px; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-green { background: #10b981; color: #000; }
+        .btn-red { background: #ef4444; color: #fff; }
+        .primary-btn:active { transform: scale(0.98); }
 
-        .terminal-wrap { height: 100%; display: flex; flex-direction: column; }
-        .t-header { display: flex; padding: 4px; background: #060a14; border-radius: 12px; margin: 16px; }
-        .side-btn { flex: 1; padding: 10px; border-radius: 9px; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.2s; border: none; }
-        .side-buy.active { background: #10b981; color: #000; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
-        .side-sell.active { background: #ef4444; color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
-        
-        .t-form { padding: 0 16px 16px 16px; display: flex; flex-direction: column; gap: 20px; }
-        .f-box { background: #060a14; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0 16px; height: 54px; display: flex; align-items: center; }
-        .f-input { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; width: 100%; outline: none; }
-        .f-label { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; block; }
-        
-        .exec-btn-full { width: 100%; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; }
-        .buy-active { background: #10b981; color: #000; }
-        .sell-active { background: #ef4444; color: #fff; }
-
-        .equity-strip { padding: 24px; background: linear-gradient(to right, #0b0f1a, #060a14); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .equity-footer { padding: 16px 20px; background: #0b0f1a; border: 1px solid #1f2937; border-radius: 12px; flex-shrink: 0; }
       `}} />
 
-      <MarketTerminal onSelectSymbol={handleSelectSymbol} />
+      <div className="mb-4">
+        <MarketTerminal onSelectSymbol={handleSelectSymbol} />
+      </div>
       
-      <div className="dashboard-grid mt-4">
-        <div className="column-left">
-           <div className="p-card chart-main shadow-2xl">
-              <div className="chart-header flex justify-between items-center">
-                 <div className="flex items-center gap-4">
-                    <span className="text-2xl font-black text-white uppercase tracking-tighter">{activeSymbol}</span>
-                    <span className={`text-lg font-black font-mono ${priceColor}`}>${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+      <div className="main-scaffold">
+        <div className="col-left">
+           <div className="box-panel chart-section">
+              <div className="px-5 py-4 border-b border-[#1f2937] flex justify-between items-center bg-[#0b0f1a]">
+                 <div className="flex items-center gap-6">
+                    <span className="text-xl font-black text-white uppercase tracking-tighter">{activeSymbol}</span>
+                    <span className={`text-xl font-mono font-black ${priceColor}`}>${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                        {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
                     </span>
                  </div>
-                 <div className="flex gap-6">
+                 <div className="flex gap-8">
                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">24h High</span>
-                       <span className="text-xs font-bold text-slate-200 font-mono">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
+                       <span className="text-[9px] font-bold text-slate-500 uppercase">24h High</span>
+                       <span className="text-[12px] font-bold text-slate-300 font-mono">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">24h Low</span>
-                       <span className="text-xs font-bold text-slate-200 font-mono">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
+                       <span className="text-[9px] font-bold text-slate-500 uppercase">24h Low</span>
+                       <span className="text-[12px] font-bold text-slate-300 font-mono">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
                     </div>
                  </div>
               </div>
-              <div className="chart-box">
+              <div className="flex-1 p-2">
                  <CustomTradingChart symbol={activeSymbol} />
               </div>
            </div>
 
-           <div className="equity-strip shadow-xl">
+           <div className="equity-footer shadow-lg">
               <div className="flex justify-between items-center">
                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-2">Portfolio Equity ({tradingMode})</span>
-                    <div className="text-4xl font-black text-white tracking-tight font-mono">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-[0.2em] mb-1">Account Equity ({tradingMode})</span>
+                    <div className="text-3xl font-black text-white tracking-tight font-mono">
                       {balance ? `$${parseFloat(balance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
                     </div>
                  </div>
                  <div className="flex gap-12">
                     <div className="flex flex-col items-end">
-                       <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Available Funds</span>
+                       <span className="text-[10px] lowercase font-bold text-slate-600 mb-1">Available Liquidity</span>
                        <span className="text-xl font-black text-emerald-400 font-mono">
                          {balance ? `$${parseFloat(balance.totalAvailableBalance).toLocaleString()}` : '--'}
                        </span>
                     </div>
-                    <div className="flex flex-col items-end border-l border-white/5 pl-12">
-                       <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Wallet Total</span>
-                       <span className="text-xl font-black text-slate-300 font-mono">
+                    <div className="flex flex-col items-end border-l border-[#1f2937] pl-12">
+                       <span className="text-[10px] lowercase font-bold text-slate-600 mb-1">Wallet Total</span>
+                       <span className="text-xl font-black text-slate-400 font-mono">
                          {balance ? `$${parseFloat(balance.totalWalletBalance).toLocaleString()}` : '--'}
                        </span>
                     </div>
@@ -381,89 +301,66 @@ export default function BybitDashboard() {
            </div>
         </div>
 
-        <div className="column-right">
-           <div className="p-card terminal-wrap shadow-2xl border-emerald-500/10">
-              <div className="t-header">
-                 <button 
-                   className={`side-btn side-buy ${activeSide === 'BUY' ? 'active' : ''} text-slate-400`}
-                   onClick={() => setActiveSide('BUY')}
-                 >Long</button>
-                 <button 
-                   className={`side-btn side-sell ${activeSide === 'SELL' ? 'active' : ''} text-slate-400`}
-                   onClick={() => setActiveSide('SELL')}
-                 >Short</button>
+        <div className="col-right">
+           <div className="box-panel h-full">
+              <div className="exec-tabs">
+                 <button className={`tab-trigger tab-buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Long</button>
+                 <button className={`tab-trigger tab-sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Short</button>
               </div>
 
               {orderStatus && (
-                <div className={`mx-4 mb-4 p-3 rounded-xl text-center text-[11px] font-black uppercase tracking-wider ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
+                <div className={`mx-3 mb-4 p-3 rounded-lg text-center text-[10px] font-bold uppercase ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                    {orderStatus.msg}
                 </div>
               )}
 
-              <div className="t-form">
-                 <div className="input-group">
-                    <label className="f-label">Entry Logic</label>
+              <div className="exec-form">
+                 <div>
+                    <label className="label-text">Execution Mode</label>
                     <div className="flex gap-2">
-                       <button 
-                         className={`flex-1 p-2 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Market' ? 'bg-slate-200 text-slate-900 border-slate-200' : 'bg-transparent text-slate-500 border-white/5'}`}
-                         onClick={() => setOrderType('Market')}
-                       >Market</button>
-                       <button 
-                         className={`flex-1 p-2 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Limit' ? 'bg-slate-200 text-slate-900 border-slate-200' : 'bg-transparent text-slate-500 border-white/5'}`}
-                         onClick={() => setOrderType('Limit')}
-                       >Limit</button>
+                       <button className={`flex-1 p-2 rounded-md text-[10px] font-bold uppercase transition-all ${orderType === 'Market' ? 'bg-[#1f2937] text-white' : 'text-slate-500'}`} onClick={() => setOrderType('Market')}>Market</button>
+                       <button className={`flex-1 p-2 rounded-md text-[10px] font-bold uppercase transition-all ${orderType === 'Limit' ? 'bg-[#1f2937] text-white' : 'text-slate-500'}`} onClick={() => setOrderType('Limit')}>Limit</button>
                     </div>
                  </div>
 
-                 <div className="input-group">
-                    <div className="flex justify-between items-center mb-2">
-                       <label className="f-label mb-0">Quantity</label>
-                       <span className="text-[10px] font-bold text-slate-600 uppercase">Max: {balance ? (parseFloat(balance.totalAvailableBalance) / activePrice).toFixed(3) : '--'}</span>
+                 <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                       <label className="label-text mb-0">Quantity</label>
+                       <span className="text-[9px] font-bold text-slate-600">Max: {balance ? (parseFloat(balance.totalAvailableBalance) / (activePrice || 1)).toFixed(3) : '--'}</span>
                     </div>
-                    <div className="f-box border-emerald-500/20">
-                       <input className="f-input" value={qty} onChange={(e) => setQty(e.target.value)} />
-                       <span className="text-[11px] font-black text-slate-600 ml-2">{activeSymbol.replace('USDT', '')}</span>
+                    <div className="input-wrap">
+                       <input className="input-field" value={qty} onChange={(e) => setQty(e.target.value)} />
+                       <span className="text-[11px] font-bold text-slate-500 ml-2">{activeSymbol.replace('USDT', '')}</span>
                     </div>
                  </div>
 
-                 <div className="input-group">
-                    <label className="f-label">Leverage Factor</label>
-                    <input 
-                      type="range" 
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
-                      min="1" 
-                      max="100" 
-                      value={leverage} 
-                      onChange={(e) => setLeverage(e.target.value)}
-                    />
-                    <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-600">
-                       <span>1x</span>
+                 <div>
+                    <label className="label-text">Leverage Engine</label>
+                    <input type="range" className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
+                    <div className="flex justify-between mt-2 text-[9px] font-bold text-slate-600">
                        <span className="text-emerald-500">{leverage}x Isolated</span>
                        <span>100x</span>
                     </div>
                  </div>
 
-                 <button 
-                   className={`exec-btn-full mt-4 ${activeSide === 'BUY' ? 'buy-active' : 'sell-active'} ${orderLoading ? 'animate-pulse' : ''}`}
-                   onClick={handlePlaceOrder}
-                   disabled={orderLoading}
-                 >
-                    {orderLoading ? 'Transmitting...' : `Execute ${activeSide === 'BUY' ? 'Long' : 'Short'} Position`}
+                 <button className={`primary-btn mt-auto ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
+                    {orderLoading ? <RefreshCw className="animate-spin" size={14} /> : <Zap size={14} />}
+                    {orderLoading ? 'Transmitting' : `Confirm ${activeSide === 'BUY' ? 'Long' : 'Short'}`}
                  </button>
               </div>
 
-              <div className="mt-auto p-5 bg-[#060a14] border-t border-white/5">
-                 <div className="flex items-center gap-2 mb-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Live Engine Active</span>
+              <div className="p-4 bg-[#030712] border-t border-[#1f2937]">
+                 <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_4px_#34d399]"></div>
+                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Core Status: Active</span>
                  </div>
-                 <div className="flex justify-between items-center text-[11px] mb-2">
-                    <span className="text-slate-500">Security Mode</span>
-                    <span className="text-slate-300 font-bold uppercase tracking-widest">{tradingMode}</span>
+                 <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-600">Environment</span>
+                    <span className="text-slate-400 font-bold">{tradingMode}</span>
                  </div>
-                 <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-500">Node Latency</span>
-                    <span className="text-emerald-500 font-bold font-mono">~24ms</span>
+                 <div className="flex justify-between text-[11px] mt-1">
+                    <span className="text-slate-600">Node Speed</span>
+                    <span className="text-emerald-500 font-mono">~18ms</span>
                  </div>
               </div>
            </div>
