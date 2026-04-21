@@ -107,9 +107,9 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-    console.warn('[AUTH] Missing token in request to:', req.originalUrl);
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  if (!token || token === 'null' || token === 'undefined') {
+    console.warn('[AUTH] Invalid token received:', token, 'for:', req.originalUrl);
+    return res.status(401).json({ error: 'Access denied. Valid token required.' });
   }
 
   try {
@@ -117,8 +117,8 @@ const authenticateToken = (req, res, next) => {
     req.user = verified;
     next();
   } catch (err) {
-    console.error('[AUTH_FAILED] Token verification failed:', err.message, 'Secret used:', JWT_SECRET.substring(0, 4) + '...');
-    res.status(401).json({ error: 'Invalid or expired token.' });
+    console.error('[AUTH_FAILED] Token verify error:', err.message, 'Secret Prefix:', JWT_SECRET.substring(0, 3));
+    res.status(401).json({ error: `Invalid or expired token: ${err.message}` });
   }
 };
 

@@ -93,7 +93,11 @@ function MarketTerminal({ onSelectSymbol }) {
         body: JSON.stringify({ symbol })
       });
 
-      if (res.ok) {
+      if (!res.ok) {
+        if (res.status === 401) {
+           console.error('[WATCHLIST] Auth failed. Check if token is valid.');
+        }
+      } else {
         if (isPinned) {
           setWatchlist(prev => prev.filter(s => s !== symbol));
         } else {
