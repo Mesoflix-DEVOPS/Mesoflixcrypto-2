@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Star, TrendingUp, Activity, BarChart2, Info, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getApiUrl } from '../config/api';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 /**
  * Institutional Markets Page for the Dashboard
@@ -22,25 +22,22 @@ function InstitutionalMarkets() {
         const token = localStorage.getItem('token');
         
         // 1. Fetch all available USDT symbols from Bybit Proxy
-        const symbolsRes = await fetch(getApiUrl('/api/market/all-symbols'));
+        const symbolsRes = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
         
-        const symbolsType = symbolsRes.headers.get('content-type');
-        if (symbolsRes.ok && symbolsType?.includes('application/json')) {
+        if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
           const data = await symbolsRes.json();
           setAllSymbols(data);
           setFilteredSymbols(data.slice(0, 50)); 
         } else {
-          console.warn('[MARKET_SYNC] Expected JSON, received:', symbolsType);
-          // Don't flip loading to false yet, wait for retry or show error
+          console.warn('[MARKET_SYNC] Symbols fetch failed or returned non-JSON content');
         }
 
         // 2. Fetch User's DB Watchlist
         if (token) {
-          const watchRes = await fetch(getApiUrl('/api/dashboard/watchlist'), {
+          const watchRes = await fetchWithLogging(getApiUrl('/api/dashboard/watchlist'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          const watchType = watchRes.headers.get('content-type');
-          if (watchRes.ok && watchType?.includes('application/json')) {
+          if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
             setWatchlist(await watchRes.json());
           }
         }
@@ -64,9 +61,8 @@ function InstitutionalMarkets() {
       
       await Promise.all(pollList.map(async (symbol) => {
         try {
-          const res = await fetch(getApiUrl(`/api/market/ticker/${symbol}`));
-          const type = res.headers.get('content-type');
-          if (res.ok && type?.includes('application/json')) {
+          const res = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
             priceMap[symbol] = await res.json();
           }
         } catch (e) {}
@@ -92,7 +88,7 @@ function InstitutionalMarkets() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const res = await fetch(getApiUrl('/api/dashboard/watchlist/add'), {
+      const res = await fetchWithLogging(getApiUrl('/api/dashboard/watchlist/add'), {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

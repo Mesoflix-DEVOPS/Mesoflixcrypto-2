@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function SignIn() {
   const [email, setEmail] = useState('');
@@ -14,11 +15,7 @@ function SignIn() {
     setError('');
 
     try {
-      const API_BASE_URL = import.meta.env.MODE === 'development' 
-        ? 'http://localhost:3001' 
-        : 'https://mesoflixcrypto-2.onrender.com';
-        
-      const response = await fetch(`${API_BASE_URL}/api/user/login`, {
+      const response = await fetchWithLogging(getApiUrl('/api/user/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -26,7 +23,7 @@ function SignIn() {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('user_token', data.token);
+        localStorage.setItem('token', data.token);
         localStorage.setItem('user_profile', JSON.stringify(data.user));
         navigate('/dashboard'); // Redirect to main trading dashboard
       } else {

@@ -1,15 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import DashboardSidebar from './DashboardSidebar';
 import DashboardHeader from './DashboardHeader';
 
 function DashboardLayout({ user, balance }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="layout-shell">
-      <DashboardSidebar />
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={closeSidebar} />
+      )}
+
+      <DashboardSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       
       <main className="layout-body">
-        <DashboardHeader user={user} balance={balance} />
+        <DashboardHeader 
+          user={user} 
+          balance={balance} 
+          onMenuClick={toggleSidebar} 
+          sidebarOpen={sidebarOpen}
+        />
         
         <section className="layout-content">
           <Outlet />
@@ -24,6 +39,16 @@ function DashboardLayout({ user, balance }) {
           color: #fff;
           font-family: 'Inter', sans-serif;
           overflow: hidden;
+          position: relative;
+        }
+
+        .sidebar-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(4px);
+          z-index: 1040;
+          display: none;
         }
 
         .layout-body {
@@ -32,6 +57,7 @@ function DashboardLayout({ user, balance }) {
           flex-direction: column;
           min-width: 0;
           background: #0a0f1d;
+          height: 100vh;
         }
 
         .layout-content {
@@ -53,6 +79,12 @@ function DashboardLayout({ user, balance }) {
         }
         .layout-content::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 1024px) {
+          .sidebar-backdrop {
+            display: block;
+          }
         }
       `}} />
     </div>

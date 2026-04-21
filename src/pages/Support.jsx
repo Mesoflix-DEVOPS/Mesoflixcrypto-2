@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 const faqs = [
+// ... (rest of faqs)
   {
     q: 'How do I create a MesoflixLabs account?',
     a: 'Click "Sign Up" on the top right corner, enter your email and password, verify your email, then complete the KYC process. You\'ll be trading within minutes.',
@@ -89,12 +91,8 @@ function Support() {
     
     setLoading(true);
 
-    const API_BASE_URL = import.meta.env.MODE === 'development' 
-    ? 'http://localhost:3001' 
-    : 'https://mesoflixcrypto-2.onrender.com';
-
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+      const response = await fetchWithLogging(getApiUrl('/api/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formState)

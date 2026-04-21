@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function BybitRelay() {
   const [searchParams] = useSearchParams();
@@ -21,8 +22,6 @@ function BybitRelay() {
       // NOTE: window.history.replaceState is REMOVED to keep token in URL for debugging/retry
       // window.history.replaceState({}, document.title, window.location.pathname);
 
-      const backendUrl = 'https://mesoflixcrypto-2.onrender.com/api/auth/bybit/callback';
-
       const timer1 = setTimeout(() => setSyncStep(1), 800);
       const timer2 = setTimeout(() => setSyncStep(2), 1800);
       
@@ -32,7 +31,7 @@ function BybitRelay() {
           const forwardQuery = new URLSearchParams(capturedParams).toString();
           
           // Use fetch instead of window.location.href to keep the user on this page on failure
-          const response = await fetch(`${backendUrl}?${forwardQuery}`, {
+          const response = await fetchWithLogging(getApiUrl(`/api/auth/bybit/callback?${forwardQuery}`), {
             method: 'GET',
             headers: {
               'Accept': 'application/json'

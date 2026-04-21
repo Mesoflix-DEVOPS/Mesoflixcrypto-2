@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function BybitConsole() {
   const [apiKey, setApiKey] = React.useState('');
@@ -40,10 +41,6 @@ function BybitConsole() {
     }
   }, []);
   
-  const API_BASE_URL = import.meta.env.MODE === 'development' 
-    ? 'http://localhost:3001' 
-    : 'https://mesoflixcrypto-2.onrender.com';
-
   useEffect(() => {
     if (userId) {
       fetchManagedAccount();
@@ -55,7 +52,7 @@ function BybitConsole() {
     
     try {
       const env = isDemo ? 'DEMO' : isTestnet ? 'TESTNET' : 'REAL';
-      const res = await fetch(`${API_BASE_URL}/api/broker/account/${userId}?environment=${env}`);
+      const res = await fetchWithLogging(getApiUrl(`/api/broker/account/${userId}?environment=${env}`));
       const data = await res.json();
       if (res.ok) {
         setManagedAccount(data);
@@ -72,7 +69,7 @@ function BybitConsole() {
     setIsOnboarding(true);
     
     // Official Broker OAuth Redirection
-    window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${userId}`;
+    window.location.href = getApiUrl(`/api/auth/bybit/authorize?userId=${userId}`);
   };
 
   const loginWithManagedAccount = () => {
@@ -123,10 +120,7 @@ function BybitConsole() {
     };
 
     try {
-      const API_BASE_URL = import.meta.env.MODE === 'development' 
-        ? 'http://localhost:3001' 
-        : 'https://mesoflixcrypto-2.onrender.com';
-      const res = await fetch(`${API_BASE_URL}/api/bybit/balance`, {
+      const res = await fetchWithLogging(getApiUrl('/api/bybit/balance'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import MarketTerminal from '../components/MarketTerminal';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function BybitDashboard() {
   const [activeSide, setActiveSide] = useState('BUY');
@@ -29,7 +30,7 @@ function BybitDashboard() {
   useEffect(() => {
     const fetchActivePrice = async () => {
       try {
-        const res = await fetch(`/api/market/ticker/${activeSymbol}`);
+        const res = await fetchWithLogging(getApiUrl(`/api/market/ticker/${activeSymbol}`));
         if (res.ok) {
           const data = await res.json();
           setActivePrice(parseFloat(data.lastPrice));

@@ -9,10 +9,11 @@ import {
   ListTodo, 
   Cpu, 
   Settings, 
-  HelpCircle 
+  HelpCircle,
+  X 
 } from 'lucide-react';
 
-function DashboardSidebar() {
+function DashboardSidebar({ isOpen, onClose }) {
   const menuItems = [
     { name: 'Home', icon: <Home size={20} />, path: '/dashboard' },
     { name: 'Markets', icon: <BarChart3 size={20} />, path: '/dashboard/markets' },
@@ -24,8 +25,14 @@ function DashboardSidebar() {
     { name: 'Settings', icon: <Settings size={20} />, path: '/dashboard/config', badge: '9' },
   ];
 
+  const handleLinkClick = () => {
+    if (window.innerWidth <= 1024) {
+      onClose();
+    }
+  };
+
   return (
-    <aside className="sidebar-container">
+    <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
          <div className="logo-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -33,6 +40,9 @@ function DashboardSidebar() {
             </svg>
          </div>
          <span className="logo-text">Mesoflix</span>
+         <button className="mobile-close-btn mobile-only" onClick={onClose}>
+           <X size={20} />
+         </button>
       </div>
 
       <nav className="sidebar-links">
@@ -40,6 +50,7 @@ function DashboardSidebar() {
           <NavLink
             key={item.name}
             to={item.path}
+            onClick={handleLinkClick}
             className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
           >
             <span className="item-icon">{item.icon}</span>
@@ -51,11 +62,11 @@ function DashboardSidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <NavLink to="/dashboard/settings" className="sidebar-item">
+        <NavLink to="/dashboard/settings" onClick={handleLinkClick} className="sidebar-item">
           <span className="item-icon"><Settings size={20} /></span>
           <span className="item-name">Settings</span>
         </NavLink>
-        <NavLink to="/dashboard/help" className="sidebar-item">
+        <NavLink to="/dashboard/help" onClick={handleLinkClick} className="sidebar-item">
           <span className="item-icon"><HelpCircle size={20} /></span>
           <span className="item-name">Help</span>
         </NavLink>
@@ -72,6 +83,8 @@ function DashboardSidebar() {
           position: sticky;
           top: 0;
           padding: 24px 0;
+          transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 1050;
         }
 
         .sidebar-logo {
@@ -81,6 +94,10 @@ function DashboardSidebar() {
           padding: 0 24px 32px;
         }
         .logo-text { color: #fff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+
+        .mobile-close-btn {
+          margin-left: auto; background: transparent; border: none; color: #64748b; cursor: pointer;
+        }
 
         .sidebar-links { flex: 1; padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
 
@@ -122,6 +139,22 @@ function DashboardSidebar() {
         }
 
         .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255, 255, 255, 0.03); margin-top: auto; }
+
+        @media (max-width: 1024px) {
+          .sidebar-container {
+            position: fixed;
+            left: -260px;
+            box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+          }
+          .sidebar-container.open {
+            left: 0;
+          }
+          .mobile-only { display: block; }
+        }
+
+        @media (min-width: 1025px) {
+          .mobile-only { display: none; }
+        }
       `}} />
     </aside>
   );

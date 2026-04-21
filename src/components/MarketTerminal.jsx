@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Star, TrendingUp, Activity, ChevronRight, X, Pin } from 'lucide-react';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 const RECOMMENDED_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
 
@@ -17,15 +18,19 @@ function MarketTerminal({ onSelectSymbol }) {
         const token = localStorage.getItem('token');
         
         // 1. Fetch available symbols for search
-        const symbolsRes = await fetch('/api/market/all-symbols');
-        if (symbolsRes.ok) setAllSymbols(await symbolsRes.json());
+        const symbolsRes = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
+        if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
+          setAllSymbols(await symbolsRes.json());
+        }
 
         // 2. Fetch User Watchlist
         if (token) {
-          const watchRes = await fetch('/api/dashboard/watchlist', {
+          const watchRes = await fetchWithLogging(getApiUrl('/api/dashboard/watchlist'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (watchRes.ok) setWatchlist(await watchRes.json());
+          if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
+            setWatchlist(await watchRes.json());
+          }
         }
       } catch (err) {
         console.error('Market init failed', err);
@@ -46,8 +51,8 @@ function MarketTerminal({ onSelectSymbol }) {
       const priceMap = { ...prices };
       await Promise.all(visibleSymbols.map(async (symbol) => {
         try {
-          const res = await fetch(`/api/market/ticker/${symbol}`);
-          if (res.ok) {
+          const res = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
             const data = await res.json();
             priceMap[symbol] = data;
           }
@@ -79,7 +84,7 @@ function MarketTerminal({ onSelectSymbol }) {
       const token = localStorage.getItem('token');
       const isPinned = watchlist.includes(symbol);
       
-      const res = await fetch('/api/dashboard/watchlist/add', {
+      const res = await fetchWithLogging(getApiUrl('/api/dashboard/watchlist/add'), {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

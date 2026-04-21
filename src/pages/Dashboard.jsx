@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function Dashboard() {
   const [searchParams] = useSearchParams();
@@ -34,18 +35,14 @@ function Dashboard() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    const API_BASE_URL = import.meta.env.MODE === 'development' 
-      ? 'http://localhost:3001' 
-      : 'https://mesoflixcrypto-2.onrender.com';
-
-    fetchDashboardData(parsedUser.id, API_BASE_URL);
+    fetchDashboardData(parsedUser.id);
   }, [searchParams, navigate]);
 
-  const fetchDashboardData = async (userId, API_BASE_URL) => {
+  const fetchDashboardData = async (userId) => {
     setLoading(true);
     try {
       // 1. Fetch Broker Account Info
-      const accountRes = await fetch(`${API_BASE_URL}/api/broker/account/${userId}`);
+      const accountRes = await fetchWithLogging(getApiUrl(`/api/broker/account/${userId}`));
       
       if (accountRes.status === 404) {
         // Normal state: user exists but no Bybit link yet
@@ -59,7 +56,7 @@ function Dashboard() {
         setBrokerAccount(accountData);
         
         // 2. Fetch Balance if connected
-        const balanceRes = await fetch(`${API_BASE_URL}/api/bybit/balance`, {
+        const balanceRes = await fetchWithLogging(getApiUrl('/api/bybit/balance'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -81,18 +78,11 @@ function Dashboard() {
 
   const handleConnectBybit = () => {
     if (!user) return;
-    const API_BASE_URL = import.meta.env.MODE === 'development' 
-      ? 'http://localhost:3001' 
-      : 'https://mesoflixcrypto-2.onrender.com';
-    window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${user.id}`;
+    window.location.href = getApiUrl(`/api/auth/bybit/authorize?userId=${user.id}`);
   };
 
   // --- ONBOARDING GATE UI ---
   if (!loading && !brokerAccount) {
-    const API_BASE_URL = import.meta.env.MODE === 'development' 
-      ? 'http://localhost:3001' 
-      : 'https://mesoflixcrypto-2.onrender.com';
-
     return (
       <div style={{ 
         minHeight: '100vh', 
@@ -132,7 +122,7 @@ function Dashboard() {
           </p>
 
           <button 
-            onClick={() => window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${user?.id}`}
+            onClick={() => window.location.href = getApiUrl(`/api/auth/bybit/authorize?userId=${user?.id}`)}
             style={{ 
               width: '100%',
               padding: '18px 24px', 

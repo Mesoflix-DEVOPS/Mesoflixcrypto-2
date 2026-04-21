@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
 function SignUp() {
   const [fullName, setFullName] = useState('');
@@ -15,11 +16,7 @@ function SignUp() {
     setError('');
 
     try {
-      const API_BASE_URL = import.meta.env.MODE === 'development' 
-        ? 'http://localhost:3001' 
-        : 'https://mesoflixcrypto-2.onrender.com';
-        
-      const response = await fetch(`${API_BASE_URL}/api/user/register`, {
+      const response = await fetchWithLogging(getApiUrl('/api/user/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fullName, email, password })
@@ -27,13 +24,13 @@ function SignUp() {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('user_token', data.token);
+        localStorage.setItem('token', data.token);
         localStorage.setItem('user_profile', JSON.stringify(data.user));
         
         // --- SEAMLESS INSTITUTIONAL REDIRECT ---
         // Instead of going to the dashboard, we go directly to Bybit to sync the broker account.
         const userId = data.user.id;
-        window.location.href = `${API_BASE_URL}/api/auth/bybit/authorize?userId=${userId}`;
+        window.location.href = getApiUrl(`/api/auth/bybit/authorize?userId=${userId}`);
       } else {
         setError(data.error || 'Registration failed.');
       }

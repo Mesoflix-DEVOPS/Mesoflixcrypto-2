@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Search, User, MessageSquare, X, LogOut, Settings, CreditCard, ShieldCheck } from 'lucide-react';
-import { getApiUrl } from '../config/api';
+import { Bell, Search, User, MessageSquare, X, LogOut, Settings, CreditCard, ShieldCheck, Menu } from 'lucide-react';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 
-function DashboardHeader() {
+function DashboardHeader({ onMenuClick, sidebarOpen }) {
   const [profile, setProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -18,9 +18,9 @@ function DashboardHeader() {
         if (!token) return;
 
         const [profileRes, notifyRes, msgRes] = await Promise.all([
-          fetch(getApiUrl('/api/dashboard/profile'), { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(getApiUrl('/api/dashboard/notifications'), { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(getApiUrl('/api/dashboard/messages'), { headers: { 'Authorization': `Bearer ${token}` } })
+          fetchWithLogging(getApiUrl('/api/dashboard/profile'), { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetchWithLogging(getApiUrl('/api/dashboard/notifications'), { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetchWithLogging(getApiUrl('/api/dashboard/messages'), { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         if (profileRes.ok && profileRes.headers.get('content-type')?.includes('application/json')) {
@@ -44,7 +44,7 @@ function DashboardHeader() {
 
     const fetchPrice = async () => {
       try {
-        const res = await fetch(getApiUrl('/api/market/ticker/BTCUSDT'));
+        const res = await fetchWithLogging(getApiUrl('/api/market/ticker/BTCUSDT'));
         const contentType = res.headers.get('content-type');
         
         if (res.ok && contentType && contentType.includes('application/json')) {
@@ -52,8 +52,6 @@ function DashboardHeader() {
           if (data.lastPrice) {
             setMarketPrice(parseFloat(data.lastPrice).toLocaleString(undefined, { minimumFractionDigits: 2 }));
           }
-        } else {
-           console.warn('[TICKER_API_ERROR] Expected JSON but received:', contentType);
         }
       } catch (err) {
         console.warn('Ticker fetch failed', err);
@@ -90,17 +88,23 @@ function DashboardHeader() {
       {/* Click-away overlay */}
       {activePopup && <div className="popup-overlay" onClick={() => setActivePopup(null)} />}
 
-      {/* SEARCH SECTION */}
-      <div className={`search-container ${isSearchOpen ? 'mobile-expanded' : ''}`}>
-        <div className="search-box-wrapper">
-          <Search size={18} className="search-icon" onClick={() => setIsSearchOpen(true)} />
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Search symbols..." 
-            onFocus={() => setIsSearchOpen(true)}
-          />
-          {isSearchOpen && <X size={18} className="search-close-icon" onClick={() => setIsSearchOpen(false)} />}
+      <div className="header-left">
+        <button className="menu-toggle-btn mobile-only" onClick={onMenuClick}>
+          <Menu size={24} />
+        </button>
+
+        {/* SEARCH SECTION */}
+        <div className={`search-container ${isSearchOpen ? 'mobile-expanded' : ''}`}>
+          <div className="search-box-wrapper">
+            <Search size={18} className="search-icon" onClick={() => setIsSearchOpen(true)} />
+            <input 
+              type="text" 
+              className="search-input" 
+              placeholder="Search symbols..." 
+              onFocus={() => setIsSearchOpen(true)}
+            />
+            {isSearchOpen && <X size={18} className="search-close-icon" onClick={() => setIsSearchOpen(false)} />}
+          </div>
         </div>
       </div>
 
@@ -199,6 +203,14 @@ function DashboardHeader() {
           background: #0a0f1d; border-bottom: 1px solid rgba(255, 255, 255, 0.03); position: sticky; top: 0; z-index: 1000;
         }
 
+        .header-left { display: flex; align-items: center; gap: 16px; }
+
+        .menu-toggle-btn {
+          background: transparent; border: none; color: #fff; cursor: pointer; display: none;
+          padding: 8px; border-radius: 8px; transition: 0.2s;
+        }
+        .menu-toggle-btn:hover { background: rgba(255, 255, 255, 0.05); }
+
         .popup-overlay { position: fixed; inset: 0; z-index: 999; }
         .popup-trigger { position: relative; display: flex; align-items: center; }
 
@@ -266,7 +278,11 @@ function DashboardHeader() {
         .nav-divider { height: 1px; background: rgba(255, 255, 255, 0.05); margin: 10px; }
 
         @media (max-width: 1024px) {
-          .header-modern { padding: 0 16px; } .desktop-only { display: none; }
+          .header-modern { padding: 0 16px; } 
+          .desktop-only { display: none; }
+          .mobile-only { display: block; }
+          .menu-toggle-btn { display: flex; }
+          
           .search-container:not(.mobile-expanded) { width: 0; overflow: hidden; opacity: 0; pointer-events: none; }
           .search-container.mobile-expanded { position: absolute; left: 0; top: 0; width: 100% !important; height: 100%; background: #0a0f1d; padding: 0 16px; display: flex; align-items: center; z-index: 1001; }
           .mobile-expanded .search-box-wrapper { width: 100%; }

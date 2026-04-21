@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getApiUrl, fetchWithLogging } from '../config/api';
 import createIcon from '../assets/icons/create_icon.svg';
 import loginIcon from '../assets/icons/login_icon.svg';
 import manageIcon from '../assets/icons/manage_icon.svg';
@@ -30,10 +31,7 @@ function Home() {
   React.useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const API_BASE_URL = import.meta.env.MODE === 'development' 
-          ? 'http://localhost:3001' 
-          : 'https://mesoflixcrypto-2.onrender.com';
-        const response = await fetch(`${API_BASE_URL}/api/market/coins?limit=8`);
+        const response = await fetchWithLogging(getApiUrl('/api/market/coins?limit=8'));
         if (!response.ok) throw new Error('Proxy response was not ok');
         const json = await response.json();
         
