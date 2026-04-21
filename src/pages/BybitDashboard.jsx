@@ -231,21 +231,22 @@ export default function BybitDashboard() {
         .box-panel { background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
         .chart-section { min-height: 650px; display: flex; flex-direction: column; }
         
-        .exec-tabs { display: flex; padding: 4px; background: #030712; border-radius: 8px; margin: 16px; border: 1px solid #1f2937; }
-        .tab-trigger { flex: 1; padding: 12px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.2s; }
+        .exec-tabs { display: flex; padding: 4px; background: #030712; border-radius: 8px; margin: 16px; border: 1px solid #1f2937; height: 44px; align-items: center; }
+        .tab-trigger { flex: 1; height: 100%; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
         .tab-buy.active { background: #10b981; color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2); }
         .tab-sell.active { background: #ef4444; color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2); }
         
-        .exec-form { padding: 0 20px 20px 20px; display: flex; flex-direction: column; gap: 24px; flex: 1; }
-        .input-wrap { background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 0 16px; height: 50px; display: flex; align-items: center; }
-        .input-wrap:focus-within { border-color: #3b82f6; background: #050810; }
-        .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; width: 100%; outline: none; }
-        .label-text { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 6px; }
+        .exec-form { padding: 0 20px 24px 20px; display: flex; flex-direction: column; gap: 20px; flex: 1; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-wrap { background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 12px 16px; min-height: 52px; display: flex; align-items: center; transition: 0.2s; }
+        .input-wrap:focus-within { border-color: #3b82f6; background: #050810; box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
+        .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; width: 100%; outline: none; }
+        .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
         
-        .primary-btn { width: 100%; padding: 18px; border-radius: 8px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .primary-btn { width: 100%; padding: 18px; border-radius: 10px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .btn-green { background: #10b981; color: #000; }
         .btn-red { background: #ef4444; color: #fff; }
-        .primary-btn:active { transform: scale(0.98); }
+        .primary-btn:active { transform: scale(0.97); }
 
         .equity-footer { padding: 24px 32px; background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; }
         .chart-header { padding: 20px 24px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
@@ -315,14 +316,14 @@ export default function BybitDashboard() {
         </div>
 
         <div className="col-right">
-           <div className="box-panel h-full shadow-lg border-emerald-500/10">
+           <div className="box-panel h-full shadow-2xl border border-emerald-500/5">
               <div className="exec-tabs">
-                 <button className={`tab-trigger tab-buy ${activeSide === 'BUY' ? 'active' : ''} text-slate-400`} onClick={() => setActiveSide('BUY')}>Long</button>
-                 <button className={`tab-trigger tab-sell ${activeSide === 'SELL' ? 'active' : ''} text-slate-400`} onClick={() => setActiveSide('SELL')}>Short</button>
+                 <button className={`tab-trigger tab-buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Long</button>
+                 <button className={`tab-trigger tab-sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Short</button>
               </div>
 
               {orderStatus && (
-                <div className={`mx-3 mb-4 p-3 rounded text-center text-[10px] font-bold uppercase tracking-wider ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                <div className={`mx-4 mb-4 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-wider ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                    {orderStatus.msg}
                 </div>
               )}
@@ -331,14 +332,14 @@ export default function BybitDashboard() {
                  <div className="input-group">
                     <label className="label-text">Order Mode</label>
                     <div className="flex gap-2">
-                       <button className={`flex-1 p-2 rounded text-[10px] font-bold uppercase border transition-all ${orderType === 'Market' ? 'bg-slate-200 text-slate-900 border-slate-200' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Market')}>Market</button>
-                       <button className={`flex-1 p-2 rounded text-[10px] font-bold uppercase border transition-all ${orderType === 'Limit' ? 'bg-slate-200 text-slate-900 border-slate-200' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Limit')}>Limit</button>
+                       <button className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Market' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Market')}>Market</button>
+                       <button className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Limit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Limit')}>Limit</button>
                     </div>
                  </div>
 
                  <div className="input-group">
-                    <div className="flex justify-between items-center mb-1.5">
-                       <label className="label-text mb-0">Quantity</label>
+                    <div className="flex justify-between items-center">
+                       <label className="label-text">Quantity</label>
                        <span className="text-[9px] font-bold text-slate-600">Max: {balance ? (parseFloat(balance.totalAvailableBalance) / (activePrice || 1)).toFixed(3) : '--'}</span>
                     </div>
                     <div className="input-wrap">
@@ -348,32 +349,39 @@ export default function BybitDashboard() {
                  </div>
 
                  <div className="input-group">
-                    <label className="label-text">Leverage Factor</label>
-                    <input type="range" className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
-                    <div className="flex justify-between mt-2 text-[9px] font-bold text-slate-600">
-                       <span className="text-emerald-500">{leverage}x Isolated</span>
-                       <span>100x</span>
+                    <div className="flex justify-between items-center">
+                       <label className="label-text">Leverage Factor</label>
+                       <span className="text-[10px] font-black text-emerald-500 font-mono">{leverage}x</span>
+                    </div>
+                    <div className="input-wrap">
+                       <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
+                    </div>
+                    <div className="flex justify-between mt-2 text-[9px] font-black text-slate-600">
+                       <span className="text-emerald-500">1x Isolated</span>
+                       <span>100x Cross</span>
                     </div>
                  </div>
 
-                 <button className={`primary-btn mt-auto ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
-                    {orderLoading ? <RefreshCw className="animate-spin" size={14} /> : <Zap size={14} />}
-                    {orderLoading ? 'Processing' : `Execute ${activeSide === 'BUY' ? 'Long' : 'Short'}`}
-                 </button>
+                 <div className="mt-8">
+                    <button className={`primary-btn ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50 pointer-events-none' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
+                       {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
+                       {orderLoading ? 'EXECUTING...' : `EXECUTE ${activeSide === 'BUY' ? 'LONG' : 'SHORT'}`}
+                    </button>
+                 </div>
               </div>
 
-              <div className="mt-auto p-4 bg-[#030712] border-t border-[#1f2937]">
-                 <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_4px_#34d399]"></div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Node Engine Active</span>
+              <div className="mt-auto p-6 bg-[#030712] border-t border-[#1f2937]">
+                 <div className="flex items-center gap-2 mb-4">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Institutional Engine Active</span>
+                 </div>
+                 <div className="flex justify-between text-[11px] mb-2">
+                    <span className="text-slate-600 uppercase font-black tracking-widest text-[9px]">Environment</span>
+                    <span className="text-white font-black">{tradingMode}</span>
                  </div>
                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-600">Environment</span>
-                    <span className="text-slate-400 font-bold">{tradingMode}</span>
-                 </div>
-                 <div className="flex justify-between text-[11px] mt-1">
-                    <span className="text-slate-600">Speed</span>
-                    <span className="text-emerald-500 font-mono">~14ms</span>
+                    <span className="text-slate-600 uppercase font-black tracking-widest text-[9px]">Latency</span>
+                    <span className="text-emerald-500 font-mono font-black">~14ms</span>
                  </div>
               </div>
            </div>

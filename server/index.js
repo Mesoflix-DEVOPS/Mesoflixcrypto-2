@@ -37,7 +37,8 @@ import {
   getClosedPnL,
   getTickers,
   getInstruments,
-  getKlines
+  getKlines,
+  bybitRequest
 } from './bybitService.js';
 import brokerService from './brokerService.js';
 import encryption from './encryption.js';
@@ -1597,19 +1598,30 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
       isLeverage: 1
     };
 
-    // 3. Set Leverage
+    // 3. Set Leverage (Defensive - if it fails, we still try to place the order)
     try {
-      await bybitRequest('POST', '/v5/position/set-leverage', {
-        category: 'linear', symbol, buyLeverage: leverage.toString(), sellLeverage: leverage.toString()
-      }, config);
-    } catch (e) {}
+      if (leverage && typeof bybitRequest === 'function') {
+        await bybitRequest('POST', '/v5/position/set-leverage', {
+          category: 'linear', 
+          symbol, 
+          buyLeverage: leverage.toString(), 
+          sellLeverage: leverage.toString()
+        }, config);
+      }
+    } catch (e) {
+      console.warn(`[ORDER_LEVERAGE_FAIL] Symbol: ${symbol} | Err: ${e.message}`);
+    }
 
     // 4. Create Order
     const result = await createOrder(orderParams, config);
-    if (result.retCode === 0) res.status(200).json({ success: true, data: result.result });
-    else res.status(400).json({ error: result.retMsg });
+    if (result.retCode === 0) {
+      res.status(200).json({ success: true, data: result.result });
+    } else {
+      res.status(400).json({ error: result.retMsg });
+    }
 
   } catch (err) {
+    console.error('[ORDER_CRITICAL_500]', err);
     res.status(500).json({ error: 'Failed to place order', details: err.message });
   }
 });
