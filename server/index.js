@@ -1543,24 +1543,27 @@ app.get('/api/admin/recalibrate', (req, res) => {
 // POST /api/bybit/order - Execute live or demo trades
 app.post('/api/bybit/order', authenticateToken, async (req, res) => {
   try {
-    const { email } = req.user;
+    const { id } = req.user;
     const { symbol, side, qty, orderType, environment, leverage, price } = req.body;
     const finalEnv = environment || 'REAL';
+
+    console.log(`[ORDER_PROBE] Entry for ID: ${id} | Env: ${finalEnv}`);
 
     // 1. Fetch credentials for environment
     let { data: account, error: accError } = await supabase
       .from('user_broker_accounts')
       .select('*')
-      .eq('email', email)
+      .eq('user_id', id)
       .eq('environment', finalEnv)
       .single();
 
     // FALLBACK: If DEMO account not found, try to use REAL account
     if ((accError || !account) && finalEnv === 'DEMO') {
+       console.log(`[ORDER] No DEMO keys found for ${id}, falling back to REAL keys with isDemo:true`);
        const { data: realAcc } = await supabase
         .from('user_broker_accounts')
         .select('*')
-        .eq('email', email)
+        .eq('user_id', id)
         .eq('environment', 'REAL')
         .single();
        account = realAcc;
