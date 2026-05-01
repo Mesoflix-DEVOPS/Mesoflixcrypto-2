@@ -28,23 +28,29 @@
         transform: translateX(-100%);
         width: 280px !important;
         box-shadow: 20px 0 50px rgba(0,0,0,0.6);
-        background: #060c1a; // Solid on mobile for better perf
+        background: #060c1a; 
 
         &.ds-open {
             transform: translateX(0);
+        }
+
+        /* FORCE EXPANDED STATE ON MOBILE */
+        .ds-label {
+            display: block !important;
+            opacity: 1 !important;
+            width: auto !important;
+        }
+        
+        .ds-section-label {
+            display: block !important;
         }
 
         .ds-collapse-btn {
             display: none !important;
         }
 
-        .ds-label {
-            display: block !important;
-            opacity: 1 !important;
-        }
-        
-        .ds-section-label {
-            display: block !important;
+        &.ds-collapsed {
+            width: 280px !important; // Override collapsed width on mobile
         }
     }
 

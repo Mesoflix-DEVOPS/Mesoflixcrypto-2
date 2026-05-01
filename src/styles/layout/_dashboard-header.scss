@@ -12,8 +12,31 @@
   -webkit-backdrop-filter: blur(24px);
   
   @media (max-width: 768px) {
-    height: 64px;
     padding: 0 16px;
+    height: 64px;
+    justify-content: space-between;
+  }
+}
+
+.menu-toggle-btn {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #fff;
+  padding: 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(16, 185, 129, 0.25);
+    transform: scale(1.05);
+  }
+
+  svg {
+    stroke: #fff !important;
   }
 }
 
@@ -381,3 +404,5 @@
     }
   }
 }
+
+.menu-toggle-btn { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #fff; padding: 8px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; &:hover { background: rgba(16, 185, 129, 0.25); transform: scale(1.05); } svg { stroke: #fff !important; } }

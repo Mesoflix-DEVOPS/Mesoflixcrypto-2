@@ -201,9 +201,11 @@
   .lev-slider { width: 100%; accent-color: #10b981; height: 6px; cursor: pointer; }
   .lev-presets {
     display: flex; gap: 6px; margin-top: 4px;
+    flex-wrap: wrap; 
     button {
       flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
-      color: #475569; font-size: 9px; font-weight: 900; padding: 6px; border-radius: 6px; cursor: pointer;
+      color: #475569; font-size: 9px; font-weight: 900; padding: 8px; border-radius: 6px; cursor: pointer;
+      min-width: 60px;
       &:hover { background: rgba(255,255,255,0.06); color: #fff; }
     }
   }
@@ -256,8 +258,11 @@
     .ov-grid { 
       grid-template-columns: 1fr; 
       grid-template-rows: auto; 
-      overflow-y: auto;
+      overflow-y: visible;
+      overflow-x: hidden;
       height: auto;
+      display: flex;
+      flex-direction: column;
     }
     
     .ov-left, .ov-right, .ov-center { 
