@@ -1652,6 +1652,7 @@ app.all('/api/*', (req, res) => {
 // --- BYBIT WEBSOCKET BRIDGE ---
 let bybitWS = null;
 const activeTopics = new Set();
+const tickerCache = new Map(); // Store latest ticker state to handle delta updates
 
 function connectBybitWS() {
   const wsUrl = 'wss://stream.bybit.com/v5/public/linear';
@@ -1685,16 +1686,23 @@ function connectBybitWS() {
       const symbol = message.topic.split('.')[1];
       const ticker = message.data;
       
-      // Broadcast to all clients joined to this symbol's room
-      io.to(symbol).emit('ticker', {
+      // Merge with cache to handle deltas
+      const lastState = tickerCache.get(symbol) || {};
+      const newState = {
         symbol,
-        lastPrice: ticker.lastPrice,
-        price24hPcnt: ticker.price24hPcnt,
-        highPrice24h: ticker.highPrice24h,
-        lowPrice24h: ticker.lowPrice24h,
-        volume24h: ticker.volume24h,
+        lastPrice: ticker.lastPrice || lastState.lastPrice,
+        price24hPcnt: ticker.price24hPcnt || lastState.price24hPcnt,
+        highPrice24h: ticker.highPrice24h || lastState.highPrice24h,
+        lowPrice24h: ticker.lowPrice24h || lastState.lowPrice24h,
+        volume24h: ticker.volume24h || lastState.volume24h,
         ts: message.ts
-      });
+      };
+      
+      // Save to cache
+      tickerCache.set(symbol, newState);
+      
+      // Broadcast to all clients joined to this symbol's room
+      io.to(symbol).emit('ticker', newState);
     }
   });
 

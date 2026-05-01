@@ -60,10 +60,16 @@ function MarketTerminal({ onSelectSymbol }) {
     });
 
     socketRef.current.on('ticker', (data) => {
-      setPrices(prev => ({
-        ...prev,
-        [data.symbol]: data
-      }));
+      setPrices(prev => {
+        const last = prev[data.symbol] || {};
+        return {
+          ...prev,
+          [data.symbol]: {
+            ...last,
+            ...data
+          }
+        };
+      });
     });
 
     return () => {
@@ -76,9 +82,9 @@ function MarketTerminal({ onSelectSymbol }) {
   const handleSearch = (e) => {
     const query = e.target.value.toUpperCase();
     setSearchQuery(query);
-    if (query.length > 1) {
+    if (query.length > 1 && Array.isArray(allSymbols)) {
       const filtered = allSymbols
-        .filter(s => s.symbol.includes(query))
+        .filter(s => s.symbol && s.symbol.includes(query))
         .slice(0, 10);
       setSuggestions(filtered);
     } else {
