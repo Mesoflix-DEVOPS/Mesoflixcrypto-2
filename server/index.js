@@ -1587,44 +1587,48 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
       brokerId: 'Ef001038'
     };
 
-    // 3. Preparation
+    // 3. Preparation & Validation
+    if (!symbol || !side || !qty) {
+      return sendResponse(res, 400, null, { message: 'Missing mandatory trade parameters (Symbol, Side, Qty)', code: 'MISS_PARAMS' });
+    }
+
     const orderParams = {
       category: 'linear',
       symbol,
       side: side === 'BUY' ? 'Buy' : 'Sell',
       orderType: orderType || 'Market',
       qty: qty.toString(),
-      price: orderType === 'Limit' ? price.toString() : undefined,
+      price: (orderType === 'Limit' && price) ? price.toString() : undefined,
       timeInForce: 'GTC',
       isLeverage: 1
     };
 
-    // 3. Set Leverage (Defensive - if it fails, we still try to place the order)
+    // 4. Set Leverage (Defensive)
     try {
       if (leverage && !isNaN(leverage)) {
-        console.log(`[ORDER_LEVERAGE] Setting leverage to ${leverage} for ${symbol}`);
-        await bybitRequest('POST', '/v5/position/set-leverage', {
-          category: 'linear', 
-          symbol, 
-          buyLeverage: leverage.toString(), 
-          sellLeverage: leverage.toString()
-        }, config);
+        const levNum = parseInt(leverage);
+        if (levNum >= 1 && levNum <= 100) {
+          console.log(`[ORDER_LEVERAGE] Setting leverage to ${levNum} for ${symbol}`);
+          await bybitRequest('POST', '/v5/position/set-leverage', {
+            category: 'linear', 
+            symbol, 
+            buyLeverage: levNum.toString(), 
+            sellLeverage: levNum.toString()
+          }, config);
+        }
       }
     } catch (e) {
       console.warn(`[ORDER_LEVERAGE_FAIL] Symbol: ${symbol} | Err: ${e.message}`);
     }
 
-    // 4. Create Order
-    if (!qty || isNaN(qty)) {
-      return sendResponse(res, 400, null, { message: 'Invalid quantity provided', code: 'INVALID_QTY' });
-    }
-
+    // 5. Create Order
     const result = await createOrder(orderParams, config);
-    if (result.retCode === 0) {
+    if (result && result.retCode === 0) {
       sendResponse(res, 200, result.result, null, { source: 'bybit' });
     } else {
+      const errMsg = result?.retMsg || 'Bybit execution failed without message';
       console.error('[BYBIT_EXECUTION_ERROR]', result);
-      sendResponse(res, 400, null, { message: result.retMsg, code: 'BYBIT_ERROR', details: result });
+      sendResponse(res, 400, null, { message: errMsg, code: 'BYBIT_ERROR', details: result });
     }
 
   } catch (err) {
@@ -1632,7 +1636,7 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
     sendResponse(res, 500, null, { 
       message: 'Critical Order Engine Failure', 
       details: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      code: 'SERVER_CRASH'
     });
   }
 });
