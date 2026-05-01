@@ -120,6 +120,7 @@ function MarketTerminal({ onSelectSymbol }) {
           <input 
             type="text" 
             placeholder="Search crypto pairs (e.g. BTC, SOL)"
+            className="search-input"
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -191,19 +192,25 @@ function MarketTerminal({ onSelectSymbol }) {
         
         .discovery-search { position: relative; max-width: 500px; }
         .search-box { 
-          display: flex; align-items: center; background: rgba(22, 27, 44, 0.6); 
-          border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 16px;
-          gap: 12px; transition: 0.3s;
+          display: flex; align-items: center; background: rgba(10, 15, 29, 0.8); 
+          border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 14px 20px;
+          gap: 14px; transition: 0.3s;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
-        .search-box:focus-within { border-color: #34d399; background: rgba(22, 27, 44, 0.8); box-shadow: 0 0 20px rgba(52, 211, 153, 0.1); }
-        .search-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 14px; }
-        .search-icon { color: #64748b; }
-        .clear-icon { color: #64748b; cursor: pointer; }
-
-        .search-suggestions { 
-          position: absolute; top: calc(100% + 8px); left: 0; width: 100%; z-index: 100;
-          background: #0a0f1d; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
-          max-height: 300px; overflow-y: auto; padding: 8px;
+        .search-box:focus-within { border-color: #10b981; background: rgba(10, 15, 29, 0.9); box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+        .search-input { width: 100%; background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 600; outline: none; }
+        .search-input::placeholder { color: #475569; font-weight: 500; }
+        
+        .market-list { 
+          display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; 
+          scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .market-list::-webkit-scrollbar { display: none; }
+        
+        .symbol-card {
+          flex-shrink: 0; padding: 12px 18px; background: rgba(15, 23, 42, 0.5); 
+          border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px;
+          cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px;
         }
         .suggestion-item { 
           padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;

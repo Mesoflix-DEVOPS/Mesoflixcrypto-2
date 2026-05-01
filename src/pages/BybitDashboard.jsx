@@ -240,8 +240,8 @@ export default function BybitDashboard() {
           .col-left { order: 2; }
         }
 
-        .box-panel { background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
-        .chart-section { min-height: 650px; display: flex; flex-direction: column; }
+        .box-panel { background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+        .chart-section { min-height: 500px; height: 500px; display: flex; flex-direction: column; }
         
         .exec-tabs { display: flex; padding: 4px; background: #030712; border-radius: 8px; margin: 16px; border: 1px solid #1f2937; height: 44px; align-items: center; }
         .tab-trigger { flex: 1; height: 100%; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
@@ -255,14 +255,14 @@ export default function BybitDashboard() {
         .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; width: 100%; outline: none; }
         .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
         
-        .primary-btn { width: 100%; padding: 18px; border-radius: 10px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .btn-green { background: #10b981; color: #000; }
-        .btn-red { background: #ef4444; color: #fff; }
+        .primary-btn { width: 100%; padding: 14px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-green { background: #10b981; color: #000; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+        .btn-red { background: #ef4444; color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
         .primary-btn:active { transform: scale(0.97); }
 
         .equity-footer { padding: 24px 32px; background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; }
         .chart-header { padding: 20px 24px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
-        .chart-box { flex: 1; padding: 12px; min-height: 550px; }
+        .chart-box { flex: 1; padding: 12px; min-height: 400px; }
 
         @media (max-width: 768px) {
           .chart-header { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -278,13 +278,13 @@ export default function BybitDashboard() {
         <div className="col-left">
            <div className="box-panel chart-section shadow-lg">
               <div className="chart-header">
-                 <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4">
                     <span className="text-xl font-black text-white uppercase tracking-tighter">{activeSymbol}</span>
                     <span className={`text-xl font-mono font-black ${priceColor}`}>${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                        {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
                     </span>
-                 </div>
+                  </div>
                  <div className="flex gap-8">
                     <div className="flex flex-col items-end">
                        <span className="text-[9px] font-bold text-slate-500 uppercase">24h High</span>
@@ -344,8 +344,8 @@ export default function BybitDashboard() {
                  <div className="input-group">
                     <label className="label-text">Order Mode</label>
                     <div className="flex gap-2">
-                       <button className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Market' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Market')}>Market</button>
-                       <button className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Limit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Limit')}>Limit</button>
+                       <button className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Market' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Market')}>Market</button>
+                       <button className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Limit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Limit')}>Limit</button>
                     </div>
                  </div>
 
