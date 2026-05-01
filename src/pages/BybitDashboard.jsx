@@ -21,6 +21,7 @@ import {
   Zap,
   Globe
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 import MarketTerminal from '../components/MarketTerminal';
 import { getApiUrl, fetchWithLogging } from '../config/api';
@@ -119,14 +120,12 @@ function CustomTradingChart({ symbol }) {
 
 export default function BybitDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { tradingMode } = useOutletContext();
+  const { tradingMode, user: contextUser, balance: contextBalance } = useOutletContext();
   const paramSymbol = searchParams.get('symbol') || 'BTCUSDT';
   
-  const [user, setUser] = useState(null);
   const [activeSymbol, setActiveSymbol] = useState(paramSymbol);
   const [activePrice, setActivePrice] = useState(0);
   const [tickerData, setTickerData] = useState(null);
-  const [balance, setBalance] = useState(null);
   const [positions, setPositions] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,58 +138,60 @@ export default function BybitDashboard() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderStatus, setOrderStatus] = useState(null);
 
+  const socketRef = useRef(null);
+
   useEffect(() => {
-    const savedUser = localStorage.getItem('user_profile');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setUser(parsed);
-      fetchAccountData(parsed.id);
+    // Connect to Institutional Socket
+    const socketUrl = getApiUrl('').replace('/api', '');
+    socketRef.current = io(socketUrl, {
+      transports: ['websocket'],
+      withCredentials: true
+    });
+
+    socketRef.current.on('connect', () => {
+      console.log('[SOCKET] Connected to Live Feed');
+      socketRef.current.emit('subscribe', activeSymbol);
+    });
+
+    socketRef.current.on('ticker', (data) => {
+      if (data.symbol === activeSymbol) {
+        setTickerData(data);
+        setActivePrice(parseFloat(data.lastPrice));
+      }
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.emit('unsubscribe', activeSymbol);
+        socketRef.current.disconnect();
+      }
+    };
+  }, [activeSymbol]);
+
+  const fetchAccountData = useCallback(async (userId) => {
+    try {
+      const response = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${userId}?environment=${tradingMode}`));
+      if (response.ok) {
+        const data = await response.json();
+        setPositions(data.positions || []);
+        setHistory(data.history || []);
+      }
+    } catch (err) { 
+      console.error('Account refresh failed', err); 
+    } finally { 
+      setLoading(false); 
     }
   }, [tradingMode]);
 
   useEffect(() => {
-    if (user) fetchAccountData(user.id);
-  }, [activeSymbol]);
+    if (contextUser) fetchAccountData(contextUser.id);
+  }, [contextUser, fetchAccountData, activeSymbol]);
 
   useEffect(() => {
     if (paramSymbol && paramSymbol !== activeSymbol) {
       setActiveSymbol(paramSymbol);
     }
-  }, [paramSymbol]);
-
-  const fetchAccountData = async (userId) => {
-    try {
-      const response = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${userId}?environment=${tradingMode}`));
-      if (response.ok) {
-        const data = await response.json();
-        setBalance(data.balance);
-        setPositions(data.positions);
-        setHistory(data.history);
-      }
-    } catch (err) { console.error('Account refresh failed', err); } finally { setLoading(false); }
-  };
-
-  useEffect(() => {
-    let intervalId;
-    const fetchTicker = async () => {
-      try {
-        const res = await fetch(getApiUrl(`/api/market/ticker/${activeSymbol}`));
-        if (res.ok) {
-          const data = await res.json();
-          setTickerData(data);
-          setActivePrice(parseFloat(data.lastPrice));
-        }
-      } catch (e) {}
-    };
-    fetchTicker();
-    intervalId = setInterval(fetchTicker, 2000);
-    return () => clearInterval(intervalId);
-  }, [activeSymbol]);
-
-  const handleSelectSymbol = (symbol) => {
-    setSearchParams({ symbol });
-    setActiveSymbol(symbol);
-  };
+  }, [paramSymbol, activeSymbol]);
 
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
@@ -293,20 +294,20 @@ export default function BybitDashboard() {
                  <div className="flex flex-col">
                     <span className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-1">Node Equity ({tradingMode})</span>
                     <div className="text-3xl font-black text-white tracking-tight font-mono">
-                      {balance ? `$${parseFloat(balance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                      {contextBalance ? `$${parseFloat(contextBalance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
                     </div>
                  </div>
                  <div className="flex gap-12">
                     <div className="flex flex-col items-end">
                        <span className="text-[10px] uppercase font-bold text-slate-600 mb-1">Available balance</span>
                        <span className="text-xl font-black text-emerald-400 font-mono">
-                         {balance ? `$${parseFloat(balance.totalAvailableBalance).toLocaleString()}` : '--'}
+                         {contextBalance ? `$${parseFloat(contextBalance.totalAvailableBalance).toLocaleString()}` : '--'}
                        </span>
                     </div>
                     <div className="flex flex-col items-end border-l border-[#1f2937] pl-12">
                        <span className="text-[10px] uppercase font-bold text-slate-600 mb-1">Wallet Total</span>
                        <span className="text-xl font-black text-slate-400 font-mono">
-                         {balance ? `$${parseFloat(balance.totalWalletBalance).toLocaleString()}` : '--'}
+                         {contextBalance ? `$${parseFloat(contextBalance.totalWalletBalance).toLocaleString()}` : '--'}
                        </span>
                     </div>
                  </div>
@@ -339,7 +340,7 @@ export default function BybitDashboard() {
                  <div className="input-group">
                     <div className="flex justify-between items-center">
                        <label className="label-text">Quantity</label>
-                       <span className="text-[9px] font-bold text-slate-600">Max: {balance ? (parseFloat(balance.totalAvailableBalance) / (activePrice || 1)).toFixed(3) : '--'}</span>
+                        <span className="text-[9px] font-bold text-slate-600">Max: {contextBalance ? (parseFloat(contextBalance.totalAvailableBalance) / (activePrice || 1)).toFixed(3) : '--'}</span>
                     </div>
                     <div className="input-wrap">
                        <input className="input-field" value={qty} onChange={(e) => setQty(e.target.value)} />

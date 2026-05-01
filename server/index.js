@@ -1303,21 +1303,21 @@ app.get('/api/dashboard/profile', authenticateToken, async (req, res) => {
       realEquity = equity?.total_equity || 0;
     }
 
-    res.status(200).json({
-      success: true,
-      profile: {
-        id: user.id,
-        fullName: user.full_name,
-        email: user.email,
-        role: 'INSTITUTIONAL',
-        joinedAt: user.created_at,
-        equity: realEquity
+    sendResponse(res, 200, {
+      id: user.id,
+      fullName: user.full_name,
+      email: user.email,
+      role: 'INSTITUTIONAL',
+      joinedAt: user.created_at,
+      balance: {
+        totalEquity: realEquity.toString(),
+        currency: 'USDT'
       }
     });
 
   } catch (error) {
     console.error('[PROFILE_ERROR]', error);
-    res.status(500).json({ error: 'Failed to fetch profile' });
+    sendResponse(res, 500, null, { message: 'Failed to fetch profile', details: error.message });
   }
 });
 
@@ -1333,9 +1333,9 @@ app.get('/api/dashboard/notifications', authenticateToken, async (req, res) => {
       .limit(10);
 
     if (error) throw error;
-    res.status(200).json(data);
+    sendResponse(res, 200, data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch notifications' });
+    sendResponse(res, 500, null, { message: 'Failed to fetch notifications', details: error.message });
   }
 });
 
@@ -1350,9 +1350,9 @@ app.post('/api/dashboard/notifications/read', authenticateToken, async (req, res
 
     const { error } = await query;
     if (error) throw error;
-    res.status(200).json({ success: true });
+    sendResponse(res, 200, { success: true });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update notification' });
+    sendResponse(res, 500, null, { message: 'Failed to update notification', details: error.message });
   }
 });
 
@@ -1366,10 +1366,9 @@ app.get('/api/dashboard/assets', async (req, res) => {
       .order('is_featured', { ascending: false });
 
     if (error) throw error;
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).json(data);
+    sendResponse(res, 200, data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch assets' });
+    sendResponse(res, 500, null, { message: 'Failed to fetch assets', details: error.message });
   }
 });
 
@@ -1383,10 +1382,9 @@ app.get('/api/dashboard/watchlist', authenticateToken, async (req, res) => {
       .eq('user_id', id);
 
     if (error) throw error;
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).json(data.map(item => item.symbol));
+    sendResponse(res, 200, data.map(item => item.symbol));
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch watchlist' });
+    sendResponse(res, 500, null, { message: 'Failed to fetch watchlist', details: error.message });
   }
 });
 
@@ -1589,7 +1587,7 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
     }
 
     if (!account) {
-      return res.status(404).json({ error: `Connection for ${finalEnv} mode not found. Please sync your REAL keys.` });
+      return sendResponse(res, 404, null, { message: `Connection for ${finalEnv} mode not found. Please sync your REAL keys.`, code: 'KEYS_NOT_FOUND' });
     }
 
     // 2. Decrypt Credentials
@@ -1633,14 +1631,14 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
     // 4. Create Order
     const result = await createOrder(orderParams, config);
     if (result.retCode === 0) {
-      res.status(200).json({ success: true, data: result.result });
+      sendResponse(res, 200, result.result, null, { source: 'bybit' });
     } else {
-      res.status(400).json({ error: result.retMsg });
+      sendResponse(res, 400, null, { message: result.retMsg, code: 'BYBIT_ERROR', details: result });
     }
 
   } catch (err) {
     console.error('[ORDER_CRITICAL_500]', err);
-    res.status(500).json({ error: 'Failed to place order', details: err.message });
+    sendResponse(res, 500, null, { message: 'Failed to place order', details: err.message });
   }
 });
 
@@ -1655,6 +1653,50 @@ app.all('/api/*', (req, res) => {
   });
 });
 
+// --- SOCKET.IO REAL-TIME ENGINE ---
+io.on('connection', (socket) => {
+  console.log(`[SOCKET] Client connected: ${socket.id}`);
+  
+  socket.on('subscribe', (symbol) => {
+    socket.join(symbol);
+    console.log(`[SOCKET] ${socket.id} subscribed to ${symbol}`);
+  });
+
+  socket.on('unsubscribe', (symbol) => {
+    socket.leave(symbol);
+    console.log(`[SOCKET] ${socket.id} unsubscribed from ${symbol}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[SOCKET] Client disconnected: ${socket.id}`);
+  });
+});
+
+// Broadcast Market Data (2s interval)
+const BROADCAST_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT'];
+async function broadcastTickers() {
+  try {
+    for (const symbol of BROADCAST_SYMBOLS) {
+      const ticker = await getTickers({ category: 'linear', symbol });
+      if (ticker && ticker.retCode === 0 && ticker.result?.list?.[0]) {
+        const data = ticker.result.list[0];
+        io.to(symbol).emit('ticker', {
+          symbol,
+          lastPrice: data.lastPrice,
+          price24hPcnt: data.price24hPcnt,
+          highPrice24h: data.highPrice24h,
+          lowPrice24h: data.lowPrice24h,
+          ts: Date.now()
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[SOCKET_BROADCAST_ERR]', err.message);
+  }
+  setTimeout(broadcastTickers, 2000);
+}
+broadcastTickers();
+
 httpServer.listen(PORT, () => {
-  console.log(`Express API (Bridge-Enabled) listening on port ${PORT}`);
+  console.log(`[SYSTEM] Institutional Engine Running on Port ${PORT}`);
 });
