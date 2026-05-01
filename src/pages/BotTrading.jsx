@@ -3,7 +3,6 @@ import {
   TrendingUp, 
   Cpu, 
   Lock,
-  Activity,
   Play,
   Square,
   Zap,

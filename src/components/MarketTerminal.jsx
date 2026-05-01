@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Star, TrendingUp, Activity, ChevronRight, X, Pin } from 'lucide-react';
+import { Search, Star, TrendingUp, ChevronRight, X, Pin } from 'lucide-react';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 
 const RECOMMENDED_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];

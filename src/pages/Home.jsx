@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Activity } from 'lucide-react';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 import createIcon from '../assets/icons/create_icon.svg';
 import loginIcon from '../assets/icons/login_icon.svg';

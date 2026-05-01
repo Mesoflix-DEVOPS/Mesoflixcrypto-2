@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
 import { 
   TrendingUp, 
-  Activity, 
   BarChart2,
   RefreshCw,
   ArrowUpRight,

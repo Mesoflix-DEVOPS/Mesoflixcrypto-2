@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
   TrendingDown, 
-  Activity, 
   Zap, 
   Globe, 
   BarChart2, 
