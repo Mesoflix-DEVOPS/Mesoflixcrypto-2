@@ -303,6 +303,7 @@ export default function BybitDashboard() {
           .chart-box { min-height: 450px; }
           .equity-footer .justify-between { flex-direction: column; gap: 24px; align-items: flex-start; }
           .equity-footer .flex-col.items-end { align-items: flex-start; border-left: none !important; padding-left: 0 !important; margin-top: 12px; }
+          .mobile-full-width { width: 100%; border-left: none !important; padding-left: 0 !important; margin-left: 0 !important; border-top: 1px solid #1f2937; padding-top: 12px; }
         }
       `}} />
 
@@ -312,25 +313,31 @@ export default function BybitDashboard() {
         <div className="col-left">
            <div className="box-panel chart-section shadow-lg">
               <div className="chart-header">
-                  <div className="flex items-center gap-5">
-                    <span className="text-xl font-black text-blue-400 uppercase tracking-tighter">{activeSymbol}</span>
-                    <span className={`text-2xl font-mono font-black ${priceColor}`}>
-                      ${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className={`text-xs font-black px-2 py-0.5 rounded ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                       {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
-                    </span>
+                  <div className="flex items-center flex-wrap gap-x-6 gap-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-black text-white uppercase tracking-tighter bg-blue-500/10 px-3 py-1 rounded-md border border-blue-500/20">{activeSymbol}</span>
+                      <span className={`text-2xl font-mono font-black ${priceColor} tracking-tight`}>
+                        ${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+                       <span className="text-xs font-black uppercase">
+                        {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
+                       </span>
+                    </div>
+
+                    <div className="flex gap-6 border-l border-slate-800/50 pl-6 ml-auto mobile-full-width">
+                      <div className="flex flex-col">
+                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">24h High</span>
+                         <span className="text-sm font-black text-emerald-400/90 font-mono tracking-tight">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex flex-col">
+                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">24h Low</span>
+                         <span className="text-sm font-black text-rose-400/90 font-mono tracking-tight">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
                   </div>
-                 <div className="flex gap-8">
-                    <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-slate-500 uppercase">24h High</span>
-                       <span className="text-xs font-bold text-emerald-400 font-mono">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-slate-500 uppercase">24h Low</span>
-                       <span className="text-xs font-bold text-rose-400 font-mono">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
-                    </div>
-                 </div>
               </div>
               <div className="chart-box">
                  <CustomTradingChart symbol={activeSymbol} />
