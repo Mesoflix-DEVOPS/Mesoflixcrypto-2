@@ -27,9 +27,13 @@ import MarketTerminal from '../components/MarketTerminal';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 import CustomTradingChart from '../components/CustomTradingChart';
 
+import { useSocket } from '../context/SocketContext';
+
 export default function BybitDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { tradingMode, user: contextUser, balance: contextBalance } = useOutletContext();
+  const { socket, subscribeToTicker, unsubscribeFromTicker, initPrivateStream } = useSocket();
+
   const paramSymbol = searchParams.get('symbol') || 'BTCUSDT';
   
   const [activeSymbol, setActiveSymbol] = useState(paramSymbol);
@@ -47,50 +51,39 @@ export default function BybitDashboard() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderStatus, setOrderStatus] = useState(null);
 
-  const socketRef = useRef(null);
-
   useEffect(() => {
-    // Connect to Institutional Socket
-    const socketUrl = getApiUrl('').replace('/api', '');
-    socketRef.current = io(socketUrl, {
-      transports: ['websocket'],
-      withCredentials: true
-    });
+    if (!socket) return;
 
-    socketRef.current.on('connect', () => {
-      console.log('[SOCKET] Connected to Live Feed');
-      socketRef.current.emit('subscribe', [activeSymbol]);
-      
-      // INIT PRIVATE STREAM
-      if (contextUser?.id) {
-        socketRef.current.emit('init_private_stream', { 
-          userId: contextUser.id, 
-          environment: tradingMode 
-        });
-      }
-    });
+    // Subscribe to public ticker
+    subscribeToTicker(activeSymbol);
+    
+    // Init private stream for this user
+    if (contextUser?.id) {
+      initPrivateStream(contextUser.id, tradingMode);
+    }
 
-    socketRef.current.on('ticker', (data) => {
+    const onTicker = (data) => {
       if (data.symbol === activeSymbol) {
         setTickerData(data);
         const price = parseFloat(data.lastPrice);
         if (price > 0) setActivePrice(price);
       }
-    });
+    };
 
-    socketRef.current.on('private_data', (msg) => {
-      console.log('[SOCKET] Private Update:', msg.topic);
-      // Trigger a light refresh when account state changes
+    const onPrivateData = (msg) => {
+      console.log('[DASHBOARD] Socket Private Update:', msg.topic);
       fetchDashboard();
-    });
+    };
+
+    socket.on('ticker', onTicker);
+    socket.on('private_data', onPrivateData);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.emit('unsubscribe', [activeSymbol]);
-        socketRef.current.disconnect();
-      }
+      unsubscribeFromTicker(activeSymbol);
+      socket.off('ticker', onTicker);
+      socket.off('private_data', onPrivateData);
     };
-  }, [activeSymbol, contextUser, tradingMode]);
+  }, [activeSymbol, contextUser, tradingMode, socket]);
 
   // Fetch Dashboard Aggregated Data (Balances/Positions)
   const fetchDashboard = async () => {

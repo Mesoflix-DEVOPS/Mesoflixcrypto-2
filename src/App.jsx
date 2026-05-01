@@ -27,12 +27,14 @@ import DashboardLayout from './components/DashboardLayout';
 import BotTrading from './pages/BotTrading';
 
 import { UserProvider, ProtectedRoute } from './components/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 
 function App() {
   return (
     <BrowserRouter>
       <UserProvider>
-        <Routes>
+        <SocketProvider>
+          <Routes>
           <Route path="/" element={<Layout />}>
             {/* Main nav pages */}
             <Route index element={<Home />} />
@@ -80,6 +82,7 @@ function App() {
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </SocketProvider>
       </UserProvider>
     </BrowserRouter>
   );
