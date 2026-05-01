@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import DashboardSidebar from './DashboardSidebar';
-import DashboardHeader from './DashboardHeader';
+import { useUser } from './AuthContext';
 
-function DashboardLayout({ user, balance }) {
+function DashboardLayout() {
+  const { user, balance } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tradingMode, setTradingMode] = useState('REAL'); // 'REAL' or 'DEMO'
 
@@ -30,7 +28,7 @@ function DashboardLayout({ user, balance }) {
         />
         
         <section className="layout-content">
-          <Outlet context={{ tradingMode, setTradingMode }} />
+          <Outlet context={{ tradingMode, setTradingMode, user, balance }} />
         </section>
       </main>
 

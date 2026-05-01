@@ -26,59 +26,61 @@ import BybitRelay from './pages/BybitRelay';
 import DashboardLayout from './components/DashboardLayout';
 import BotTrading from './pages/BotTrading';
 
+import { UserProvider, ProtectedRoute } from './components/AuthContext';
+
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          {/* Main nav pages */}
-          <Route index element={<Home />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="auth/complete" element={<AuthComplete />} />
-          <Route path="auth/error" element={<AuthError />} />
-          <Route path="invest" element={<Invest />} />
-          <Route path="market" element={<Market />} />
-          <Route path="ecosystem" element={<Ecosystem />} />
-          <Route path="support" element={<Support />} />
-          
+      <UserProvider>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            {/* Main nav pages */}
+            <Route index element={<Home />} />
+            <Route path="auth/complete" element={<AuthComplete />} />
+            <Route path="auth/error" element={<AuthError />} />
+            <Route path="invest" element={<ProtectedRoute><Invest /></ProtectedRoute>} />
+            <Route path="market" element={<Market />} />
+            <Route path="ecosystem" element={<Ecosystem />} />
+            <Route path="support" element={<Support />} />
+            
+            {/* Footer pages */}
+            <Route path="about" element={<About />} />
+            <Route path="careers" element={<Careers />} />
+            <Route path="press" element={<Press />} />
+            <Route path="news" element={<News />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="biometrics-privacy" element={<Privacy />} />
+            <Route path="financial-policy" element={<Terms />} />
+            <Route path="trading-terms" element={<Terms />} />
 
-          {/* Footer pages */}
-          <Route path="about" element={<About />} />
-          <Route path="careers" element={<Careers />} />
-          <Route path="press" element={<Press />} />
-          <Route path="news" element={<News />} />
-          <Route path="privacy" element={<Privacy />} />
-          <Route path="terms" element={<Terms />} />
-          <Route path="biometrics-privacy" element={<Privacy />} />
-          <Route path="financial-policy" element={<Terms />} />
-          <Route path="trading-terms" element={<Terms />} />
+            {/* Live auth pages */}
+            <Route path="sign-in" element={<SignIn />} />
+            <Route path="sign-up" element={<SignUp />} />
 
-          {/* Live auth pages */}
-          <Route path="sign-in" element={<SignIn />} />
-          <Route path="sign-up" element={<SignUp />} />
+            {/* Institutional Relay (Catch messy Bybit links) */}
+            <Route path="callback/bybit" element={<BybitRelay />} />
+            <Route path="api/auth/bybit/callback" element={<BybitRelay />} />
+          </Route>
 
-          {/* Institutional Relay (Catch messy Bybit links) */}
-          <Route path="callback/bybit" element={<BybitRelay />} />
-          <Route path="api/auth/bybit/callback" element={<BybitRelay />} />
-        </Route>
+          {/* --- Institutional Dashboard Branch --- */}
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+            <Route index element={<BybitDashboard />} />
+            <Route path="markets" element={<InstitutionalMarkets />} />
+            <Route path="trade" element={<BybitDashboard />} />
+            <Route path="portfolio" element={<BybitDashboard />} /> 
+            <Route path="analytics" element={<BybitDashboard />} /> 
+            <Route path="orders" element={<BybitDashboard />} /> 
+            <Route path="bots" element={<BotTrading />} />
+            <Route path="config" element={<BybitDashboard />} />
+            <Route path="settings" element={<BybitDashboard />} />
+            <Route path="help" element={<BybitDashboard />} />
+          </Route>
 
-        {/* --- Institutional Dashboard Branch --- */}
-        <Route path="/dashboard" element={<DashboardLayout user={{ full_name: 'Mesoflix Investor' }} balance={{ totalEquity: '0.00' }} />}>
-          <Route index element={<BybitDashboard />} />
-          <Route path="markets" element={<InstitutionalMarkets />} />
-          <Route path="trade" element={<BybitDashboard />} />
-          <Route path="portfolio" element={<BybitDashboard />} /> 
-          <Route path="analytics" element={<BybitDashboard />} /> 
-          <Route path="orders" element={<BybitDashboard />} /> 
-          <Route path="bots" element={<BotTrading />} />
-          <Route path="config" element={<BybitDashboard />} />
-          <Route path="settings" element={<BybitDashboard />} />
-          <Route path="help" element={<BybitDashboard />} />
-        </Route>
-
-        {/* 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </UserProvider>
     </BrowserRouter>
   );
 }
