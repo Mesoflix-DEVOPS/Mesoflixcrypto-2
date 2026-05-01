@@ -29,12 +29,19 @@ import { getApiUrl, fetchWithLogging } from '../config/api';
 /**
  * Institutional Terminal Chart Engine
  */
-function CustomTradingChart({ symbol }) {
+function CustomTradingChart({ symbol, tickerData }) {
   const chartContainerRef = useRef();
   const chartInstance = useRef(null);
   const seriesInstance = useRef(null);
+  const volumeSeriesInstance = useRef(null);
+  const ema20Instance = useRef(null);
+  const ema50Instance = useRef(null);
   const resizeObserver = useRef(null);
+  const lastCandleRef = useRef(null);
+  
   const [isInitializing, setIsInitializing] = useState(true);
+  const [interval, setInterval] = useState('15'); // default 15m
+  const [showIndicators, setShowIndicators] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -63,19 +70,38 @@ function CustomTradingChart({ symbol }) {
       setIsInitializing(true);
       try {
         const chart = LWCharts.createChart(chartContainerRef.current, {
-          layout: { background: { color: '#030712' }, textColor: '#94a3b8', fontSize: 11, fontFamily: "'JetBrains Mono', monospace" },
-          grid: { vertLines: { color: '#111827' }, horzLines: { color: '#111827' } },
-          crosshair: { mode: 0, vertLine: { color: '#10b981', width: 0.5, style: 2 }, horzLine: { color: '#10b981', width: 0.5, style: 2 } },
-          rightPriceScale: { borderColor: '#1f2937', scaleMargins: { top: 0.1, bottom: 0.1 } },
-          timeScale: { borderColor: '#1f2937', barSpacing: 12 },
+          layout: { background: { color: '#030712' }, textColor: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono', monospace" },
+          grid: { vertLines: { color: '#0f172a' }, horzLines: { color: '#0f172a' } },
+          crosshair: { mode: 0, vertLine: { color: '#3b82f6', width: 0.5, style: 2 }, horzLine: { color: '#3b82f6', width: 0.5, style: 2 } },
+          rightPriceScale: { borderColor: '#1e293b', scaleMargins: { top: 0.2, bottom: 0.2 }, autoScale: true },
+          timeScale: { borderColor: '#1e293b', barSpacing: 10, timeVisible: true, secondsVisible: false },
+          handleScroll: true,
+          handleScale: true,
         });
 
         const candleSeries = chart.addCandlestickSeries({
-          upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
+          upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444',
+          priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
         });
+
+        const volumeSeries = chart.addHistogramSeries({
+            color: '#26a69a',
+            priceFormat: { type: 'volume' },
+            priceScaleId: '', // overlay
+        });
+        
+        volumeSeries.priceScale().applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0 },
+        });
+
+        const ema20 = chart.addLineSeries({ color: '#3b82f6', lineWidth: 1, title: 'EMA 20', visible: showIndicators });
+        const ema50 = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1, title: 'EMA 50', visible: showIndicators });
 
         chartInstance.current = chart;
         seriesInstance.current = candleSeries;
+        volumeSeriesInstance.current = volumeSeries;
+        ema20Instance.current = ema20;
+        ema50Instance.current = ema50;
 
         resizeObserver.current = new ResizeObserver(() => {
            if (chartInstance.current && chartContainerRef.current) {
@@ -84,7 +110,7 @@ function CustomTradingChart({ symbol }) {
         });
         resizeObserver.current.observe(chartContainerRef.current);
 
-        const response = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=15&limit=150`));
+        const response = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=${interval}&limit=200`));
         if (response.ok && isMounted) {
             const res = await response.json();
             const data = res.data;
@@ -96,7 +122,33 @@ function CustomTradingChart({ symbol }) {
                     low: parseFloat(item[3]),
                     close: parseFloat(item[4]),
                 })).reverse();
+                
+                const volumeData = data.list.map(item => ({
+                    time: parseInt(item[0]) / 1000,
+                    value: parseFloat(item[5]),
+                    color: parseFloat(item[4]) >= parseFloat(item[1]) ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                })).reverse();
+
                 seriesInstance.current.setData(formatted);
+                volumeSeriesInstance.current.setData(volumeData);
+                
+                // Simple EMA Calculation
+                const calculateEMA = (data, period) => {
+                  const k = 2 / (period + 1);
+                  let emaData = [];
+                  let prevEma = data[0].close;
+                  data.forEach((d, i) => {
+                    const ema = (d.close - prevEma) * k + prevEma;
+                    emaData.push({ time: d.time, value: ema });
+                    prevEma = ema;
+                  });
+                  return emaData;
+                };
+
+                ema20Instance.current.setData(calculateEMA(formatted, 20));
+                ema50Instance.current.setData(calculateEMA(formatted, 50));
+                
+                lastCandleRef.current = formatted[formatted.length - 1];
                 chart.timeScale().fitContent();
             }
         }
@@ -104,16 +156,64 @@ function CustomTradingChart({ symbol }) {
     };
     init();
     return () => { isMounted = false; if (resizeObserver.current) resizeObserver.current.disconnect(); if (chartInstance.current) { try { chartInstance.current.remove(); } catch (e) {} } };
-  }, [symbol]);
+  }, [symbol, interval]);
+
+  // Handle Real-time Price Update on Candle
+  useEffect(() => {
+    if (tickerData && seriesInstance.current && lastCandleRef.current) {
+      const price = parseFloat(tickerData.lastPrice);
+      const lastCandle = lastCandleRef.current;
+      
+      const updatedCandle = {
+        ...lastCandle,
+        high: Math.max(lastCandle.high, price),
+        low: Math.min(lastCandle.low, price),
+        close: price
+      };
+      
+      seriesInstance.current.update(updatedCandle);
+      lastCandleRef.current = updatedCandle;
+    }
+  }, [tickerData]);
 
   return (
-    <div className="relative w-full h-full bg-[#030712] border border-[#1e293b] rounded-lg overflow-hidden">
-      {isInitializing && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#030712]/90 z-20">
-           <RefreshCw className="animate-spin text-emerald-500" size={18} />
+    <div className="relative w-full h-full bg-[#030712] border border-[#1e293b] rounded-lg overflow-hidden flex flex-col">
+      {/* Chart Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 border-bottom border-slate-800 bg-[#0b111e]/50 z-30">
+        <div className="flex gap-1">
+          {['1', '5', '15', '60', '240', 'D'].map(tf => (
+            <button 
+              key={tf}
+              onClick={() => setInterval(tf)}
+              className={`px-2 py-1 rounded text-[10px] font-black transition-all ${interval === tf ? 'bg-blue-500 text-white' : 'text-slate-500 hover:bg-slate-800'}`}
+            >
+              {tf === '60' ? '1H' : tf === '240' ? '4H' : tf === 'D' ? '1D' : `${tf}m`}
+            </button>
+          ))}
         </div>
-      )}
-      <div ref={chartContainerRef} className="w-full h-full" />
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => {
+              const next = !showIndicators;
+              setShowIndicators(next);
+              if (ema20Instance.current) ema20Instance.current.applyOptions({ visible: next });
+              if (ema50Instance.current) ema50Instance.current.applyOptions({ visible: next });
+            }}
+            className={`text-[10px] font-bold px-2 py-1 rounded border ${showIndicators ? 'border-blue-500/50 text-blue-400' : 'border-slate-700 text-slate-500'}`}
+          >
+            INDICATORS {showIndicators ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      </div>
+
+      <div className="relative flex-1">
+        {isInitializing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#030712]/90 z-20">
+             <RefreshCw className="animate-spin text-emerald-500" size={18} />
+          </div>
+        )}
+        <div ref={chartContainerRef} className="w-full h-full" />
+      </div>
     </div>
   );
 }
@@ -340,7 +440,7 @@ export default function BybitDashboard() {
                   </div>
               </div>
               <div className="chart-box">
-                 <CustomTradingChart symbol={activeSymbol} />
+                 <CustomTradingChart symbol={activeSymbol} tickerData={tickerData} />
               </div>
            </div>
 
