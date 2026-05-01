@@ -23,6 +23,11 @@ import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import InstitutionalMarkets from './pages/InstitutionalMarkets';
 import InstitutionalTrade from './pages/InstitutionalTrade';
+import InstitutionalPortfolio from './pages/InstitutionalPortfolio';
+import InstitutionalAnalytics from './pages/InstitutionalAnalytics';
+import InstitutionalOrders from './pages/InstitutionalOrders';
+import InstitutionalSettings from './pages/InstitutionalSettings';
+import InstitutionalHelp from './pages/InstitutionalHelp';
 import BybitRelay from './pages/BybitRelay';
 import DashboardLayout from './components/DashboardLayout';
 import BotTrading from './pages/BotTrading';
@@ -71,13 +76,13 @@ function App() {
             <Route index element={<BybitDashboard />} />
             <Route path="markets" element={<InstitutionalMarkets />} />
             <Route path="trade" element={<InstitutionalTrade />} />
-            <Route path="portfolio" element={<BybitDashboard />} /> 
-            <Route path="analytics" element={<BybitDashboard />} /> 
-            <Route path="orders" element={<BybitDashboard />} /> 
+            <Route path="portfolio" element={<InstitutionalPortfolio />} /> 
+            <Route path="analytics" element={<InstitutionalAnalytics />} /> 
+            <Route path="orders" element={<InstitutionalOrders />} /> 
             <Route path="bots" element={<BotTrading />} />
-            <Route path="config" element={<BybitDashboard />} />
-            <Route path="settings" element={<BybitDashboard />} />
-            <Route path="help" element={<BybitDashboard />} />
+            <Route path="config" element={<InstitutionalSettings />} />
+            <Route path="settings" element={<InstitutionalSettings />} />
+            <Route path="help" element={<InstitutionalHelp />} />
           </Route>
 
           {/* 404 */}
