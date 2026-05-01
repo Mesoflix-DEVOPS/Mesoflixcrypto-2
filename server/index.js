@@ -103,6 +103,24 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// --- STANDARDIZED RESPONSE HELPER ---
+const sendResponse = (res, status, data = null, error = null, meta = {}) => {
+  res.status(status).json({
+    ok: status >= 200 && status < 300,
+    data,
+    meta: {
+      ts: Date.now(),
+      source: 'mesoflix-gateway',
+      ...meta
+    },
+    error: error ? {
+      code: error.code || 'INTERNAL_ERROR',
+      message: error.message || error,
+      details: error.details || {}
+    } : null
+  });
+};
+
 // --- AUTHENTICATION MIDDLEWARE ---
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
