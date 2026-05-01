@@ -22,15 +22,19 @@ function Market() {
       try {
         const res = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
         if (!res.ok) return;
-        const all = await res.json();
+        const jsonRes = await res.json();
+        const all = jsonRes.data || [];
         
         // Polling tickers for a sample of symbols to find gainers/losers
-        // In a real app, the backend would provide a /movers endpoint
-        // For now, we take a balanced set and fetch their tickers
         const sample = all.slice(0, 30);
         const results = await Promise.all(sample.map(async (s) => {
-           const tRes = await fetch(getApiUrl(`/api/market/ticker/${s.symbol}`));
-           if (tRes.ok) return { symbol: s.symbol, ...(await tRes.json()) };
+           try {
+             const tRes = await fetch(getApiUrl(`/api/market/ticker/${s.symbol}`));
+             if (tRes.ok) {
+               const tickerData = await tRes.json();
+               return { symbol: s.symbol, ...tickerData.data };
+             }
+           } catch (e) {}
            return null;
         }));
 

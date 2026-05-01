@@ -76,36 +76,64 @@ function Home() {
           </div>
         </div>
 
-        <div className="info flex items-center justify-center">
-          <div className="container">
-            <div className="info-content grid">
-              <div className="info-item text-center bg-slate-900/40 border border-white/5 rounded-3xl p-10">
-                <img src={createIcon} alt="Create" className="mx-auto mb-6 opacity-80" />
-                <h3 className="info-item-title text-xl font-bold mb-4">Quick Onboarding</h3>
-                <p className="text-base text-slate-400 mb-6">Connect your existing Bybit account in seconds and unlock advanced institutional features immediately.</p>
-                <Link to="/sign-up" className="flex items-center justify-center gap-2 text-emerald-500 font-bold hover:gap-4 transition-all uppercase text-xs tracking-widest">
-                  Connect Now <img src={arrowIcon} className="w-4 h-4" alt="Arrow" />
-                </Link>
-              </div>
-              <div className="info-item text-center bg-slate-900/40 border border-white/5 rounded-3xl p-10">
-                <img src={loginIcon} alt="Connect" className="mx-auto mb-6 opacity-80" />
-                <h3 className="info-item-title text-xl font-bold mb-4">Trading Terminal</h3>
-                <p className="text-base text-slate-400 mb-6">Access a professional, high-density dashboard designed for millisecond trade execution and monitoring.</p>
-                <Link to="/bybit-dashboard" className="flex items-center justify-center gap-2 text-emerald-500 font-bold hover:gap-4 transition-all uppercase text-xs tracking-widest">
-                  View Terminal <img src={arrowIcon} className="w-4 h-4" alt="Arrow" />
-                </Link>
-              </div>
-              <div className="info-item text-center bg-slate-900/40 border border-white/5 rounded-3xl p-10">
-                <img src={manageIcon} alt="Manage" className="mx-auto mb-6 opacity-80" />
-                <h3 className="info-item-title text-xl font-bold mb-4">Asset Management</h3>
-                <p className="text-base text-slate-400 mb-6">Monitor your live Bybit portfolio, track PnL curves, and manage distribution with institutional tools.</p>
-                <Link to="/invest" className="flex items-center justify-center gap-2 text-emerald-500 font-bold hover:gap-4 transition-all uppercase text-xs tracking-widest">
-                  Manage Ledger <img src={arrowIcon} className="w-4 h-4" alt="Arrow" />
-                </Link>
-              </div>
+        <div className="bybit-launch-campaign py-24 bg-gradient-to-b from-[#0a0f1d] to-[#030712] border-y border-white/5">
+        <div className="container mx-auto px-6">
+          <div className="bg-gradient-to-r from-orange-500/10 to-transparent border border-orange-500/20 rounded-[40px] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 blur-[100px] rounded-full"></div>
+             <div className="flex-1 z-10">
+                <div className="inline-block px-4 py-1.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-black uppercase tracking-widest mb-6 border border-orange-500/20">Official Bybit Campaign</div>
+                <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-6 leading-tight">Master the markets with <br /><span className="text-orange-500">Bybit Institutional</span></h2>
+                <p className="text-slate-400 text-lg mb-10 max-w-xl">Join the world's fastest growing crypto exchange through MesoflixLabs. Get exclusive access to the highest rebate tiers and institutional liquidity pools.</p>
+                <div className="flex flex-wrap gap-4">
+                   <a href="https://partner.bybit.com/b/aff_7_157391" target="_blank" rel="noopener noreferrer" className="btn bg-orange-500 text-black font-black px-10 py-4 rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all">Claim Welcome Bonus</a>
+                   <a href="https://partner.bybit.com/b/157391" target="_blank" rel="noopener noreferrer" className="btn border border-white/10 text-white font-black px-10 py-4 rounded-xl text-xs uppercase tracking-widest hover:bg-white/5 transition-all">Partner Registration</a>
+                </div>
+             </div>
+             <div className="flex-shrink-0 z-10 hidden lg:block">
+                <div className="w-64 h-64 bg-[#030712] border border-white/5 rounded-[40px] p-8 flex flex-col items-center justify-center shadow-2xl rotate-3">
+                   <svg width="80" height="80" viewBox="0 0 200 60" className="mb-6">
+                      <text x="0" y="48" fontFamily="Arial Black, sans-serif" fontWeight="900" fontSize="48" fill="#F7A600">bybit</text>
+                   </svg>
+                   <div className="text-center">
+                      <span className="block text-white font-black text-2xl">$30,000</span>
+                      <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Deposit Rewards</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="info flex items-center justify-center">
+        <div className="container">
+          <div className="info-content grid">
+            <div className="info-item text-center bg-slate-900/40 border border-white/5 rounded-3xl p-10 hover:border-emerald-500/30 transition-all group">
+              <img src={createIcon} alt="Create" className="mx-auto mb-6 opacity-80 group-hover:scale-110 transition-all" />
+              <h3 className="info-item-title text-xl font-bold mb-4">Quick Onboarding</h3>
+              <p className="text-base text-slate-400 mb-6">Connect your existing Bybit account in seconds and unlock advanced institutional features immediately.</p>
+              <Link to="/sign-up" className="flex items-center justify-center gap-2 text-emerald-500 font-bold hover:gap-4 transition-all uppercase text-xs tracking-widest">
+                Connect Now <img src={arrowIcon} className="w-4 h-4" alt="Arrow" />
+              </Link>
+            </div>
+            <div className="info-item text-center bg-slate-900/40 border border-white/5 rounded-3xl p-10 hover:border-emerald-500/30 transition-all group">
+              <img src={loginIcon} alt="Connect" className="mx-auto mb-6 opacity-80 group-hover:scale-110 transition-all" />
+              <h3 className="info-item-title text-xl font-bold mb-4">Trading Terminal</h3>
+              <p className="text-base text-slate-400 mb-6">Access a professional, high-density dashboard designed for millisecond trade execution and monitoring.</p>
+              <Link to="/dashboard" className="flex items-center justify-center gap-2 text-emerald-500 font-bold hover:gap-4 transition-all uppercase text-xs tracking-widest">
+                View Terminal <img src={arrowIcon} className="w-4 h-4" alt="Arrow" />
+              </Link>
+            </div>
+            <div className="info-item text-center bg-slate-900/40 border border-white/5 rounded-3xl p-10 hover:border-emerald-500/30 transition-all group">
+              <img src={manageIcon} alt="Manage" className="mx-auto mb-6 opacity-80 group-hover:scale-110 transition-all" />
+              <h3 className="info-item-title text-xl font-bold mb-4">Asset Management</h3>
+              <p className="text-base text-slate-400 mb-6">Monitor your live Bybit portfolio, track PnL curves, and manage distribution with institutional tools.</p>
+              <Link to="/invest" className="flex items-center justify-center gap-2 text-emerald-500 font-bold hover:gap-4 transition-all uppercase text-xs tracking-widest">
+                Manage Ledger <img src={arrowIcon} className="w-4 h-4" alt="Arrow" />
+              </Link>
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       <div className="bybit-partner-strip bg-[#030712] border-y border-white/5 py-10">

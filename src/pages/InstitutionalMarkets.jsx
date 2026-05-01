@@ -67,7 +67,8 @@ function InstitutionalMarkets() {
         try {
           const res = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
           if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-            priceMap[symbol] = await res.json();
+            const tickerRes = await res.json();
+            priceMap[symbol] = tickerRes.data;
           }
         } catch (e) {}
       }));

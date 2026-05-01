@@ -251,18 +251,20 @@ export default function BybitDashboard() {
                  {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
               </button>
 
-              <div className="mt-auto p-6 bg-[#030712] border-t border-[#1f2937]">
-                 <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Institutional Engine Active</span>
+              <div className="exec-engine-footer">
+                 <div className="engine-status">
+                    <div className="dot"></div>
+                    <span className="label">Institutional Engine Active</span>
                  </div>
-                 <div className="flex justify-between text-[11px] mb-2">
-                    <span className="text-slate-600 uppercase font-black tracking-widest text-[9px]">Environment</span>
-                    <span className="text-white font-black">{tradingMode}</span>
-                 </div>
-                 <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-600 uppercase font-black tracking-widest text-[9px]">Latency</span>
-                    <span className="text-emerald-500 font-mono font-black">~14ms</span>
+                 <div className="engine-meta">
+                    <div className="meta-row">
+                       <span className="m-label">Environment</span>
+                       <span className="m-val text-white">{tradingMode}</span>
+                    </div>
+                    <div className="meta-row latency">
+                       <span className="m-label">Latency</span>
+                       <span className="m-val">~14ms</span>
+                    </div>
                  </div>
               </div>
            </div>

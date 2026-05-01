@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { getApiUrl } from '../config/api';
+import { getApiUrl, RENDER_BACKEND_URL } from '../config/api';
 
 const SocketContext = createContext(null);
 
@@ -17,10 +17,13 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // 1. Initialize Global Socket (Hard-coded for institutional stability)
-    const socketUrl = 'https://api.mesoflixlabs.com';
+    const socketUrl = RENDER_BACKEND_URL;
     console.log(`[SOCKET_SYSTEM] Connecting to institutional hub: ${socketUrl}`);
     
-    const socket = io(socketUrl, {
+    // Ensure URL has no trailing slash for socket.io-client consistency
+    const sanitizedUrl = socketUrl.replace(/\/$/, '');
+    
+    const socket = io(sanitizedUrl, {
       transports: ['websocket'],
       withCredentials: true,
       reconnectionAttempts: 10,
