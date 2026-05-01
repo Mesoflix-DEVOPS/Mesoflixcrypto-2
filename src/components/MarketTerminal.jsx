@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Star, TrendingUp, ChevronRight, X, Pin } from 'lucide-react';
-import { io } from 'socket.io-client';
 import { getApiUrl, fetchWithLogging } from '../config/api';
+import { useSocket } from '../context/SocketContext';
 
 const RECOMMENDED_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
 
 function MarketTerminal({ onSelectSymbol }) {
+  const { socket, isConnected, subscribeToTicker } = useSocket();
   const [allSymbols, setAllSymbols] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [prices, setPrices] = useState({});
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef(null);
 
   useEffect(() => {
     const init = async () => {
@@ -49,38 +49,25 @@ function MarketTerminal({ onSelectSymbol }) {
     init();
   }, []);
 
-  // Real-time Market Data Bridge
+  // Real-time Market Data Bridge - Use Global Socket
   useEffect(() => {
-    const socketUrl = 'https://api.mesoflixlabs.com';
-    socketRef.current = io(socketUrl, { transports: ['websocket'] });
+    if (!socket || !isConnected) return;
 
-    socketRef.current.on('connect', () => {
-      console.log('[MARKET_SOCKET] Connected for Sidebar Feed');
-      const visibleSymbols = [...new Set([...RECOMMENDED_SYMBOLS, ...watchlist])];
-      if (visibleSymbols.length > 0) {
-        socketRef.current.emit('subscribe', visibleSymbols);
-      }
-    });
+    const visibleSymbols = [...new Set([...RECOMMENDED_SYMBOLS, ...watchlist])];
+    visibleSymbols.forEach(symbol => subscribeToTicker(symbol));
 
-    socketRef.current.on('ticker', (data) => {
-      setPrices(prev => {
-        const last = prev[data.symbol] || {};
-        return {
-          ...prev,
-          [data.symbol]: {
-            ...last,
-            ...data
-          }
-        };
-      });
-    });
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+    const onTicker = (data) => {
+      setPrices(prev => ({
+        ...prev,
+        [data.symbol]: { ...(prev[data.symbol] || {}), ...data }
+      }));
     };
-  }, [watchlist]);
+
+    socket.on('ticker', onTicker);
+    return () => {
+      socket.off('ticker', onTicker);
+    };
+  }, [socket, isConnected, watchlist]);
 
   const handleSearch = (e) => {
     const query = e.target.value.toUpperCase();
