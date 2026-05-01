@@ -5,7 +5,7 @@ import DashboardSidebar from './DashboardSidebar';
 import DashboardHeader from './DashboardHeader';
 
 function DashboardLayout() {
-  const { user, balance } = useUser();
+  const { user, balance, refresh } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tradingMode, setTradingMode] = useState('REAL'); // 'REAL' or 'DEMO'
 
