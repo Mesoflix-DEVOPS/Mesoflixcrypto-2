@@ -173,8 +173,8 @@ export default function BybitDashboard() {
       const response = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${userId}?environment=${tradingMode}`));
       if (response.ok) {
         const data = await response.json();
-        setPositions(data.positions || []);
-        setHistory(data.history || []);
+        setPositions(data.data.positions || []);
+        setHistory(data.data.history || []);
       }
     } catch (err) { 
       console.error('Account refresh failed', err); 
@@ -182,6 +182,11 @@ export default function BybitDashboard() {
       setLoading(false); 
     }
   }, [tradingMode]);
+
+  const handleSelectSymbol = (symbol) => {
+    setActiveSymbol(symbol);
+    setSearchParams({ symbol });
+  };
 
   useEffect(() => {
     if (contextUser) fetchAccountData(contextUser.id);
@@ -210,7 +215,13 @@ export default function BybitDashboard() {
       const data = await res.json();
       if (res.ok) setOrderStatus({ success: true, msg: 'Order Complete' });
       else setOrderStatus({ success: false, msg: data.error || 'Execution Fail' });
-    } catch (err) { setOrderStatus({ success: false, msg: 'Auth Error' }); } finally { setOrderLoading(false); setTimeout(() => setOrderStatus(null), 4000); fetchAccountData(user.id); }
+    } catch (err) { 
+      setOrderStatus({ success: false, msg: 'Auth Error' }); 
+    } finally { 
+      setOrderLoading(false); 
+      setTimeout(() => setOrderStatus(null), 4000); 
+      if (contextUser) fetchAccountData(contextUser.id); 
+    }
   };
 
   const priceColor = parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400';

@@ -1181,8 +1181,7 @@ app.get('/api/bybit/dashboard/:userId', async (req, res) => {
     ]);
 
     // 4. Transform & Return
-    res.status(200).json({
-      success: true,
+    sendResponse(res, 200, {
       account: {
         uid: account.bybit_sub_uid,
         username: account.bybit_username,
@@ -1190,17 +1189,7 @@ app.get('/api/bybit/dashboard/:userId', async (req, res) => {
       },
       summary: balanceRes?.result?.list?.[0] || null,
       positions: positionsRes?.result?.list || [],
-      history: historyRes?.result?.list || [],
-      status: {
-        balance: balanceRes?.retCode === 0 ? 'OK' : 'FAIL',
-        positions: positionsRes?.retCode === 0 ? 'OK' : 'FAIL',
-        history: historyRes?.retCode === 0 ? 'OK' : 'FAIL'
-      },
-      raw: {
-        balance: balanceRes,
-        positions: positionsRes,
-        history: historyRes
-      }
+      history: historyRes?.result?.list || []
     });
 
   } catch (err) {
@@ -1400,10 +1389,9 @@ app.post('/api/dashboard/watchlist/add', authenticateToken, async (req, res) => 
       .upsert([{ user_id: id, symbol }], { onConflict: 'user_id, symbol' });
 
     if (error) throw error;
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).json({ success: true });
+    sendResponse(res, 200, { success: true });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to add to watchlist' });
+    sendResponse(res, 500, null, { message: 'Failed to add to watchlist' });
   }
 });
 
@@ -1419,9 +1407,9 @@ app.get('/api/dashboard/messages', authenticateToken, async (req, res) => {
       .limit(5);
 
     if (error) throw error;
-    res.status(200).json(data);
+    sendResponse(res, 200, data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
+    sendResponse(res, 500, null, { message: 'Failed to fetch messages' });
   }
 });
 

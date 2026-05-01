@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 import { Shield, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { useUser } from '../components/AuthContext';
 
 function SignIn() {
+  const { refresh } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,10 +28,11 @@ function SignIn() {
       if (response.ok) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user_profile', JSON.stringify(res.data.user));
-        // Force a small delay for smooth transition
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 800);
+        
+        // Trigger AuthContext to re-fetch profile with new token
+        await refresh();
+        
+        navigate('/dashboard');
       } else {
         setError(res.error?.message || 'Invalid credentials or access denied.');
       }

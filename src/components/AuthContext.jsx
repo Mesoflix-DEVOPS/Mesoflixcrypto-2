@@ -11,7 +11,6 @@ export const UserProvider = ({ children }) => {
   const [authenticated, setAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user_profile');
@@ -27,19 +26,13 @@ export const UserProvider = ({ children }) => {
 
   const fetchProfile = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
+    if (!token || token === 'null' || token === 'undefined') {
       setLoading(false);
       setAuthenticated(false);
       return;
     }
 
     try {
-      const response = await fetchWithLogging(getApiUrl('/api/dashboard/profile'), {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
       if (response.ok) {
         const res = await response.json();
         // Standardized response uses { ok: true, data: { ... } }

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 import { Shield, User, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { useUser } from '../components/AuthContext';
 
 function SignUp() {
+  const { refresh } = useUser();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +29,9 @@ function SignUp() {
       if (response.ok) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user_profile', JSON.stringify(res.data.user));
+        
+        // Refresh auth state before redirecting to Bybit
+        await refresh();
         
         // --- SEAMLESS INSTITUTIONAL REDIRECT ---
         const userId = res.data.user.id;
