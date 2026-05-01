@@ -79,20 +79,25 @@ export default function BybitDashboard() {
     };
   }, [activeSymbol]);
 
-  const fetchAccountData = useCallback(async (userId) => {
+  // Fetch Dashboard Aggregated Data (Balances/Positions)
+  const fetchDashboard = async () => {
+    if (!contextUser?.id) return;
     try {
-      const response = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${userId}?environment=${tradingMode}`));
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${contextUser.id}?environment=${tradingMode}`));
+      if (res.ok) {
+        const data = await res.json();
         setPositions(data.data.positions || []);
         setHistory(data.data.history || []);
       }
-    } catch (err) { 
-      console.error('Account refresh failed', err); 
-    } finally { 
-      setLoading(false); 
-    }
-  }, [tradingMode]);
+    } catch (err) { console.error('[DASHBOARD_FETCH_FAIL]', err); }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+    // INCREASED INTERVAL TO 20s TO SAVE FIXIE PROXY CREDITS
+    const timer = setInterval(fetchDashboard, 20000); 
+    return () => clearInterval(timer);
+  }, [contextUser, tradingMode]);
 
   const handleSelectSymbol = (symbol) => {
     setActiveSymbol(symbol);
