@@ -43,6 +43,14 @@ export default function BybitDashboard() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Terminal State
+  const [activeSide, setActiveSide] = useState('BUY');
+  const [orderType, setOrderType] = useState('Market');
+  const [qty, setQty] = useState('0.1');
+  const [leverage, setLeverage] = useState('10');
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderStatus, setOrderStatus] = useState(null);
+
   // Throttled refresh to prevent proxy spikes
   const lastRefresh = useRef(0);
   const fetchDashboardThrottled = () => {
