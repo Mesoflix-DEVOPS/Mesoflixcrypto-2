@@ -256,30 +256,35 @@ export default function BybitDashboard() {
         .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
         
         .primary-btn { width: 100%; padding: 16px; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-green { background: linear-gradient(135deg, #10b981, #059669); color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3); }
-        .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3); }
+        .btn-green { background: #10b981; color: #000; box-shadow: 0 8px 30px rgba(16, 185, 129, 0.2); }
+        .btn-red { background: #ef4444; color: #fff; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.2); }
         .primary-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .primary-btn:active { transform: translateY(0); }
 
-        .exec-card { display: flex; flex-direction: column; gap: 24px; padding: 24px; }
-        .cyber-input-wrap { 
-          background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); 
-          border-radius: 14px; padding: 12px 16px; position: relative; overflow: hidden;
-          transition: 0.3s;
+        .exec-card { display: flex; flex-direction: column; gap: 20px; padding: 24px; }
+        .form-row { display: flex; flex-direction: column; gap: 8px; }
+        .input-box { 
+          background: #030712; border: 1px solid #1f2937; border-radius: 10px; padding: 12px 16px;
+          display: flex; align-items: center; justify-content: space-between; transition: 0.2s;
         }
-        .cyber-input-wrap:focus-within { border-color: $color-secondary; background: rgba(3, 7, 18, 0.8); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
-        .cyber-input-wrap::after { 
-          content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; 
-          background: linear-gradient(90deg, transparent, $color-secondary, transparent);
-          transform: translateX(-100%); transition: 0.5s;
+        .input-box:focus-within { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
+        .input-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; }
+        
+        .side-picker { display: flex; gap: 10px; margin-bottom: 4px; }
+        .side-btn { 
+          flex: 1; padding: 12px; border-radius: 10px; font-weight: 900; font-size: 11px; 
+          text-transform: uppercase; border: 1px solid #1f2937; cursor: pointer; transition: 0.2s;
+          background: transparent; color: #475569;
         }
-        .cyber-input-wrap:focus-within::after { transform: translateX(100%); }
+        .side-btn.buy.active { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #10b981; }
+        .side-btn.sell.active { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
+
+        .mode-selector { display: flex; background: #030712; padding: 4px; border-radius: 8px; border: 1px solid #1f2937; }
+        .mode-btn { flex: 1; padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 800; border: none; background: transparent; color: #475569; cursor: pointer; }
+        .mode-btn.active { background: #1f2937; color: #fff; }
         
-        .mode-toggle-group { display: flex; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .mode-btn { flex: 1; padding: 10px; border-radius: 10px; font-size: 10px; font-weight: 800; border: none; background: transparent; color: #475569; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
-        .mode-btn.active { background: rgba(255,255,255,0.05); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        
-        .leverage-badge { background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; }
+        .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .info-label { font-size: 9px; font-weight: 700; color: #475569; }
 
         .equity-footer { padding: 24px 32px; background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; }
         .chart-header { padding: 20px 24px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
@@ -299,21 +304,23 @@ export default function BybitDashboard() {
         <div className="col-left">
            <div className="box-panel chart-section shadow-lg">
               <div className="chart-header">
-                  <div className="flex items-center gap-4">
-                    <span className="text-xl font-black text-white uppercase tracking-tighter">{activeSymbol}</span>
-                    <span className={`text-xl font-mono font-black ${priceColor}`}>${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                       {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
+                  <div className="flex items-center gap-5">
+                    <span className="text-xl font-black text-blue-400 uppercase tracking-tighter">{activeSymbol}</span>
+                    <span className={`text-2xl font-mono font-black ${priceColor}`}>
+                      ${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                    <span className={`text-xs font-black px-2 py-0.5 rounded ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                       {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
                     </span>
                   </div>
                  <div className="flex gap-8">
                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-bold text-slate-500 uppercase">24h High</span>
-                       <span className="text-xs font-bold text-slate-300 font-mono">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
+                       <span className="text-[9px] font-black text-slate-500 uppercase">24h High</span>
+                       <span className="text-xs font-bold text-emerald-400 font-mono">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-bold text-slate-500 uppercase">24h Low</span>
-                       <span className="text-xs font-bold text-slate-300 font-mono">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
+                       <span className="text-[9px] font-black text-slate-500 uppercase">24h Low</span>
+                       <span className="text-xs font-bold text-rose-400 font-mono">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
                     </div>
                  </div>
               </div>
@@ -362,45 +369,51 @@ export default function BybitDashboard() {
               )}
 
               <div className="exec-card">
-                 <div className="input-group">
-                    <label className="label-text">Execution Mode</label>
-                    <div className="mode-toggle-group">
-                       <button className={`mode-btn ${orderType === 'Market' ? 'active' : ''}`} onClick={() => setOrderType('Market')}>Market Order</button>
-                       <button className={`mode-btn ${orderType === 'Limit' ? 'active' : ''}`} onClick={() => setOrderType('Limit')}>Limit Price</button>
+                 <div className="form-row">
+                    <label className="label-text">Select Side</label>
+                    <div className="side-picker">
+                       <button className={`side-btn buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Buy / Long</button>
+                       <button className={`side-btn sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Sell / Short</button>
                     </div>
                  </div>
- 
-                 <div className="input-group">
-                    <div className="flex justify-between items-center mb-1">
+
+                 <div className="form-row">
+                    <label className="label-text">Order Type</label>
+                    <div className="mode-selector">
+                       <button className={`mode-btn ${orderType === 'Market' ? 'active' : ''}`} onClick={() => setOrderType('Market')}>Market</button>
+                       <button className={`mode-btn ${orderType === 'Limit' ? 'active' : ''}`} onClick={() => setOrderType('Limit')}>Limit</button>
+                    </div>
+                 </div>
+
+                 <div className="form-row">
+                    <div className="flex justify-between items-center">
                        <label className="label-text">Position Size</label>
-                        <span className="text-[9px] font-bold text-slate-600">Max: {contextBalance ? (parseFloat(contextBalance.totalAvailableBalance || 0) / (activePrice || 1)).toFixed(3) : '0.000'}</span>
+                       <span className="info-label">Max: {contextBalance ? (parseFloat(contextBalance.totalAvailableBalance || 0) / (activePrice || 1)).toFixed(4) : '0.0000'}</span>
                     </div>
-                    <div className="cyber-input-wrap">
-                       <input className="input-field" placeholder="0.00" value={qty} onChange={(e) => setQty(e.target.value)} />
-                       <span className="text-[11px] font-black text-slate-500 ml-2">{activeSymbol.replace('USDT', '')}</span>
+                    <div className="input-box">
+                       <input placeholder="0.000" value={qty} onChange={(e) => setQty(e.target.value)} />
+                       <span className="text-[11px] font-black text-slate-500">{activeSymbol.replace('USDT', '')}</span>
                     </div>
                  </div>
- 
-                 <div className="input-group">
-                    <div className="flex justify-between items-center mb-1">
+
+                 <div className="form-row">
+                    <div className="flex justify-between items-center">
                        <label className="label-text">Leverage Factor</label>
-                       <span className="leverage-badge">{leverage}x</span>
+                       <span className="text-[11px] font-black text-emerald-400 font-mono">{leverage}x</span>
                     </div>
                     <div className="py-2">
                        <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
                     </div>
-                    <div className="flex justify-between mt-1 text-[9px] font-black text-slate-600">
-                       <span className="text-emerald-500/80">1x SAFE</span>
+                    <div className="flex justify-between text-[9px] font-bold text-slate-600">
+                       <span>1x SAFE</span>
                        <span>100x DEGEN</span>
                     </div>
                  </div>
- 
-                 <div className="pt-4">
-                    <button className={`primary-btn ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50 pointer-events-none' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
-                       {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                       {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
-                    </button>
-                 </div>
+
+                 <button className={`primary-btn ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
+                    {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
+                    {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
+                 </button>
               </div>
 
               <div className="mt-auto p-6 bg-[#030712] border-t border-[#1f2937]">
