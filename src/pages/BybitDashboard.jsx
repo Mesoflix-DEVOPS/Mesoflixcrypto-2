@@ -214,10 +214,17 @@ export default function BybitDashboard() {
         body: JSON.stringify({ symbol: activeSymbol, side: activeSide, qty, orderType, leverage, environment: tradingMode, price: orderType === 'Limit' ? activePrice : undefined })
       });
       const data = await res.json();
-      if (res.ok) setOrderStatus({ success: true, msg: 'Order Complete' });
-      else setOrderStatus({ success: false, msg: data.error || 'Execution Fail' });
+      if (res.ok) {
+        setOrderStatus({ success: true, msg: 'Order Complete' });
+      } else {
+        // Extract string message from error object to prevent React crash
+        const errorMsg = typeof data.error === 'object' 
+          ? (data.error.message || JSON.stringify(data.error)) 
+          : (data.error || 'Execution Fail');
+        setOrderStatus({ success: false, msg: errorMsg });
+      }
     } catch (err) { 
-      setOrderStatus({ success: false, msg: 'Auth Error' }); 
+      setOrderStatus({ success: false, msg: 'Network/Auth Error' }); 
     } finally { 
       setOrderLoading(false); 
       setTimeout(() => setOrderStatus(null), 4000); 
@@ -334,7 +341,7 @@ export default function BybitDashboard() {
                  <div className="flex flex-col">
                     <span className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-1">Node Equity ({tradingMode})</span>
                     <div className="text-3xl font-black text-white tracking-tight font-mono">
-                      {contextBalance ? `$${parseFloat(contextBalance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                      {contextBalance ? `$${parseFloat(contextBalance.totalEquity || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
                     </div>
                  </div>
                  <div className="flex gap-8">
