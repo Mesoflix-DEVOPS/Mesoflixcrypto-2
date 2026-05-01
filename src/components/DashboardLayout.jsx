@@ -40,41 +40,6 @@ function DashboardLayout() {
         </section>
       </main>
 
-      <style>{`
-        .dl-shell {
-          display: flex;
-          min-height: 100vh;
-          background: #07111f;
-          color: #e2e8f0;
-          font-family: 'Inter', sans-serif;
-          overflow: hidden;
-          position: relative;
-        }
-        .dl-backdrop {
-          position: fixed; inset: 0;
-          background: rgba(0,0,0,0.65);
-          backdrop-filter: blur(6px);
-          z-index: 1040;
-        }
-        .dl-body {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-          background: #07111f;
-          height: 100vh;
-        }
-        .dl-content {
-          flex: 1;
-          overflow-y: auto;
-          overflow-x: hidden;
-          position: relative;
-        }
-        .dl-content::-webkit-scrollbar { width: 4px; }
-        .dl-content::-webkit-scrollbar-track { background: transparent; }
-        .dl-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
-        .dl-content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
-      `}</style>
     </div>
   );
 }
