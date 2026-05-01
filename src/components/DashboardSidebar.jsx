@@ -10,7 +10,8 @@ import {
   Cpu, 
   Settings, 
   HelpCircle,
-  X 
+  X,
+  ShieldCheck
 } from 'lucide-react';
 
 function DashboardSidebar({ isOpen, onClose }) {
