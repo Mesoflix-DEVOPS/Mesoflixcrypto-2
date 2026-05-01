@@ -150,7 +150,7 @@ export default function InstitutionalTrade() {
             </div>
           </div>
           <div className="trade-chart-canvas">
-            <CustomTradingChart symbol={activeSymbol} height="100%" />
+            <CustomTradingChart symbol={activeSymbol} tickerData={currentTicker} height="100%" />
           </div>
         </div>
 

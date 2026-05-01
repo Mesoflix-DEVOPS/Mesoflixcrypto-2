@@ -125,7 +125,7 @@ export default function InstitutionalMarkets() {
             )}
           </div>
           <div style={{ flex: 1, minHeight: 0 }}>
-            <CustomTradingChart symbol={chartSymbol} height="100%" />
+            <CustomTradingChart symbol={chartSymbol} tickerData={tickers[chartSymbol]} height="100%" />
           </div>
         </div>
       </div>

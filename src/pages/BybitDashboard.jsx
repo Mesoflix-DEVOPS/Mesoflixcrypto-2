@@ -258,7 +258,7 @@ export default function BybitDashboard() {
               <span style={{ fontSize: 9, color: '#334155', fontWeight: 900 }}>HIGH-FREQUENCY FEED</span>
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-              <CustomTradingChart symbol={activeSymbol} height="100%" />
+              <CustomTradingChart symbol={activeSymbol} tickerData={activeTicker} height="100%" />
             </div>
           </div>
         </div>
