@@ -1714,24 +1714,30 @@ connectBybitWS();
 io.on('connection', (socket) => {
   console.log(`[SOCKET] Client connected: ${socket.id}`);
   
-  socket.on('subscribe', (symbol) => {
-    if (!symbol) return;
-    socket.join(symbol);
-    console.log(`[SOCKET] ${socket.id} subscribed to ${symbol}`);
-
-    const topic = `tickers.${symbol}`;
-    if (!activeTopics.has(topic)) {
-      activeTopics.add(topic);
-      if (bybitWS && bybitWS.readyState === WebSocket.OPEN) {
-        bybitWS.send(JSON.stringify({ op: 'subscribe', args: [topic] }));
+  socket.on('subscribe', (symbols) => {
+    if (!symbols) return;
+    const symbolList = Array.isArray(symbols) ? symbols : [symbols];
+    
+    const topicsToSubscribe = [];
+    symbolList.forEach(symbol => {
+      socket.join(symbol);
+      const topic = `tickers.${symbol}`;
+      if (!activeTopics.has(topic)) {
+        activeTopics.add(topic);
+        topicsToSubscribe.push(topic);
       }
+    });
+
+    if (topicsToSubscribe.length > 0 && bybitWS && bybitWS.readyState === WebSocket.OPEN) {
+      console.log(`[BYBIT_WS] Subscribing to new topics: ${topicsToSubscribe.join(', ')}`);
+      bybitWS.send(JSON.stringify({ op: 'subscribe', args: topicsToSubscribe }));
     }
   });
 
-  socket.on('unsubscribe', (symbol) => {
-    if (!symbol) return;
-    socket.leave(symbol);
-    // Note: We keep the Bybit subscription active for other potential clients
+  socket.on('unsubscribe', (symbols) => {
+    if (!symbols) return;
+    const symbolList = Array.isArray(symbols) ? symbols : [symbols];
+    symbolList.forEach(symbol => socket.leave(symbol));
   });
 
   socket.on('disconnect', () => {

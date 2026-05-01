@@ -52,7 +52,6 @@ function CustomTradingChart({ symbol }) {
         }
         const onScriptLoad = () => { if (isMounted) resolve(window.LightweightCharts); };
         script.addEventListener('load', onScriptLoad);
-        const interval = setInterval(() => { if (window.LightweightCharts) { clearInterval(interval); onScriptLoad(); } }, 100);
       });
     };
 
@@ -151,19 +150,21 @@ export default function BybitDashboard() {
 
     socketRef.current.on('connect', () => {
       console.log('[SOCKET] Connected to Live Feed');
-      socketRef.current.emit('subscribe', activeSymbol);
+      socketRef.current.emit('subscribe', [activeSymbol]);
     });
 
     socketRef.current.on('ticker', (data) => {
+      // Only update if symbol matches
       if (data.symbol === activeSymbol) {
         setTickerData(data);
-        setActivePrice(parseFloat(data.lastPrice));
+        const price = parseFloat(data.lastPrice);
+        if (price > 0) setActivePrice(price);
       }
     });
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.emit('unsubscribe', activeSymbol);
+        socketRef.current.emit('unsubscribe', [activeSymbol]);
         socketRef.current.disconnect();
       }
     };

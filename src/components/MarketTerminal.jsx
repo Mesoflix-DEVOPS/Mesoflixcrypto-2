@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Star, TrendingUp, ChevronRight, X, Pin } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { getApiUrl, fetchWithLogging } from '../config/api';
 
 const RECOMMENDED_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
@@ -11,6 +12,7 @@ function MarketTerminal({ onSelectSymbol }) {
   const [watchlist, setWatchlist] = useState([]);
   const [prices, setPrices] = useState({});
   const [loading, setLoading] = useState(true);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     const init = async () => {
@@ -44,28 +46,31 @@ function MarketTerminal({ onSelectSymbol }) {
     init();
   }, []);
 
-  // Fetch prices for all visible symbols
+  // Real-time Market Data Bridge
   useEffect(() => {
-    const visibleSymbols = [...new Set([...RECOMMENDED_SYMBOLS, ...watchlist])];
-    if (visibleSymbols.length === 0) return;
+    const socketUrl = getApiUrl('').replace('/api', '');
+    socketRef.current = io(socketUrl, { transports: ['websocket'] });
 
-    const fetchPrices = async () => {
-      const priceMap = { ...prices };
-      await Promise.all(visibleSymbols.map(async (symbol) => {
-        try {
-          const response = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
-          if (response.ok) {
-            const res = await response.json();
-            priceMap[symbol] = res.data;
-          }
-        } catch (e) {}
+    socketRef.current.on('connect', () => {
+      console.log('[MARKET_SOCKET] Connected for Sidebar Feed');
+      const visibleSymbols = [...new Set([...RECOMMENDED_SYMBOLS, ...watchlist])];
+      if (visibleSymbols.length > 0) {
+        socketRef.current.emit('subscribe', visibleSymbols);
+      }
+    });
+
+    socketRef.current.on('ticker', (data) => {
+      setPrices(prev => ({
+        ...prev,
+        [data.symbol]: data
       }));
-      setPrices(priceMap);
-    };
+    });
 
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 15000); // 15s refresh
-    return () => clearInterval(interval);
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, [watchlist]);
 
   const handleSearch = (e) => {
