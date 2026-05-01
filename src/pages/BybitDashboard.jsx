@@ -40,8 +40,9 @@ function CustomTradingChart({ symbol, tickerData }) {
   const lastCandleRef = useRef(null);
   
   const [isInitializing, setIsInitializing] = useState(true);
-  const [interval, setInterval] = useState('15'); // default 15m
+  const [interval, setInterval] = useState('15'); 
   const [showIndicators, setShowIndicators] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -87,7 +88,7 @@ function CustomTradingChart({ symbol, tickerData }) {
         const volumeSeries = chart.addHistogramSeries({
             color: '#26a69a',
             priceFormat: { type: 'volume' },
-            priceScaleId: '', // overlay
+            priceScaleId: '', 
         });
         
         volumeSeries.priceScale().applyOptions({
@@ -110,7 +111,8 @@ function CustomTradingChart({ symbol, tickerData }) {
         });
         resizeObserver.current.observe(chartContainerRef.current);
 
-        const response = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=${interval}&limit=200`));
+        // FETCHING 500 CANDLES AS REQUESTED
+        const response = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=${interval}&limit=500`));
         if (response.ok && isMounted) {
             const res = await response.json();
             const data = res.data;
@@ -132,8 +134,8 @@ function CustomTradingChart({ symbol, tickerData }) {
                 seriesInstance.current.setData(formatted);
                 volumeSeriesInstance.current.setData(volumeData);
                 
-                // Simple EMA Calculation
                 const calculateEMA = (data, period) => {
+                  if (data.length < period) return [];
                   const k = 2 / (period + 1);
                   let emaData = [];
                   let prevEma = data[0].close;
@@ -158,7 +160,6 @@ function CustomTradingChart({ symbol, tickerData }) {
     return () => { isMounted = false; if (resizeObserver.current) resizeObserver.current.disconnect(); if (chartInstance.current) { try { chartInstance.current.remove(); } catch (e) {} } };
   }, [symbol, interval]);
 
-  // Handle Real-time Price Update on Candle
   useEffect(() => {
     if (tickerData && seriesInstance.current && lastCandleRef.current) {
       const price = parseFloat(tickerData.lastPrice);
@@ -176,37 +177,65 @@ function CustomTradingChart({ symbol, tickerData }) {
     }
   }, [tickerData]);
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+    setTimeout(() => {
+      if (chartInstance.current && chartContainerRef.current) {
+        chartInstance.current.applyOptions({ width: chartContainerRef.current.clientWidth, height: chartContainerRef.current.clientHeight });
+      }
+    }, 100);
+  };
+
   return (
-    <div className="relative w-full h-full bg-[#030712] border border-[#1e293b] rounded-lg overflow-hidden flex flex-col">
-      {/* Chart Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-bottom border-slate-800 bg-[#0b111e]/50 z-30">
-        <div className="flex gap-1">
+    <div className={`box-panel chart-section ${isFullscreen ? 'fixed inset-0 z-[9999] !h-screen !w-screen rounded-none' : ''}`}>
+      <div className="chart-header">
+        <div className="flex items-center gap-4">
+          <div className="symbol-badge">{symbol}</div>
+          <div className="price-display">
+            <span className={`main-price ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              ${parseFloat(tickerData?.lastPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+            <span className={`change-pct ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
+              {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        <div className="metrics-grid hidden md:flex">
+          <div className="metric-card high">
+            <span className="m-label">24h High</span>
+            <span className="m-value">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
+          </div>
+          <div className="metric-card low">
+            <span className="m-label">24h Low</span>
+            <span className="m-value">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="chart-toolbar">
+        <div className="tf-group">
           {['1', '5', '15', '60', '240', 'D'].map(tf => (
             <button 
               key={tf}
               onClick={() => setInterval(tf)}
-              className={`px-2 py-1 rounded text-[10px] font-black transition-all ${interval === tf ? 'bg-blue-500 text-white' : 'text-slate-500 hover:bg-slate-800'}`}
+              className={interval === tf ? 'active' : ''}
             >
               {tf === '60' ? '1H' : tf === '240' ? '4H' : tf === 'D' ? '1D' : `${tf}m`}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => {
-              const next = !showIndicators;
-              setShowIndicators(next);
-              if (ema20Instance.current) ema20Instance.current.applyOptions({ visible: next });
-              if (ema50Instance.current) ema50Instance.current.applyOptions({ visible: next });
-            }}
-            className={`text-[10px] font-bold px-2 py-1 rounded border ${showIndicators ? 'border-blue-500/50 text-blue-400' : 'border-slate-700 text-slate-500'}`}
-          >
-            INDICATORS {showIndicators ? 'ON' : 'OFF'}
+        <div className="flex gap-2">
+          <button onClick={() => setShowIndicators(!showIndicators)} className={`tool-btn ${showIndicators ? 'active' : ''}`}>
+             <TrendingUp size={12} /> INDICATORS
+          </button>
+          <button onClick={toggleFullscreen} className="tool-btn">
+             <Maximize2 size={12} /> {isFullscreen ? 'CLOSE' : 'FULL'}
           </button>
         </div>
       </div>
 
-      <div className="relative flex-1">
+      <div className="chart-box">
         {isInitializing && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#030712]/90 z-20">
              <RefreshCw className="animate-spin text-emerald-500" size={18} />
@@ -339,41 +368,11 @@ export default function BybitDashboard() {
     <div className="bybit-dashboard-container">
       <MarketTerminal onSelectSymbol={handleSelectSymbol} />
       
-      <div className="main-scaffold mt-4">
+      <div className="main-scaffold">
         <div className="col-left">
-           <div className="box-panel chart-section shadow-lg">
-              <div className="chart-header">
-                  <div className="flex items-center flex-wrap justify-between w-full gap-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-xl font-black text-white uppercase tracking-tighter bg-blue-500/10 px-3 py-1 rounded-md border border-blue-500/20">{activeSymbol}</span>
-                      <div className="flex flex-col">
-                        <span className={`text-2xl font-mono font-black ${priceColor} tracking-tight leading-none`}>
-                          ${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
-                        <span className={`text-[10px] font-black mt-1 ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
-                        </span>
-                      </div>
-                    </div>
+           <CustomTradingChart symbol={activeSymbol} tickerData={tickerData} />
 
-                    <div className="flex gap-8 border-l border-slate-800/50 pl-6 mobile-full-width">
-                      <div className="flex flex-col">
-                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">24h High</span>
-                         <span className="text-sm font-black text-emerald-400/90 font-mono tracking-tight">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex flex-col">
-                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">24h Low</span>
-                         <span className="text-sm font-black text-rose-400/90 font-mono tracking-tight">${parseFloat(tickerData?.lowPrice24h || 0).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-              </div>
-              <div className="chart-box">
-                 <CustomTradingChart symbol={activeSymbol} tickerData={tickerData} />
-              </div>
-           </div>
-
-           <div className="equity-footer shadow-lg">
+           <div className="equity-footer">
               <div className="flex justify-between items-center">
                  <div className="flex flex-col">
                     <span className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-1">Node Equity ({tradingMode})</span>
@@ -400,65 +399,52 @@ export default function BybitDashboard() {
         </div>
 
         <div className="col-right">
-           <div className="box-panel h-full shadow-2xl border border-emerald-500/5">
+           <div className="box-panel trade-panel shadow-2xl">
+              <div className="exec-header">
+                <span className="title">Trade Execution</span>
+              </div>
+
               <div className="exec-tabs">
-                 <button className={`tab-trigger tab-buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Long</button>
-                 <button className={`tab-trigger tab-sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Short</button>
+                 <button className={`tab-trigger buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Long</button>
+                 <button className={`tab-trigger sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Short</button>
               </div>
 
               {orderStatus && (
                 <div className={`mx-4 mb-4 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-wider ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                    {orderStatus.msg}
-                </div>
+                 </div>
               )}
 
-              <div className="exec-card">
-                 <div className="form-row">
-                    <label className="label-text">Select Side</label>
-                    <div className="side-picker">
-                       <button className={`side-btn buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Buy / Long</button>
-                       <button className={`side-btn sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Sell / Short</button>
-                    </div>
-                 </div>
-
-                 <div className="form-row">
-                    <label className="label-text">Order Type</label>
+              <div className="input-row">
+                 <div className="input-item">
+                    <label className="i-label">Order Type</label>
                     <div className="mode-selector">
                        <button className={`mode-btn ${orderType === 'Market' ? 'active' : ''}`} onClick={() => setOrderType('Market')}>Market</button>
                        <button className={`mode-btn ${orderType === 'Limit' ? 'active' : ''}`} onClick={() => setOrderType('Limit')}>Limit</button>
                     </div>
                  </div>
 
-                 <div className="form-row">
-                    <div className="flex justify-between items-center">
-                       <label className="label-text">Position Size</label>
-                       <span className="info-label">Max: {contextBalance ? (parseFloat(contextBalance.totalAvailableBalance || 0) / (activePrice || 1)).toFixed(4) : '0.0000'}</span>
-                    </div>
-                    <div className="input-box">
+                 <div className="input-item">
+                    <label className="i-label">Position Size</label>
+                    <div className="i-wrap">
                        <input placeholder="0.000" value={qty} onChange={(e) => setQty(e.target.value)} />
-                       <span className="text-[11px] font-black text-slate-500">{activeSymbol.replace('USDT', '')}</span>
+                       <span className="unit">{activeSymbol.replace('USDT', '')}</span>
                     </div>
                  </div>
 
-                 <div className="form-row">
-                    <div className="flex justify-between items-center">
-                       <label className="label-text">Leverage Factor</label>
+                 <div className="input-item">
+                    <div className="flex justify-between mb-2">
+                       <label className="i-label">Leverage Factor</label>
                        <span className="text-[11px] font-black text-emerald-400 font-mono">{leverage}x</span>
                     </div>
-                    <div className="py-2">
-                       <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
-                    </div>
-                    <div className="flex justify-between text-[9px] font-bold text-slate-600">
-                       <span>1x SAFE</span>
-                       <span>100x DEGEN</span>
-                    </div>
+                    <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
                  </div>
-
-                 <button className={`primary-btn ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
-                    {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                    {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
-                 </button>
               </div>
+
+              <button className={`action-btn ${activeSide === 'BUY' ? 'long' : 'short'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
+                 {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
+                 {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
+              </button>
 
               <div className="mt-auto p-6 bg-[#030712] border-t border-[#1f2937]">
                  <div className="flex items-center gap-2 mb-4">
