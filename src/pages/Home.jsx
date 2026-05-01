@@ -52,9 +52,9 @@ function Home() {
           <div className="lp-badge">Institutional-Grade Infrastructure</div>
           <h1 className="lp-title">Build your portfolio on <br /><span className="accent">Bybit Core</span></h1>
           <p className="lp-desc">Experience the world's most robust trading engine with military-grade security and institutional liquidity pools.</p>
-          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-             <Link to="/sign-up" className="c-btn" style={{ background: '#10b981', color: '#000' }}>Open Account</Link>
-             <Link to="/institutional-markets" className="c-btn" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>Explore Markets</Link>
+          <div className="hero-actions">
+             <Link to="/sign-up" className="c-btn primary">Open Account</Link>
+             <Link to="/institutional-markets" className="c-btn secondary">Explore Markets</Link>
           </div>
         </div>
       </section>
@@ -66,13 +66,13 @@ function Home() {
                <span className="c-badge">Bybit Official Promotion</span>
                <h2 className="c-title">Master the markets with <br /><span style={{ color: '#F7A600' }}>Bybit Institutional</span></h2>
                <p className="c-desc">Join the fastest growing exchange through MesoflixLabs. Get exclusive access to the highest rebate tiers and institutional liquidity.</p>
-               <a href="https://partner.bybit.com/b/aff_7_157391" target="_blank" rel="noopener noreferrer" className="c-btn">Claim Welcome Bonus</a>
+               <a href="https://partner.bybit.com/b/aff_7_157391" target="_blank" rel="noopener noreferrer" className="c-btn bybit">Claim Welcome Bonus</a>
             </div>
             <div className="desktop-only">
-               <div style={{ background: '#000', border: '1px solid rgba(247,166,0,0.2)', borderRadius: '30px', padding: '40px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '32px', fontWeight: '900', color: '#F7A600', marginBottom: '10px' }}>BYBIT</div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#fff' }}>$30,000</div>
-                  <div style={{ fontSize: '10px', color: '#475569', fontWeight: '800' }}>DEPOSIT REWARDS</div>
+               <div className="promo-box">
+                  <div className="promo-logo">BYBIT</div>
+                  <div className="promo-val">$30,000</div>
+                  <div className="promo-lbl">DEPOSIT REWARDS</div>
                </div>
             </div>
           </div>
