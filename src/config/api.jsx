@@ -16,8 +16,8 @@ const getBaseUrl = () => {
     return 'http://localhost:3001';
   }
 
-  // 3. Fallback to production DigitalOcean VPS URL
-  return 'http://178.62.51.135:10000';
+  // 3. Fallback to production Institutional VPS URL
+  return 'https://api.mesoflixlabs.com';
 };
 
 export const RENDER_BACKEND_URL = getBaseUrl();
