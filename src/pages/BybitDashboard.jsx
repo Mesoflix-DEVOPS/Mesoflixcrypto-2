@@ -31,7 +31,7 @@ import { useSocket } from '../context/SocketContext';
 
 export default function BybitDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { tradingMode, user: contextUser, balance: contextBalance } = useOutletContext();
+  const { tradingMode, user: contextUser, balance: contextBalance, refresh: refreshProfile } = useOutletContext();
   const { socket, subscribeToTicker, unsubscribeFromTicker, initPrivateStream } = useSocket();
 
   const paramSymbol = searchParams.get('symbol') || 'BTCUSDT';
@@ -43,21 +43,19 @@ export default function BybitDashboard() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Terminal State
-  const [activeSide, setActiveSide] = useState('BUY');
-  const [orderType, setOrderType] = useState('Market');
-  const [qty, setQty] = useState('0.1');
-  const [leverage, setLeverage] = useState('10');
-  const [orderLoading, setOrderLoading] = useState(false);
-  const [orderStatus, setOrderStatus] = useState(null);
+  // Throttled refresh to prevent proxy spikes
+  const lastRefresh = useRef(0);
+  const fetchDashboardThrottled = () => {
+    const now = Date.now();
+    if (now - lastRefresh.current < 5000) return; // Max once per 5 seconds
+    lastRefresh.current = now;
+    fetchDashboard();
+  };
 
   useEffect(() => {
     if (!socket) return;
 
-    // Subscribe to public ticker
     subscribeToTicker(activeSymbol);
-    
-    // Init private stream for this user
     if (contextUser?.id) {
       initPrivateStream(contextUser.id, tradingMode);
     }
@@ -71,8 +69,12 @@ export default function BybitDashboard() {
     };
 
     const onPrivateData = (msg) => {
-      console.log('[DASHBOARD] Socket Private Update:', msg.topic);
-      fetchDashboard();
+      // ONLY REFRESH FOR CRITICAL CHANGES (Wallet/Execution)
+      // Ignore 'position' topic which ticks every second for PnL changes
+      if (msg.topic === 'wallet' || msg.topic === 'execution' || msg.topic === 'order') {
+        console.log('[DASHBOARD] Critical Private Update:', msg.topic);
+        fetchDashboardThrottled();
+      }
     };
 
     socket.on('ticker', onTicker);
@@ -95,7 +97,8 @@ export default function BybitDashboard() {
         if (data.ok) {
           setPositions(data.data.positions || []);
           setHistory(data.data.history || []);
-          setContextBalance(data.data.balance); // Ensure balance is updated
+          // Use global refresh for balance consistency
+          if (refreshProfile) refreshProfile();
         }
       }
     } catch (err) { console.error('[DASHBOARD_FETCH_FAIL]', err); }
@@ -103,7 +106,7 @@ export default function BybitDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-    // MINIMAL POLLING (60s) - WEBSOCKETS HANDLE THE REAL-TIME UPDATES NOW
+    // POLLING: 60s is enough as safety, WS handles the rest
     const timer = setInterval(fetchDashboard, 60000); 
     return () => clearInterval(timer);
   }, [contextUser, tradingMode]);

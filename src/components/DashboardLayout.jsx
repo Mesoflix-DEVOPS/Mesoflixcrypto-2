@@ -30,7 +30,7 @@ function DashboardLayout() {
         />
         
         <section className="layout-content">
-          <Outlet context={{ tradingMode, setTradingMode, user, balance }} />
+          <Outlet context={{ tradingMode, setTradingMode, user, balance, refresh }} />
         </section>
       </main>
 
