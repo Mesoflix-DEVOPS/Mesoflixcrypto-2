@@ -170,9 +170,6 @@ export default function InstitutionalSettings() {
     </div>
   );
 }
-    </div>
-  );
-}
 
 const AlertCircle = ({ size, color }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

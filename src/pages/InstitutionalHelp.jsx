@@ -121,9 +121,6 @@ export default function InstitutionalHelp() {
     </div>
   );
 }
-    </div>
-  );
-}
 
 const Activity = ({ size, color }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
