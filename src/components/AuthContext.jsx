@@ -33,6 +33,12 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
+      const response = await fetchWithLogging(getApiUrl('/api/dashboard/profile'), {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (response.ok) {
         const res = await response.json();
         // Standardized response uses { ok: true, data: { ... } }
