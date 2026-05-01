@@ -1719,9 +1719,109 @@ function connectBybitWS() {
 // Initialize Bybit WS Bridge
 connectBybitWS();
 
+// --- BYBIT PRIVATE WEBSOCKET BRIDGE (AUTHENTICATED) ---
+const privateWSConnections = new Map();
+
+async function connectBybitPrivateWS(userId, config, socket) {
+  const { apiKey, apiSecret, isTestnet } = config;
+  const wsUrl = isTestnet ? 'wss://stream-testnet.bybit.com/v5/private' : 'wss://stream.bybit.com/v5/private';
+  
+  if (privateWSConnections.has(userId)) {
+    console.log(`[BYBIT_PRIVATE_WS] Closing existing connection for ${userId}`);
+    privateWSConnections.get(userId).close();
+  }
+
+  console.log(`[BYBIT_PRIVATE_WS] Connecting for ${userId} to ${wsUrl}`);
+  const ws = new WebSocket(wsUrl);
+  privateWSConnections.set(userId, ws);
+
+  ws.on('open', () => {
+    console.log(`[BYBIT_PRIVATE_WS] Handshake for ${userId}...`);
+    
+    // 1. Authenticate
+    const expires = (Date.now() + 10000).toString();
+    const signature = crypto
+      .createHmac('sha256', apiSecret)
+      .update(`GET/realtime${expires}`)
+      .digest('hex');
+
+    const authMsg = {
+      op: 'auth',
+      args: [apiKey, expires, signature]
+    };
+    ws.send(JSON.stringify(authMsg));
+
+    // 2. Heartbeat
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ op: 'ping' }));
+      } else {
+        clearInterval(pingInterval);
+      }
+    }, 20000);
+  });
+
+  ws.on('message', (data) => {
+    const msg = JSON.parse(data.toString());
+    
+    // Handle Auth Success
+    if (msg.op === 'auth' && msg.success) {
+      console.log(`[BYBIT_PRIVATE_WS] Auth Success for ${userId}. Subscribing...`);
+      ws.send(JSON.stringify({
+        op: 'subscribe',
+        args: ['position', 'execution', 'wallet', 'order']
+      }));
+    }
+
+    // Push Private Data to Frontend
+    if (msg.topic) {
+      socket.emit('private_data', {
+        topic: msg.topic,
+        data: msg.data
+      });
+    }
+  });
+
+  ws.on('error', (err) => {
+    console.error(`[BYBIT_PRIVATE_WS] Error for ${userId}:`, err.message);
+  });
+
+  ws.on('close', () => {
+    console.log(`[BYBIT_PRIVATE_WS] Connection closed for ${userId}`);
+    privateWSConnections.delete(userId);
+  });
+}
+
 io.on('connection', (socket) => {
   console.log(`[SOCKET] Client connected: ${socket.id}`);
   
+  // Initialize Private Stream on request
+  socket.on('init_private_stream', async ({ userId, environment }) => {
+    try {
+      console.log(`[SOCKET] Init Private Stream for ${userId} (${environment})`);
+      
+      const { data: account, error } = await supabase
+        .from('user_broker_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('environment', environment || 'REAL')
+        .single();
+
+      if (error || !account) throw new Error('Account not found');
+
+      const config = {
+        apiKey: encryption.decrypt(account.encrypted_api_key),
+        apiSecret: encryption.decrypt(account.encrypted_api_secret),
+        isTestnet: environment === 'TESTNET' || environment === 'DEMO'
+      };
+
+      await connectBybitPrivateWS(userId, config, socket);
+    } catch (err) {
+      console.error('[SOCKET_INIT_PRIVATE_FAIL]', err.message);
+      socket.emit('private_data_error', { message: err.message });
+    }
+  });
+
   socket.on('subscribe', (symbols) => {
     if (!symbols) return;
     const symbolList = Array.isArray(symbols) ? symbols : [symbols];

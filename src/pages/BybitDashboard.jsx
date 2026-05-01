@@ -60,15 +60,28 @@ export default function BybitDashboard() {
     socketRef.current.on('connect', () => {
       console.log('[SOCKET] Connected to Live Feed');
       socketRef.current.emit('subscribe', [activeSymbol]);
+      
+      // INIT PRIVATE STREAM
+      if (contextUser?.id) {
+        socketRef.current.emit('init_private_stream', { 
+          userId: contextUser.id, 
+          environment: tradingMode 
+        });
+      }
     });
 
     socketRef.current.on('ticker', (data) => {
-      // Only update if symbol matches
       if (data.symbol === activeSymbol) {
         setTickerData(data);
         const price = parseFloat(data.lastPrice);
         if (price > 0) setActivePrice(price);
       }
+    });
+
+    socketRef.current.on('private_data', (msg) => {
+      console.log('[SOCKET] Private Update:', msg.topic);
+      // Trigger a light refresh when account state changes
+      fetchDashboard();
     });
 
     return () => {
@@ -77,7 +90,7 @@ export default function BybitDashboard() {
         socketRef.current.disconnect();
       }
     };
-  }, [activeSymbol]);
+  }, [activeSymbol, contextUser, tradingMode]);
 
   // Fetch Dashboard Aggregated Data (Balances/Positions)
   const fetchDashboard = async () => {
@@ -86,16 +99,19 @@ export default function BybitDashboard() {
       const res = await fetchWithLogging(getApiUrl(`/api/bybit/dashboard/${contextUser.id}?environment=${tradingMode}`));
       if (res.ok) {
         const data = await res.json();
-        setPositions(data.data.positions || []);
-        setHistory(data.data.history || []);
+        if (data.ok) {
+          setPositions(data.data.positions || []);
+          setHistory(data.data.history || []);
+          setContextBalance(data.data.balance); // Ensure balance is updated
+        }
       }
     } catch (err) { console.error('[DASHBOARD_FETCH_FAIL]', err); }
   };
 
   useEffect(() => {
     fetchDashboard();
-    // INCREASED INTERVAL TO 20s TO SAVE FIXIE PROXY CREDITS
-    const timer = setInterval(fetchDashboard, 20000); 
+    // MINIMAL POLLING (60s) - WEBSOCKETS HANDLE THE REAL-TIME UPDATES NOW
+    const timer = setInterval(fetchDashboard, 60000); 
     return () => clearInterval(timer);
   }, [contextUser, tradingMode]);
 
@@ -105,8 +121,8 @@ export default function BybitDashboard() {
   };
 
   useEffect(() => {
-    if (contextUser) fetchAccountData(contextUser.id);
-  }, [contextUser, fetchAccountData, tradingMode]);
+    if (contextUser) fetchDashboard();
+  }, [contextUser, tradingMode]);
 
   useEffect(() => {
     if (paramSymbol && paramSymbol !== activeSymbol) {
