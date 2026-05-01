@@ -3,6 +3,7 @@
 @import 'abstracts/variables';
 @import 'abstracts/mixins';
 @import 'abstracts/utilities';
+@import 'theme';
 // from base folder
 @import 'base/reset';
 @import 'base/typography';
@@ -47,6 +48,8 @@
 @import 'layout/header';
 @import 'layout/navbar';
 @import 'layout/footer';
+@import 'layout/dashboard-header';
+@import 'layout/sidebar';
 // from pages folder
 @import "pages/index";
 @import "pages/inner-pages";

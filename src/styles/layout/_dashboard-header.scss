@@ -1,0 +1,229 @@
+.header-modern {
+  height: 72px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $color-bg-dark;
+  border-bottom: 1px solid $color-border;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  @include glass-panel;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-container {
+  position: relative;
+  width: 320px;
+  
+  .search-box-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      color: $color-text-muted;
+    }
+    
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid $color-border;
+      border-radius: 12px;
+      padding: 10px 14px 10px 42px;
+      color: #fff;
+      font-size: 13px;
+      transition: all 0.2s;
+      
+      &:focus {
+        border-color: $color-primary;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+      }
+    }
+  }
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.status-pill {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid $color-border;
+  padding: 8px 16px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  .pill-label {
+    @extend .institutional-label;
+  }
+  
+  .pill-value {
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    
+    &.green { color: $color-primary; }
+    &.blue { color: $color-secondary; }
+  }
+}
+
+.mode-switcher-header {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid $color-border;
+  
+  .ms-btn {
+    border: none;
+    background: transparent;
+    color: $color-text-muted;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.2s;
+    
+    &.ms-real {
+      background: $color-primary;
+      color: #000;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    &.ms-demo {
+      background: $color-warning;
+      color: #000;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    &:hover:not(.ms-real):not(.ms-demo) {
+      color: #fff;
+    }
+  }
+}
+
+.profile-widget {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 14px;
+  transition: 0.2s;
+  border: 1px solid transparent;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: $color-border;
+  }
+  
+  .profile-text {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    
+    .profile-name {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    
+    .profile-role {
+      @extend .institutional-label;
+      font-size: 9px;
+      opacity: 0.7;
+    }
+  }
+  
+  .profile-avatar {
+    width: 38px;
+    height: 38px;
+    background: $grad-main;
+    color: #000;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid $color-border;
+  color: $color-text-muted;
+  padding: 10px;
+  border-radius: 12px;
+  transition: 0.2s;
+  position: relative;
+  
+  &:hover, &.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .blue-dot, .red-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 1.5px solid $color-bg-dark;
+  }
+  
+  .blue-dot { background: $color-secondary; }
+  .red-dot { background: $color-danger; }
+}
+
+/* Popups */
+.popup-box {
+  @include glass-panel;
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  width: 320px;
+  border-radius: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  
+  &.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+  }
+  
+  &.right-aligned {
+    left: auto;
+    right: 0;
+    transform: scale(0.95);
+    &.show { transform: scale(1); }
+  }
+  
+  .popup-header {
+    padding: 20px;
+    @include heading-premium;
+    font-size: 14px;
+    border-bottom: 1px solid $color-border;
+  }
+}

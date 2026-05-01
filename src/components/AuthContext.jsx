@@ -18,10 +18,12 @@ export const UserProvider = ({ children }) => {
     setUser(null);
     setAuthenticated(false);
     setBalance({ totalEquity: '0.00', totalAvailableBalance: '0.00' });
-    if (location.pathname.startsWith('/dashboard')) {
+    
+    // Only redirect if we are in a protected area
+    if (window.location.pathname.startsWith('/dashboard')) {
       navigate('/sign-in');
     }
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
   const fetchProfile = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -39,11 +41,16 @@ export const UserProvider = ({ children }) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        setAuthenticated(true);
-        if (data.balance) {
-          setBalance(data.balance);
+        const res = await response.json();
+        // Standardized response uses { ok: true, data: { ... } }
+        const profileData = res.data;
+        
+        if (profileData) {
+          setUser(profileData);
+          setAuthenticated(true);
+          if (profileData.balance) {
+            setBalance(profileData.balance);
+          }
         }
       } else if (response.status === 401) {
         logout();

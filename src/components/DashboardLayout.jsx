@@ -1,4 +1,8 @@
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { useUser } from './AuthContext';
+import DashboardSidebar from './DashboardSidebar';
+import DashboardHeader from './DashboardHeader';
 
 function DashboardLayout() {
   const { user, balance } = useUser();
@@ -19,8 +23,6 @@ function DashboardLayout() {
       
       <main className="layout-body">
         <DashboardHeader 
-          user={user} 
-          balance={balance} 
           onMenuClick={toggleSidebar} 
           sidebarOpen={sidebarOpen}
           tradingMode={tradingMode}

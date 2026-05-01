@@ -435,7 +435,7 @@ app.post('/api/user/register', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    res.status(201).json({ success: true, token, user: newUser });
+    sendResponse(res, 201, { token, user: newUser });
 
   } catch (error) {
     console.error('User registration error:', error);
@@ -476,8 +476,7 @@ app.post('/api/user/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    res.status(200).json({ 
-      success: true, 
+    sendResponse(res, 200, { 
       token, 
       user: { 
         id: user.id, 

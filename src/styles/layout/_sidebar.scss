@@ -1,0 +1,116 @@
+.sidebar-container {
+  width: 260px;
+  background: $color-bg-dark;
+  height: 100vh;
+  border-right: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  padding: 32px 0;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1050;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 32px 40px;
+  
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+  
+  .logo-text {
+    @include heading-premium;
+    font-size: 22px;
+  }
+}
+
+.sidebar-links {
+  flex: 1;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  color: $color-text-muted;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  &.active {
+    color: #fff;
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    
+    .item-icon {
+      color: $color-primary;
+    }
+  }
+}
+
+.ai-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: $color-primary;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-left: auto;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.num-badge {
+  background: $color-secondary;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.sidebar-footer {
+  padding: 24px 16px;
+  border-top: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-container {
+    position: fixed;
+    left: -260px;
+    box-shadow: 24px 0 64px rgba(0,0,0,0.6);
+    
+    &.open {
+      left: 0;
+    }
+  }
+}
