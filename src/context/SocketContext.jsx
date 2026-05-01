@@ -17,7 +17,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // 1. Initialize Global Socket
-    const socketUrl = getApiUrl('').replace('/api', '');
+    const socketUrl = getApiUrl(''); // Point directly to the root of the secure domain
     console.log(`[SOCKET_SYSTEM] Connecting to institutional hub: ${socketUrl}`);
     
     const socket = io(socketUrl, {

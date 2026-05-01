@@ -25,7 +25,8 @@ function InstitutionalMarkets() {
         const symbolsRes = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
         
         if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
-          const data = await symbolsRes.json();
+          const res = await symbolsRes.json();
+          const data = Array.isArray(res) ? res : (res.data || []);
           setAllSymbols(data);
           setFilteredSymbols(data.slice(0, 50)); 
         } else {
