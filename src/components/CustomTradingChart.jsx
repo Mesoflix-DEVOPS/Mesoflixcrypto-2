@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Maximize2, TrendingUp, RefreshCw } from 'lucide-react';
-import { getApiUrl } from '../config';
+import { getApiUrl } from '../config/api';
 
 // Reusable Institutional Trading Chart Component
 export default function CustomTradingChart({ symbol, tickerData, height = "600px" }) {
