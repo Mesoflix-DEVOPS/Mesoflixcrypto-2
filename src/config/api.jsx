@@ -16,8 +16,8 @@ const getBaseUrl = () => {
     return 'http://localhost:3001';
   }
 
-  // 3. Fallback to production Render URL
-  return 'https://mesoflixcrypto-2.onrender.com';
+  // 3. Fallback to production DigitalOcean VPS URL
+  return 'http://178.62.51.135:10000';
 };
 
 export const RENDER_BACKEND_URL = getBaseUrl();
