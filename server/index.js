@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import WebSocket from 'ws';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
@@ -1648,17 +1649,89 @@ app.all('/api/*', (req, res) => {
 });
 
 // --- SOCKET.IO REAL-TIME ENGINE ---
+// --- BYBIT WEBSOCKET BRIDGE ---
+let bybitWS = null;
+const activeTopics = new Set();
+
+function connectBybitWS() {
+  const wsUrl = 'wss://stream.bybit.com/v5/public/linear';
+  console.log(`[BYBIT_WS] Connecting to ${wsUrl}...`);
+  
+  bybitWS = new WebSocket(wsUrl);
+
+  bybitWS.on('open', () => {
+    console.log('[BYBIT_WS] Connected to Bybit Public Stream');
+    // Re-subscribe to all active topics on reconnect
+    if (activeTopics.size > 0) {
+      const topics = Array.from(activeTopics);
+      bybitWS.send(JSON.stringify({ op: 'subscribe', args: topics }));
+    }
+    
+    // Start heartbeat
+    const pingInterval = setInterval(() => {
+      if (bybitWS.readyState === WebSocket.OPEN) {
+        bybitWS.send(JSON.stringify({ op: 'ping' }));
+      } else {
+        clearInterval(pingInterval);
+      }
+    }, 20000);
+  });
+
+  bybitWS.on('message', (data) => {
+    const message = JSON.parse(data);
+    
+    // Handle Ticker Updates
+    if (message.topic && message.topic.startsWith('tickers.')) {
+      const symbol = message.topic.split('.')[1];
+      const ticker = message.data;
+      
+      // Broadcast to all clients joined to this symbol's room
+      io.to(symbol).emit('ticker', {
+        symbol,
+        lastPrice: ticker.lastPrice,
+        price24hPcnt: ticker.price24hPcnt,
+        highPrice24h: ticker.highPrice24h,
+        lowPrice24h: ticker.lowPrice24h,
+        volume24h: ticker.volume24h,
+        ts: message.ts
+      });
+    }
+  });
+
+  bybitWS.on('error', (err) => {
+    console.error('[BYBIT_WS_ERROR]', err.message);
+  });
+
+  bybitWS.on('close', () => {
+    console.warn('[BYBIT_WS] Connection closed. Reconnecting in 5s...');
+    setTimeout(connectBybitWS, 5000);
+  });
+}
+
+// Initialize Bybit WS Bridge
+connectBybitWS();
+
 io.on('connection', (socket) => {
   console.log(`[SOCKET] Client connected: ${socket.id}`);
   
   socket.on('subscribe', (symbol) => {
+    if (!symbol) return;
     socket.join(symbol);
     console.log(`[SOCKET] ${socket.id} subscribed to ${symbol}`);
+
+    const topic = `tickers.${symbol}`;
+    if (!activeTopics.has(topic)) {
+      activeTopics.add(topic);
+      if (bybitWS && bybitWS.readyState === WebSocket.OPEN) {
+        bybitWS.send(JSON.stringify({ op: 'subscribe', args: [topic] }));
+      }
+    }
   });
 
   socket.on('unsubscribe', (symbol) => {
+    if (!symbol) return;
     socket.leave(symbol);
-    console.log(`[SOCKET] ${socket.id} unsubscribed from ${symbol}`);
+    // Note: We keep the Bybit subscription active for other potential clients
   });
 
   socket.on('disconnect', () => {
