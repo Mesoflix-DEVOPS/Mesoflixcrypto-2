@@ -191,7 +191,7 @@ export default function BybitDashboard() {
 
   useEffect(() => {
     if (contextUser) fetchAccountData(contextUser.id);
-  }, [contextUser, fetchAccountData, activeSymbol]);
+  }, [contextUser, fetchAccountData, tradingMode]);
 
   useEffect(() => {
     if (paramSymbol && paramSymbol !== activeSymbol) {
