@@ -94,7 +94,15 @@ export async function bybitRequest(method, endpoint, params = {}, config = {}) {
     }
 
     const response = await fetch(url, fetchOptions);
-    const result = await response.json();
+    const responseText = await response.text();
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.error('[BYBIT_JSON_PARSE_ERROR] Body is not JSON:', responseText.substring(0, 500));
+      throw new Error(`Bybit returned non-JSON response: ${responseText.substring(0, 100)}...`);
+    }
     
     // Internal Logging for Broker Verification
     console.log(`[BYBIT_API_LOG] ${new Date().toISOString()} | ${method} ${endpoint} | Status: ${result.retCode} | Msg: ${result.retMsg} | Broker: ${FINAL_BROKER_ID} | Latency: ${Date.now() - startTime}ms`);
