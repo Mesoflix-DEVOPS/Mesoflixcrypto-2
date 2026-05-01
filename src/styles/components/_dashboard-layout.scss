@@ -5,11 +5,16 @@
 .dl-shell {
     display: flex;
     min-height: 100vh;
-    background: #07111f;
+    background: #020610;
     color: #e2e8f0;
     font-family: 'Inter', sans-serif;
     overflow: hidden;
     position: relative;
+
+    @media (max-width: 1024px) {
+        height: auto;
+        min-height: 100dvh;
+    }
 
     .dl-backdrop {
         position: fixed;
@@ -24,8 +29,13 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
-        background: #07111f;
+        background: #020610;
         height: 100vh;
+
+        @media (max-width: 1024px) {
+            height: auto;
+            min-height: 100dvh;
+        }
     }
 
     .dl-content {

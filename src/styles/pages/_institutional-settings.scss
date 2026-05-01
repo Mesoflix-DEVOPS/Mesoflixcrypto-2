@@ -81,8 +81,22 @@
   .api-warning { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #f59e0b; background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; }
   .new-key-btn { align-self: flex-start; background: transparent; border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 800; cursor: pointer; }
 
-  @media (max-width: 900px) {
-    .set-container { grid-template-columns: 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    padding: 16px;
+    .set-container { 
+      grid-template-columns: 1fr; 
+      gap: 32px; 
+    }
+    .set-nav { gap: 24px; }
+    .set-nav-items { 
+      flex-direction: row; 
+      overflow-x: auto; 
+      padding-bottom: 8px;
+      gap: 8px;
+    }
+    .set-nav-item { white-space: nowrap; }
+    .form-grid { grid-template-columns: 1fr; gap: 16px; }
+    .security-item { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .ak-display { flex-direction: column; }
   }
 }

@@ -131,8 +131,14 @@
 
   .loading-row, .empty-row { text-align: center; padding: 48px !important; color: #475569; font-size: 13px; font-weight: 700; }
 
-  @media (max-width: 1200px) {
-    .port-header { grid-template-columns: 1fr; }
-    .port-content { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    padding: 12px;
+    gap: 12px;
+    .port-header { grid-template-columns: 1fr; gap: 12px; }
+    .port-summary-main { padding: 24px; }
+    .port-summary-grid { gap: 12px; }
+    .port-content { grid-template-columns: 1fr; gap: 12px; }
+    .grid-item { padding: 16px; }
+    .summary-value { font-size: 28px; }
   }
 }

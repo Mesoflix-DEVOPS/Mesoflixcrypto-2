@@ -90,8 +90,20 @@
     .mkt-chart-sym { font-size: 14px; font-weight: 900; color: #fff; }
   }
 
-  @media (max-width: 900px) {
-    .mkt-body { grid-template-columns: 1fr; }
-    .mkt-chart-panel { height: 300px; }
+  @media (max-width: 1024px) {
+    .mkt-topbar { padding: 12px; }
+    .mkt-body { 
+      grid-template-columns: 1fr; 
+      height: auto;
+      overflow: visible;
+    }
+    .mkt-table-wrap { overflow: visible; }
+    .mkt-chart-panel { 
+      height: 400px; 
+      order: -1; // Chart on top on mobile
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .mkt-controls { width: 100%; justify-content: space-between; }
+    .mkt-search { width: 100%; input { width: 100%; } }
   }
 }

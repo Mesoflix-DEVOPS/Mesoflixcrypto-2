@@ -218,8 +218,14 @@
     }
   }
 
-  @media (max-width: 1200px) {
-    .ana-hero { grid-template-columns: 1fr; }
-    .ana-layout { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    padding: 12px;
+    gap: 16px;
+    .ana-hero { grid-template-columns: 1fr; gap: 16px; }
+    .ana-layout { grid-template-columns: 1fr; gap: 16px; }
+    .ana-card { padding: 20px; }
+    .ana-stats-grid { grid-template-columns: 1fr; gap: 12px; }
+    .stat-val { font-size: 24px; }
+    .pnl-chart-container { padding: 16px; }
   }
 }

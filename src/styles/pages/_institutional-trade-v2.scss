@@ -187,12 +187,30 @@
     }
   }
 
-  @media (max-width: 1100px) {
-    .trade-body { grid-template-columns: 160px 1fr 260px; }
-  }
-  @media (max-width: 800px) {
-    .trade-body { grid-template-columns: 1fr; }
-    .trade-sym-panel { display: none; }
-    .trade-chart-area { min-height: 300px; }
+  @media (max-width: 1024px) {
+    .trade-body { 
+      grid-template-columns: 1fr; 
+      height: auto;
+      overflow: visible;
+    }
+    .trade-chart-area { 
+      height: 400px; 
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .trade-sym-panel { 
+      height: 350px; 
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .trade-exec-panel {
+      height: auto;
+      overflow: visible;
+    }
+    .trade-toolbar {
+      padding: 4px;
+    }
+    .tb-chip {
+      min-width: 100px;
+      padding: 8px 12px;
+    }
   }
 }
