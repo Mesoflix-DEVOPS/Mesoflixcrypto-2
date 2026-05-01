@@ -41,10 +41,11 @@ function DashboardHeader({ onMenuClick, sidebarOpen, tradingMode, setTradingMode
 
     const fetchPrice = async () => {
       try {
-        const res = await fetchWithLogging(getApiUrl('/api/market/ticker/BTCUSDT'));
-        if (res.ok) {
-          const data = await res.json();
-          if (data.lastPrice) {
+        const response = await fetchWithLogging(getApiUrl('/api/market/ticker/BTCUSDT'));
+        if (response.ok) {
+          const res = await response.json();
+          const data = res.data;
+          if (data && data.lastPrice) {
             setMarketPrice(parseFloat(data.lastPrice).toLocaleString(undefined, { minimumFractionDigits: 2 }));
           }
         }

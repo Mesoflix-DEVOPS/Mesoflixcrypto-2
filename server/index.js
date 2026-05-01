@@ -1426,10 +1426,9 @@ app.get('/api/market/all-symbols', async (req, res) => {
           base: p.baseCoin,
           quote: p.quoteCoin
         }));
-      res.setHeader('Content-Type', 'application/json');
-      res.status(200).json(pairs);
+      sendResponse(res, 200, pairs);
     } else {
-      res.status(500).json({ error: 'Failed to fetch instruments' });
+      sendResponse(res, 500, null, { message: 'Failed to fetch instruments' });
     }
   } catch (err) {
     res.setHeader('Content-Type', 'application/json');
@@ -1445,8 +1444,7 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
     
     if (tickerRes.retCode === 0 && tickerRes.result?.list?.[0]) {
       const t = tickerRes.result.list[0];
-      res.setHeader('Content-Type', 'application/json');
-      res.status(200).json({
+      sendResponse(res, 200, {
         symbol: t.symbol,
         lastPrice: t.lastPrice,
         price24hPcnt: t.price24hPcnt,
@@ -1455,7 +1453,7 @@ app.get('/api/market/ticker/:symbol', async (req, res) => {
         volume24h: t.volume24h
       });
     } else {
-      res.status(404).json({ error: 'Ticker not found' });
+      sendResponse(res, 404, null, { message: 'Ticker not found' });
     }
   } catch (err) {
     res.setHeader('Content-Type', 'application/json');
@@ -1476,10 +1474,9 @@ app.get('/api/market/kline/:symbol', async (req, res) => {
     });
 
     if (klineRes.retCode === 0) {
-      res.setHeader('Content-Type', 'application/json');
-      res.status(200).json(klineRes.result);
+      sendResponse(res, 200, klineRes.result);
     } else {
-      res.status(404).json({ error: 'Klines not found', details: klineRes.retMsg });
+      sendResponse(res, 404, null, { message: 'Klines not found', details: klineRes.retMsg });
     }
   } catch (err) {
     res.setHeader('Content-Type', 'application/json');

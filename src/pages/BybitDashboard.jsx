@@ -85,10 +85,11 @@ function CustomTradingChart({ symbol }) {
         });
         resizeObserver.current.observe(chartContainerRef.current);
 
-        const res = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=15&limit=150`));
-        if (res.ok && isMounted) {
-            const data = await res.json();
-            if (data.list && seriesInstance.current) {
+        const response = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=15&limit=150`));
+        if (response.ok && isMounted) {
+            const res = await response.json();
+            const data = res.data;
+            if (data && data.list && seriesInstance.current) {
                 const formatted = data.list.map(item => ({
                     time: parseInt(item[0]) / 1000,
                     open: parseFloat(item[1]),

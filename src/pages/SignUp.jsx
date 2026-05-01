@@ -5,13 +5,20 @@ import { Shield, User, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useUser } from '../components/AuthContext';
 
 function SignUp() {
-  const { refresh } = useUser();
+  const { authenticated, refresh } = useUser();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (authenticated) {
+      navigate('/dashboard');
+    }
+  }, [authenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

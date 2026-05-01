@@ -19,8 +19,9 @@ function MarketTerminal({ onSelectSymbol }) {
         
         // 1. Fetch available symbols for search
         const symbolsRes = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
-        if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
-          setAllSymbols(await symbolsRes.json());
+        if (symbolsRes.ok) {
+          const res = await symbolsRes.json();
+          setAllSymbols(res.data || []);
         }
 
         // 2. Fetch User Watchlist
@@ -28,8 +29,9 @@ function MarketTerminal({ onSelectSymbol }) {
           const watchRes = await fetchWithLogging(getApiUrl('/api/dashboard/watchlist'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
-            setWatchlist(await watchRes.json());
+          if (watchRes.ok) {
+            const res = await watchRes.json();
+            setWatchlist(res.data || []);
           }
         }
       } catch (err) {
@@ -51,10 +53,10 @@ function MarketTerminal({ onSelectSymbol }) {
       const priceMap = { ...prices };
       await Promise.all(visibleSymbols.map(async (symbol) => {
         try {
-          const res = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
-          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-            const data = await res.json();
-            priceMap[symbol] = data;
+          const response = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
+          if (response.ok) {
+            const res = await response.json();
+            priceMap[symbol] = res.data;
           }
         } catch (e) {}
       }));
