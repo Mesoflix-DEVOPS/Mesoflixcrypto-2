@@ -13,6 +13,8 @@ function MarketTerminal({ onSelectSymbol }) {
   const [watchlist, setWatchlist] = useState([]);
   const [prices, setPrices] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const init = async () => {
@@ -47,6 +49,14 @@ function MarketTerminal({ onSelectSymbol }) {
     };
 
     init();
+
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearching(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Real-time Market Data Bridge - Use Global Socket
@@ -72,13 +82,25 @@ function MarketTerminal({ onSelectSymbol }) {
   const handleSearch = (e) => {
     const query = e.target.value.toUpperCase();
     setSearchQuery(query);
-    if (query.length > 1 && Array.isArray(allSymbols)) {
+    setIsSearching(true);
+    
+    if (query.length > 0 && Array.isArray(allSymbols)) {
       const filtered = allSymbols
         .filter(s => s.symbol && s.symbol.includes(query))
         .slice(0, 10);
       setSuggestions(filtered);
     } else {
-      setSuggestions([]);
+      // Show recommended as "Hot Pairs" when query is empty
+      const hotPairs = allSymbols.filter(s => RECOMMENDED_SYMBOLS.includes(s.symbol));
+      setSuggestions(hotPairs);
+    }
+  };
+
+  const onFocusSearch = () => {
+    setIsSearching(true);
+    if (searchQuery.length === 0) {
+      const hotPairs = allSymbols.filter(s => RECOMMENDED_SYMBOLS.includes(s.symbol));
+      setSuggestions(hotPairs);
     }
   };
 
@@ -115,7 +137,7 @@ function MarketTerminal({ onSelectSymbol }) {
   return (
     <div className="market-terminal">
       {/* 1. SEARCH BAR */}
-      <div className="discovery-search">
+      <div className="discovery-search" ref={searchRef}>
         <div className="search-box">
           <Search size={18} className="search-icon" />
           <input 
@@ -124,16 +146,20 @@ function MarketTerminal({ onSelectSymbol }) {
             className="search-input"
             value={searchQuery}
             onChange={handleSearch}
+            onFocus={onFocusSearch}
           />
-          {searchQuery && <X size={16} className="clear-icon" onClick={() => setSearchQuery('')} />}
+          {searchQuery && <X size={16} className="clear-icon" onClick={() => { setSearchQuery(''); setSuggestions([]); }} />}
         </div>
         
-        {suggestions.length > 0 && (
+        {isSearching && suggestions.length > 0 && (
           <div className="search-suggestions glass-card">
+            <div className="suggestion-header">
+               {searchQuery.length > 0 ? 'Search Results' : '🔥 Hottest Pairs'}
+            </div>
             {suggestions.map(s => (
-              <div key={s.symbol} className="suggestion-item" onClick={() => { onSelectSymbol(s.symbol); setSearchQuery(''); }}>
+              <div key={s.symbol} className="suggestion-item" onClick={() => { onSelectSymbol(s.symbol); setSearchQuery(''); setIsSearching(false); }}>
                 <span className="s-symbol">{s.symbol}</span>
-                <span className="s-base">{s.base} Trading</span>
+                <span className="s-base">{s.base || 'USDT'} Trading</span>
                 <ChevronRight size={14} className="s-arrow" />
               </div>
             ))}
@@ -202,23 +228,23 @@ function MarketTerminal({ onSelectSymbol }) {
         .search-input { width: 100%; background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 600; outline: none; }
         .search-input::placeholder { color: #475569; font-weight: 500; }
         
-        .market-list { 
-          display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; 
-          scrollbar-width: none; -ms-overflow-style: none;
+        .search-suggestions { 
+          position: absolute; top: calc(100% + 10px); left: 0; right: 0; 
+          background: rgba(10, 15, 29, 0.95); backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px;
+          z-index: 1000; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+          padding: 8px;
         }
-        .market-list::-webkit-scrollbar { display: none; }
-        
-        .symbol-card {
-          flex-shrink: 0; padding: 12px 18px; background: rgba(15, 23, 42, 0.5); 
-          border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px;
-          cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px;
+        .suggestion-header {
+           padding: 10px 16px; font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.1em;
         }
         .suggestion-item { 
           padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
-          border-radius: 8px; cursor: pointer; transition: 0.2s;
+          border-radius: 10px; cursor: pointer; transition: 0.2s;
         }
-        .suggestion-item:hover { background: rgba(255, 255, 255, 0.04); }
+        .suggestion-item:hover { background: rgba(52, 211, 153, 0.1); color: #34d399; }
         .s-symbol { color: #fff; font-weight: 700; font-size: 14px; }
+        .suggestion-item:hover .s-symbol { color: #34d399; }
         .s-base { color: #64748b; font-size: 12px; }
         .s-arrow { color: #2d3748; }
 

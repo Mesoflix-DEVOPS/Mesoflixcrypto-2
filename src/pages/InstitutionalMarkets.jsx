@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Star, TrendingUp, Activity, BarChart2, Info, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getApiUrl, fetchWithLogging } from '../config/api';
+import { useSocket } from '../context/SocketContext';
 
 /**
  * Institutional Markets Page for the Dashboard
@@ -12,6 +13,7 @@ function InstitutionalMarkets() {
   const [filteredSymbols, setFilteredSymbols] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
   const [prices, setPrices] = useState({});
+  const { socket, isConnected, subscribeToTicker } = useSocket();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -41,8 +43,9 @@ function InstitutionalMarkets() {
           const watchRes = await fetchWithLogging(getApiUrl('/api/dashboard/watchlist'), {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
-            setWatchlist(await watchRes.json());
+            if (watchRes.ok && watchRes.headers.get('content-type')?.includes('application/json')) {
+            const watchData = await watchRes.json();
+            setWatchlist(watchData.data || []);
           }
         }
       } catch (err) {
@@ -55,30 +58,26 @@ function InstitutionalMarkets() {
     init();
   }, []);
 
-  // Periodic Price Polling (Throttle to top 20 visible to stay within rate limits)
+  // Real-time Market Data Bridge via Socket.io (Replacing Poll)
   useEffect(() => {
-    if (filteredSymbols.length === 0) return;
+    if (!socket || !isConnected || filteredSymbols.length === 0) return;
 
-    const fetchPrices = async () => {
-      const priceMap = { ...prices };
-      const pollList = filteredSymbols.slice(0, 50).map(s => s.symbol);
-      
-      await Promise.all(pollList.map(async (symbol) => {
-        try {
-          const res = await fetchWithLogging(getApiUrl(`/api/market/ticker/${symbol}`));
-          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-            const tickerRes = await res.json();
-            priceMap[symbol] = tickerRes.data;
-          }
-        } catch (e) {}
+    // Subscribe to visible symbols
+    const pollList = filteredSymbols.slice(0, 20); // Sync top 20 for performance
+    pollList.forEach(s => subscribeToTicker(s.symbol));
+
+    const onTicker = (data) => {
+      setPrices(prev => ({
+        ...prev,
+        [data.symbol]: data
       }));
-      setPrices(priceMap);
     };
 
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 5000);
-    return () => clearInterval(interval);
-  }, [filteredSymbols]);
+    socket.on('ticker', onTicker);
+    return () => {
+      socket.off('ticker', onTicker);
+    };
+  }, [socket, isConnected, filteredSymbols]);
 
   const handleSearch = (query) => {
     setSearchQuery(query);
