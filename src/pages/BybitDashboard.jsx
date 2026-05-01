@@ -314,7 +314,7 @@ export default function BybitDashboard() {
                      <div className="flex justify-between mb-2">
                         <span className="m-label">Deployed Buying Power</span>
                         <span className="text-[10px] font-black text-white">
-                           {contextBalance ? (($((parseFloat(contextBalance.totalUsedMargin || 0) / parseFloat(contextBalance.totalEquity || 1)) * 100)).toFixed(1) + '%') : '0%'}
+                           {contextBalance ? (((parseFloat(contextBalance.totalUsedMargin || 0) / parseFloat(contextBalance.totalEquity || 1)) * 100).toFixed(1) + '%') : '0%'}
                         </span>
                      </div>
                      <div className="progress-bg">
