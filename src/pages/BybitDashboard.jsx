@@ -255,10 +255,31 @@ export default function BybitDashboard() {
         .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; width: 100%; outline: none; }
         .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
         
-        .primary-btn { width: 100%; padding: 14px; border-radius: 10px; font-weight: 900; font-size: 13px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-green { background: #10b981; color: #000; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
-        .btn-red { background: #ef4444; color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
-        .primary-btn:active { transform: scale(0.97); }
+        .primary-btn { width: 100%; padding: 16px; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-green { background: linear-gradient(135deg, #10b981, #059669); color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3); }
+        .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3); }
+        .primary-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .primary-btn:active { transform: translateY(0); }
+
+        .exec-card { display: flex; flex-direction: column; gap: 24px; padding: 24px; }
+        .cyber-input-wrap { 
+          background: rgba(3, 7, 18, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); 
+          border-radius: 14px; padding: 12px 16px; position: relative; overflow: hidden;
+          transition: 0.3s;
+        }
+        .cyber-input-wrap:focus-within { border-color: $color-secondary; background: rgba(3, 7, 18, 0.8); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        .cyber-input-wrap::after { 
+          content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; 
+          background: linear-gradient(90deg, transparent, $color-secondary, transparent);
+          transform: translateX(-100%); transition: 0.5s;
+        }
+        .cyber-input-wrap:focus-within::after { transform: translateX(100%); }
+        
+        .mode-toggle-group { display: flex; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .mode-btn { flex: 1; padding: 10px; border-radius: 10px; font-size: 10px; font-weight: 800; border: none; background: transparent; color: #475569; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .mode-btn.active { background: rgba(255,255,255,0.05); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        
+        .leverage-badge { background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; }
 
         .equity-footer { padding: 24px 32px; background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; }
         .chart-header { padding: 20px 24px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
@@ -309,17 +330,17 @@ export default function BybitDashboard() {
                       {contextBalance ? `$${parseFloat(contextBalance.totalEquity).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
                     </div>
                  </div>
-                 <div className="flex gap-12">
+                 <div className="flex gap-8">
                     <div className="flex flex-col items-end">
                        <span className="text-[10px] uppercase font-bold text-slate-600 mb-1">Available balance</span>
                        <span className="text-xl font-black text-emerald-400 font-mono">
-                         {contextBalance ? `$${parseFloat(contextBalance.totalAvailableBalance).toLocaleString()}` : '--'}
+                         {contextBalance ? `$${parseFloat(contextBalance.totalAvailableBalance || 0).toLocaleString()}` : '$0.00'}
                        </span>
                     </div>
-                    <div className="flex flex-col items-end border-l border-[#1f2937] pl-12">
+                    <div className="flex flex-col items-end border-l border-[#1f2937] pl-8">
                        <span className="text-[10px] uppercase font-bold text-slate-600 mb-1">Wallet Total</span>
                        <span className="text-xl font-black text-slate-400 font-mono">
-                         {contextBalance ? `$${parseFloat(contextBalance.totalWalletBalance).toLocaleString()}` : '--'}
+                         {contextBalance ? `$${parseFloat(contextBalance.totalWalletBalance || 0).toLocaleString()}` : '$0.00'}
                        </span>
                     </div>
                  </div>
@@ -340,44 +361,44 @@ export default function BybitDashboard() {
                 </div>
               )}
 
-              <div className="exec-form">
+              <div className="exec-card">
                  <div className="input-group">
-                    <label className="label-text">Order Mode</label>
-                    <div className="flex gap-2">
-                       <button className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Market' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Market')}>Market</button>
-                       <button className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase border transition-all ${orderType === 'Limit' ? 'bg-blue-500/10 text-blue-400 border-blue-500/40' : 'bg-transparent text-slate-500 border-[#1f2937]'}`} onClick={() => setOrderType('Limit')}>Limit</button>
+                    <label className="label-text">Execution Mode</label>
+                    <div className="mode-toggle-group">
+                       <button className={`mode-btn ${orderType === 'Market' ? 'active' : ''}`} onClick={() => setOrderType('Market')}>Market Order</button>
+                       <button className={`mode-btn ${orderType === 'Limit' ? 'active' : ''}`} onClick={() => setOrderType('Limit')}>Limit Price</button>
                     </div>
                  </div>
-
+ 
                  <div className="input-group">
-                    <div className="flex justify-between items-center">
-                       <label className="label-text">Quantity</label>
-                        <span className="text-[9px] font-bold text-slate-600">Max: {contextBalance ? (parseFloat(contextBalance.totalAvailableBalance) / (activePrice || 1)).toFixed(3) : '--'}</span>
+                    <div className="flex justify-between items-center mb-1">
+                       <label className="label-text">Position Size</label>
+                        <span className="text-[9px] font-bold text-slate-600">Max: {contextBalance ? (parseFloat(contextBalance.totalAvailableBalance || 0) / (activePrice || 1)).toFixed(3) : '0.000'}</span>
                     </div>
-                    <div className="input-wrap">
-                       <input className="input-field" value={qty} onChange={(e) => setQty(e.target.value)} />
-                       <span className="text-[11px] font-bold text-slate-500 ml-2">{activeSymbol.replace('USDT', '')}</span>
+                    <div className="cyber-input-wrap">
+                       <input className="input-field" placeholder="0.00" value={qty} onChange={(e) => setQty(e.target.value)} />
+                       <span className="text-[11px] font-black text-slate-500 ml-2">{activeSymbol.replace('USDT', '')}</span>
                     </div>
                  </div>
-
+ 
                  <div className="input-group">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-1">
                        <label className="label-text">Leverage Factor</label>
-                       <span className="text-[10px] font-black text-emerald-500 font-mono">{leverage}x</span>
+                       <span className="leverage-badge">{leverage}x</span>
                     </div>
-                    <div className="input-wrap">
+                    <div className="py-2">
                        <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
                     </div>
-                    <div className="flex justify-between mt-2 text-[9px] font-black text-slate-600">
-                       <span className="text-emerald-500">1x Isolated</span>
-                       <span>100x Cross</span>
+                    <div className="flex justify-between mt-1 text-[9px] font-black text-slate-600">
+                       <span className="text-emerald-500/80">1x SAFE</span>
+                       <span>100x DEGEN</span>
                     </div>
                  </div>
-
-                 <div className="mt-8">
+ 
+                 <div className="pt-4">
                     <button className={`primary-btn ${activeSide === 'BUY' ? 'btn-green' : 'btn-red'} ${orderLoading ? 'opacity-50 pointer-events-none' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
                        {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                       {orderLoading ? 'EXECUTING...' : `EXECUTE ${activeSide === 'BUY' ? 'LONG' : 'SHORT'}`}
+                       {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
                     </button>
                  </div>
               </div>
