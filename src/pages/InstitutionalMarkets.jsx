@@ -26,7 +26,10 @@ function InstitutionalMarkets() {
         
         if (symbolsRes.ok && symbolsRes.headers.get('content-type')?.includes('application/json')) {
           const res = await symbolsRes.json();
-          const data = Array.isArray(res) ? res : (res.data || []);
+          const rawData = Array.isArray(res) ? res : (res.data || []);
+          // Normalize: Ensure we have objects with a .symbol property
+          const data = rawData.map(s => typeof s === 'string' ? { symbol: s } : s);
+          
           setAllSymbols(data);
           setFilteredSymbols(data.slice(0, 50)); 
         } else {
