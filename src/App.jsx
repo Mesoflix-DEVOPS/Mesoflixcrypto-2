@@ -22,6 +22,7 @@ import BybitDashboard from './pages/BybitDashboard';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import InstitutionalMarkets from './pages/InstitutionalMarkets';
+import InstitutionalTrade from './pages/InstitutionalTrade';
 import BybitRelay from './pages/BybitRelay';
 import DashboardLayout from './components/DashboardLayout';
 import BotTrading from './pages/BotTrading';
@@ -69,7 +70,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<BybitDashboard />} />
             <Route path="markets" element={<InstitutionalMarkets />} />
-            <Route path="trade" element={<BybitDashboard />} />
+            <Route path="trade" element={<InstitutionalTrade />} />
             <Route path="portfolio" element={<BybitDashboard />} /> 
             <Route path="analytics" element={<BybitDashboard />} /> 
             <Route path="orders" element={<BybitDashboard />} /> 
