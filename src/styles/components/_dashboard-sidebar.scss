@@ -25,6 +25,7 @@
         left: 0;
         bottom: 0;
         transform: translateX(-100%);
+        width: 280px !important; // Force consistent width on mobile
 
         &.ds-open {
             transform: translateX(0);
@@ -32,6 +33,19 @@
 
         .ds-collapse-btn {
             display: none;
+        }
+
+        .ds-label {
+            display: block !important;
+        }
+        
+        .ds-section-label {
+            display: block !important;
+        }
+        
+        .ds-item {
+            justify-content: flex-start !important;
+            padding: 14px 20px !important;
         }
     }
 

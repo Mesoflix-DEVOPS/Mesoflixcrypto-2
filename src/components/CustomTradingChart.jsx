@@ -178,12 +178,21 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
   }, [tickerData]);
 
   const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-    setTimeout(() => {
-      if (chartInstance.current && chartContainerRef.current) {
-        chartInstance.current.applyOptions({ width: chartContainerRef.current.clientWidth, height: chartContainerRef.current.clientHeight });
-      }
-    }, 100);
+    const newState = !isFullscreen;
+    setIsFullscreen(newState);
+    
+    // Use requestAnimationFrame for smoother transition
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (chartInstance.current && chartContainerRef.current) {
+          chartInstance.current.applyOptions({ 
+            width: chartContainerRef.current.clientWidth, 
+            height: chartContainerRef.current.clientHeight 
+          });
+          chartInstance.current.timeScale().fitContent();
+        }
+      }, 150);
+    });
   };
 
   return (
@@ -225,6 +234,14 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
             </button>
           ))}
         </div>
+        
+        {isFullscreen && (
+          <div className="fullscreen-execution-bar">
+             <button className="fs-buy-btn">BUY / LONG</button>
+             <button className="fs-sell-btn">SELL / SHORT</button>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <button onClick={() => setShowIndicators(!showIndicators)} className={`tool-btn ${showIndicators ? 'active' : ''}`}>
              <TrendingUp size={12} /> INDICATORS

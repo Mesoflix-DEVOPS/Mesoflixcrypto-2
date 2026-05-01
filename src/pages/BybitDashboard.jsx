@@ -87,17 +87,25 @@ export default function BybitDashboard() {
   const available = parseFloat(balance?.totalAvailableBalance || 0);
   const usedMarginPct = equity > 0 ? ((parseFloat(balance?.totalUsedMargin || 0) / equity) * 100) : 0;
 
+  const [expandedStat, setExpandedStat] = useState(null);
+
+  const stats = [
+    { label: 'Vault Equity', val: `$${equity.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, sub: tradingMode, color: '#10b981' },
+    { label: 'Available Margin', val: `$${available.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, sub: 'Deployable', color: '#38bdf8' },
+    { label: 'Open Positions', val: positions.length, sub: 'Active', color: '#f59e0b' },
+    { label: 'Mode', val: tradingMode, sub: 'Environment', color: tradingMode === 'REAL' ? '#ef4444' : '#8b5cf6' },
+  ];
+
   return (
     <div className="pg-overview">
       {/* ── STAT BAR ── */}
       <div className="ov-statbar">
-        {[
-          { label: 'Vault Equity', val: `$${equity.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, sub: tradingMode, color: '#10b981' },
-          { label: 'Available Margin', val: `$${available.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, sub: 'Deployable', color: '#38bdf8' },
-          { label: 'Open Positions', val: positions.length, sub: 'Active', color: '#f59e0b' },
-          { label: 'Mode', val: tradingMode, sub: 'Environment', color: tradingMode === 'REAL' ? '#ef4444' : '#8b5cf6' },
-        ].map(s => (
-          <div className="ov-stat" key={s.label}>
+        {stats.map((s, idx) => (
+          <div 
+            className={`ov-stat ${expandedStat === idx ? 'ov-stat-expanded' : ''}`} 
+            key={s.label}
+            onClick={() => setExpandedStat(expandedStat === idx ? null : idx)}
+          >
             <span className="ov-stat-label">{s.label}</span>
             <span className="ov-stat-val" style={{ color: s.color }}>{s.val}</span>
             <span className="ov-stat-sub">{s.sub}</span>
