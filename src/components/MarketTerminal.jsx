@@ -23,7 +23,10 @@ function MarketTerminal({ onSelectSymbol }) {
         const symbolsRes = await fetchWithLogging(getApiUrl('/api/market/all-symbols'));
         if (symbolsRes.ok) {
           const res = await symbolsRes.json();
-          setAllSymbols(res.data || []);
+          const rawData = res.data || (Array.isArray(res) ? res : []);
+          // Normalize: Ensure we have objects with a .symbol property
+          const data = rawData.map(s => typeof s === 'string' ? { symbol: s } : s);
+          setAllSymbols(data);
         }
 
         // 2. Fetch User Watchlist
@@ -48,7 +51,7 @@ function MarketTerminal({ onSelectSymbol }) {
 
   // Real-time Market Data Bridge
   useEffect(() => {
-    const socketUrl = getApiUrl('').replace('/api', '');
+    const socketUrl = 'https://api.mesoflixlabs.com';
     socketRef.current = io(socketUrl, { transports: ['websocket'] });
 
     socketRef.current.on('connect', () => {

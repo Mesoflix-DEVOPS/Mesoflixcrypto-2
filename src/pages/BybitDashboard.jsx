@@ -163,7 +163,7 @@ export default function BybitDashboard() {
     } finally { 
       setOrderLoading(false); 
       setTimeout(() => setOrderStatus(null), 4000); 
-      if (contextUser) fetchAccountData(contextUser.id); 
+      if (contextUser) fetchDashboard(); 
     }
   };
 

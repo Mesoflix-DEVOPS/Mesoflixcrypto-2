@@ -16,8 +16,8 @@ export const SocketProvider = ({ children }) => {
   const [activeSubscriptions, setActiveSubscriptions] = useState(new Set());
 
   useEffect(() => {
-    // 1. Initialize Global Socket
-    const socketUrl = getApiUrl(''); // Point directly to the root of the secure domain
+    // 1. Initialize Global Socket (Hard-coded for institutional stability)
+    const socketUrl = 'https://api.mesoflixlabs.com';
     console.log(`[SOCKET_SYSTEM] Connecting to institutional hub: ${socketUrl}`);
     
     const socket = io(socketUrl, {
