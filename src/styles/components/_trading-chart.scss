@@ -70,29 +70,46 @@
         }
     }
 
-    .chart-toolbar {
+    .chart-toolbar-wrap {
+        width: 100%;
+        overflow-x: hidden;
         background: rgba(15, 23, 42, 0.8);
         border-bottom: 1px solid rgba(30, 41, 59, 0.5);
-        padding: 8px 16px;
+
+        @media (max-width: 1024px) {
+            overflow-x: auto;
+            &::-webkit-scrollbar { display: none; }
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    }
+
+    .chart-toolbar {
+        padding: 10px 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-shrink: 0;
+        min-width: 500px; // Ensure no squeeze on mobile
+
+        @media (min-width: 1025px) {
+            min-width: 0;
+        }
 
         .tf-group {
             display: flex;
             background: rgba(3, 7, 18, 0.5);
             padding: 3px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid rgba(30, 41, 59, 0.5);
             
             button {
-                padding: 4px 10px;
-                border-radius: 6px;
-                font-size: 10px;
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-size: 11px;
                 font-weight: 800;
                 color: #64748b;
-                transition: 0.2s;
+                transition: all 0.2s;
                 border: none;
                 background: transparent;
                 cursor: pointer;
@@ -108,38 +125,40 @@
 
         .fullscreen-execution-bar {
             display: flex;
-            gap: 12px;
+            align-items: center;
+            margin: 0 auto;
             
             button {
-                padding: 6px 16px;
+                padding: 8px 24px;
                 border: none;
-                border-radius: 8px;
-                font-size: 11px;
+                border-radius: 10px;
+                font-size: 12px;
                 font-weight: 900;
                 cursor: pointer;
-                transition: 0.2s;
+                transition: all 0.2s;
+                letter-spacing: 0.05em;
                 
-                &.fs-buy-btn { background: #10b981; color: #000; }
-                &.fs-sell-btn { background: #ef4444; color: #fff; }
-                &:hover { filter: brightness(1.2); transform: scale(1.05); }
+                &.fs-buy-btn { background: #10b981; color: #000; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+                &.fs-sell-btn { background: #ef4444; color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+                &:hover { filter: brightness(1.2); transform: translateY(-2px); }
             }
         }
 
         .tool-btn {
-            background: transparent;
+            background: rgba(3, 7, 18, 0.5);
             border: 1px solid rgba(30, 41, 59, 0.5);
             color: #64748b;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 10px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 11px;
             font-weight: 800;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s;
 
-            &:hover { border-color: #3b82f6; color: #fff; }
+            &:hover { border-color: #3b82f6; color: #fff; background: rgba(59, 130, 246, 0.05); }
             &.active { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; color: #3b82f6; }
         }
     }

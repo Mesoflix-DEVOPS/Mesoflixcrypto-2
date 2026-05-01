@@ -156,23 +156,40 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
   }, [symbol, interval]);
 
   useEffect(() => {
-    // Safety check: Don't update if chart or series is null/disposed
     if (tickerData && seriesInstance.current && chartInstance.current && lastCandleRef.current) {
       const price = parseFloat(tickerData.lastPrice);
+      const now = Date.now() / 1000;
       const lastCandle = lastCandleRef.current;
       
-      const updatedCandle = {
-        ...lastCandle,
-        high: Math.max(lastCandle.high, price),
-        low: Math.min(lastCandle.low, price),
-        close: price
-      };
+      // Determine if we need a new candle based on interval
+      const intervalMinutes = interval === 'D' ? 1440 : parseInt(interval);
+      const candleStartTime = Math.floor(now / (intervalMinutes * 60)) * (intervalMinutes * 60);
       
       try {
-        seriesInstance.current.update(updatedCandle);
-        lastCandleRef.current = updatedCandle;
+        if (candleStartTime > lastCandle.time) {
+          // Create new candle
+          const newCandle = {
+            time: candleStartTime,
+            open: price,
+            high: price,
+            low: price,
+            close: price
+          };
+          seriesInstance.current.update(newCandle);
+          lastCandleRef.current = newCandle;
+        } else {
+          // Update current candle
+          const updatedCandle = {
+            ...lastCandle,
+            high: Math.max(lastCandle.high, price),
+            low: Math.min(lastCandle.low, price),
+            close: price
+          };
+          seriesInstance.current.update(updatedCandle);
+          lastCandleRef.current = updatedCandle;
+        }
       } catch (e) {
-        console.warn('[CHART_UPDATE_SKIPPED] Instance likely disposed during re-render');
+        console.warn('[CHART_UPDATE_SKIPPED]', e);
       }
     }
   }, [tickerData]);
@@ -222,33 +239,35 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
         </div>
       </div>
 
-      <div className="chart-toolbar">
-        <div className="tf-group">
-          {['1', '5', '15', '60', '240', 'D'].map(tf => (
-            <button 
-              key={tf}
-              onClick={() => setInterval(tf)}
-              className={interval === tf ? 'active' : ''}
-            >
-              {tf === '60' ? '1H' : tf === '240' ? '4H' : tf === 'D' ? '1D' : `${tf}m`}
-            </button>
-          ))}
-        </div>
-        
-        {isFullscreen && (
-          <div className="fullscreen-execution-bar">
-             <button className="fs-buy-btn">BUY / LONG</button>
-             <button className="fs-sell-btn">SELL / SHORT</button>
+      <div className="chart-toolbar-wrap">
+        <div className="chart-toolbar">
+          <div className="tf-group">
+            {['1', '5', '15', '60', '240', 'D'].map(tf => (
+              <button 
+                key={tf}
+                onClick={() => setInterval(tf)}
+                className={interval === tf ? 'active' : ''}
+              >
+                {tf === '60' ? '1H' : tf === '240' ? '4H' : tf === 'D' ? '1D' : `${tf}m`}
+              </button>
+            ))}
           </div>
-        )}
+          
+          {isFullscreen && (
+            <div className="fullscreen-execution-bar">
+              <button className="fs-buy-btn">BUY / LONG</button>
+              <button className="fs-sell-btn" style={{ marginLeft: 8 }}>SELL / SHORT</button>
+            </div>
+          )}
 
-        <div className="flex gap-2">
-          <button onClick={() => setShowIndicators(!showIndicators)} className={`tool-btn ${showIndicators ? 'active' : ''}`}>
-             <TrendingUp size={12} /> INDICATORS
-          </button>
-          <button onClick={toggleFullscreen} className="tool-btn">
-             <Maximize2 size={12} /> {isFullscreen ? 'CLOSE' : 'FULL'}
-          </button>
+          <div className="flex gap-2 ml-auto">
+            <button onClick={() => setShowIndicators(!showIndicators)} className={`tool-btn ${showIndicators ? 'active' : ''}`}>
+              <TrendingUp size={12} /> INDICATORS
+            </button>
+            <button onClick={toggleFullscreen} className="tool-btn">
+              <Maximize2 size={12} /> {isFullscreen ? 'CLOSE' : 'FULL'}
+            </button>
+          </div>
         </div>
       </div>
 

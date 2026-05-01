@@ -78,7 +78,7 @@ function DashboardHeader({ onMenuClick, sidebarOpen, tradingMode, setTradingMode
 
       <div className="header-left">
         <button className="menu-toggle-btn mobile-only" onClick={onMenuClick}>
-          <Menu size={24} />
+          <Menu size={24} color="#fff" />
         </button>
 
         <div className="header-brand-mobile mobile-only">

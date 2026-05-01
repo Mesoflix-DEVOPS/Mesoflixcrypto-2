@@ -51,7 +51,7 @@ function DashboardSidebar({ isOpen, onClose, collapsed, onCollapseToggle }) {
 
         {/* Collapse toggle — desktop only */}
         <button
-          className="ds-collapse-btn"
+          className="ds-collapse-btn desktop-only"
           onClick={onCollapseToggle}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
