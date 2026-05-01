@@ -336,98 +336,27 @@ export default function BybitDashboard() {
   const priceColor = parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400';
 
   return (
-    <div className="p-4 bg-[#02040a] min-h-screen text-slate-400 font-sans selection:bg-emerald-500/20">
-      <style dangerouslySetInnerHTML={{ __html: `
-        .main-scaffold { display: grid; grid-template-columns: 1fr 340px; gap: 24px; min-height: 800px; }
-        .col-left { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-        .col-right { width: 340px; flex-shrink: 0; }
-        
-        @media (max-width: 1100px) {
-          .main-scaffold { grid-template-columns: 1fr; }
-          .col-right { width: 100%; order: 1; }
-          .col-left { order: 2; }
-        }
-
-        .box-panel { background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; height: 100%; }
-        .chart-section { min-height: 500px; height: 500px; display: flex; flex-direction: column; }
-        
-        .exec-tabs { display: flex; padding: 4px; background: #030712; border-radius: 8px; margin: 16px; border: 1px solid #1f2937; height: 44px; align-items: center; }
-        .tab-trigger { flex: 1; height: 100%; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: none; background: transparent; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .tab-buy.active { background: #10b981; color: #000; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2); }
-        .tab-sell.active { background: #ef4444; color: #fff; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2); }
-        
-        .exec-form { padding: 0 20px 24px 20px; display: flex; flex-direction: column; gap: 20px; flex: 1; }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .input-wrap { background: #030712; border: 1px solid #1f2937; border-radius: 8px; padding: 12px 16px; min-height: 52px; display: flex; align-items: center; transition: 0.2s; }
-        .input-wrap:focus-within { border-color: #3b82f6; background: #050810; box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
-        .input-field { background: transparent; border: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; width: 100%; outline: none; }
-        .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
-        
-        .primary-btn { width: 100%; padding: 16px; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-green { background: #10b981; color: #000; box-shadow: 0 8px 30px rgba(16, 185, 129, 0.2); }
-        .btn-red { background: #ef4444; color: #fff; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.2); }
-        .primary-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        .primary-btn:active { transform: translateY(0); }
-
-        .exec-card { display: flex; flex-direction: column; gap: 20px; padding: 24px; }
-        .form-row { display: flex; flex-direction: column; gap: 8px; }
-        .input-box { 
-          background: #030712; border: 1px solid #1f2937; border-radius: 10px; padding: 12px 16px;
-          display: flex; align-items: center; justify-content: space-between; transition: 0.2s;
-        }
-        .input-box:focus-within { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
-        .input-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; }
-        
-        .side-picker { display: flex; gap: 10px; margin-bottom: 4px; }
-        .side-btn { 
-          flex: 1; padding: 12px; border-radius: 10px; font-weight: 900; font-size: 11px; 
-          text-transform: uppercase; border: 1px solid #1f2937; cursor: pointer; transition: 0.2s;
-          background: transparent; color: #475569;
-        }
-        .side-btn.buy.active { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #10b981; }
-        .side-btn.sell.active { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
-
-        .mode-selector { display: flex; background: #030712; padding: 4px; border-radius: 8px; border: 1px solid #1f2937; }
-        .mode-btn { flex: 1; padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 800; border: none; background: transparent; color: #475569; cursor: pointer; }
-        .mode-btn.active { background: #1f2937; color: #fff; }
-        
-        .label-text { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-        .info-label { font-size: 9px; font-weight: 700; color: #475569; }
-
-        .equity-footer { padding: 24px 32px; background: #0b111e; border: 1px solid #1f2937; border-radius: 12px; }
-        .chart-header { padding: 20px 24px; border-bottom: 1px solid #1f2937; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
-        .chart-box { flex: 1; padding: 12px; min-height: 400px; }
-
-        @media (max-width: 768px) {
-          .chart-header { flex-direction: column; align-items: flex-start; gap: 16px; }
-          .chart-box { min-height: 450px; }
-          .equity-footer .justify-between { flex-direction: column; gap: 24px; align-items: flex-start; }
-          .equity-footer .flex-col.items-end { align-items: flex-start; border-left: none !important; padding-left: 0 !important; margin-top: 12px; }
-          .mobile-full-width { width: 100%; border-left: none !important; padding-left: 0 !important; margin-left: 0 !important; border-top: 1px solid #1f2937; padding-top: 12px; }
-        }
-      `}} />
-
+    <div className="bybit-dashboard-container">
       <MarketTerminal onSelectSymbol={handleSelectSymbol} />
       
       <div className="main-scaffold mt-4">
         <div className="col-left">
            <div className="box-panel chart-section shadow-lg">
               <div className="chart-header">
-                  <div className="flex items-center flex-wrap gap-x-6 gap-y-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center flex-wrap justify-between w-full gap-4">
+                    <div className="flex items-center gap-4">
                       <span className="text-xl font-black text-white uppercase tracking-tighter bg-blue-500/10 px-3 py-1 rounded-md border border-blue-500/20">{activeSymbol}</span>
-                      <span className={`text-2xl font-mono font-black ${priceColor} tracking-tight`}>
-                        ${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
-                       <span className="text-xs font-black uppercase">
-                        {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
-                       </span>
+                      <div className="flex flex-col">
+                        <span className={`text-2xl font-mono font-black ${priceColor} tracking-tight leading-none`}>
+                          ${activePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className={`text-[10px] font-black mt-1 ${parseFloat(tickerData?.price24hPcnt) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {parseFloat(tickerData?.price24hPcnt || 0) >= 0 ? '▲' : '▼'} {(parseFloat(tickerData?.price24hPcnt || 0) * 100).toFixed(2)}%
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex gap-6 border-l border-slate-800/50 pl-6 ml-auto mobile-full-width">
+                    <div className="flex gap-8 border-l border-slate-800/50 pl-6 mobile-full-width">
                       <div className="flex flex-col">
                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">24h High</span>
                          <span className="text-sm font-black text-emerald-400/90 font-mono tracking-tight">${parseFloat(tickerData?.highPrice24h || 0).toLocaleString()}</span>
