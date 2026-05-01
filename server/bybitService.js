@@ -75,10 +75,10 @@ export async function bybitRequest(method, endpoint, params = {}, config = {}) {
   };
 
   const proxyUrl = process.env.BYBIT_PROXY_URL;
-  const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+  const agent = (proxyUrl && proxyUrl.trim() !== '') ? new HttpsProxyAgent(proxyUrl) : undefined;
 
-  if (proxyUrl) {
-    console.log('[BYBIT_PROXY] Routing request through static IP proxy');
+  if (agent) {
+    console.log(`[BYBIT_PROXY] Routing request through: ${proxyUrl}`);
   }
 
   try {
@@ -93,15 +93,23 @@ export async function bybitRequest(method, endpoint, params = {}, config = {}) {
       fetchOptions.agent = agent;
     }
 
-    const response = await fetch(url, fetchOptions);
-    const responseText = await response.text();
+    let response = await fetch(url, fetchOptions);
+    let responseText = await response.text();
+    
+    // FALLBACK: If proxy fails with 407 (Quota exceeded or Auth fail), try direct connection
+    if (response.status === 407 && agent) {
+      console.warn('[BYBIT_PROXY_LIMIT] Proxy returned 407. Attempting direct fallback...');
+      const fallbackOptions = { ...fetchOptions, agent: undefined };
+      response = await fetch(url, fallbackOptions);
+      responseText = await response.text();
+    }
     
     let result;
     try {
       result = JSON.parse(responseText);
     } catch (parseErr) {
       console.error('[BYBIT_JSON_PARSE_ERROR] Body is not JSON:', responseText.substring(0, 500));
-      throw new Error(`Bybit returned non-JSON response: ${responseText.substring(0, 100)}...`);
+      throw new Error(`Bybit returned non-JSON response (Status: ${response.status}): ${responseText.substring(0, 100)}...`);
     }
     
     // Internal Logging for Broker Verification
