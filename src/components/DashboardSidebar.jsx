@@ -34,15 +34,13 @@ function DashboardSidebar({ isOpen, onClose }) {
   return (
     <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
-         <div className="logo-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M4 4L12 12L20 4V20L12 12L4 20V4Z" fill="#10b981" />
-            </svg>
-         </div>
-         <span className="logo-text">Mesoflix</span>
-         <button className="mobile-close-btn mobile-only" onClick={onClose}>
-           <X size={20} />
-         </button>
+        <div className="logo-icon">
+          <ShieldCheck size={20} className="text-emerald-400" />
+        </div>
+        <span className="logo-text">Mesoflix</span>
+        <button className="mobile-close-btn" onClick={onClose}>
+          <X size={20} />
+        </button>
       </div>
 
       <nav className="sidebar-links">

@@ -81,17 +81,8 @@ function DashboardHeader({ onMenuClick, sidebarOpen, tradingMode, setTradingMode
           <Menu size={24} />
         </button>
 
-        <div className={`search-container ${isSearchOpen ? 'mobile-expanded' : ''}`}>
-          <div className="search-box-wrapper">
-            <Search size={18} className="search-icon" onClick={() => setIsSearchOpen(true)} />
-            <input 
-              type="text" 
-              className="search-input" 
-              placeholder="Search symbols..." 
-              onFocus={() => setIsSearchOpen(true)}
-            />
-            {isSearchOpen && <X size={18} className="search-close-icon" onClick={() => setIsSearchOpen(false)} />}
-          </div>
+        <div className="header-brand-mobile mobile-only">
+           <span className="logo-text">Mesoflix</span>
         </div>
       </div>
 

@@ -114,3 +114,25 @@
     }
   }
 }
+
+.mobile-only {
+  display: none;
+  @media (max-width: 1024px) {
+    display: flex;
+  }
+}
+
+.sidebar-logo {
+  .mobile-close-btn {
+    background: transparent;
+    border: none;
+    color: $color-text-muted;
+    cursor: pointer;
+    margin-left: auto;
+    display: none;
+    
+    @media (max-width: 1024px) {
+      display: flex;
+    }
+  }
+}

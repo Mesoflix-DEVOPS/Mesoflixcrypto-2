@@ -16,7 +16,7 @@ $color-border: rgba(255, 255, 255, 0.08);
 // Gradients
 $grad-main: linear-gradient(135deg, $color-secondary, $color-primary);
 $grad-dark: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
-$grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+$grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
 
 // Shadows
 $shadow-glow: 0 0 20px rgba(16, 185, 129, 0.2);
@@ -63,4 +63,11 @@ $shadow-deep: 0 24px 64px rgba(0, 0, 0, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: $color-text-muted;
+}
+
+.glass-card {
+  @include glass-panel;
+  background: rgba(22, 27, 44, 0.4);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
