@@ -37,7 +37,7 @@ export const getApiUrl = (path = '') => {
  */
 export const fetchWithLogging = async (url, options = {}) => {
   const startTime = Date.now();
-  console.log(`%c[API_REQ] ${options.method || 'GET'} -> ${url}`, 'color: #3b82f6; font-weight: bold;');
+  // console.log(`%c[API_REQ] ${options.method || 'GET'} -> ${url}`, 'color: #3b82f6; font-weight: bold;');
   
   try {
     const response = await fetch(url, options);
@@ -73,7 +73,7 @@ export const fetchWithLogging = async (url, options = {}) => {
         data: preview
       });
     } else {
-      console.log(`%c[API_RES] ${response.status} (${duration}ms) <- ${url}`, 'color: #10b981; font-weight: bold;', preview);
+      // console.log(`%c[API_RES] ${response.status} (${duration}ms) <- ${url}`, 'color: #10b981; font-weight: bold;', preview);
     }
 
     return response;

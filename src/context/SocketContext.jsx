@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // 1. Initialize Global Socket (Hard-coded for institutional stability)
     const socketUrl = RENDER_BACKEND_URL;
-    console.log(`[SOCKET_SYSTEM] Connecting to institutional hub: ${socketUrl}`);
+    // console.log(`[SOCKET_SYSTEM] Connecting to institutional hub: ${socketUrl}`);
     
     // Ensure URL has no trailing slash for socket.io-client consistency
     const sanitizedUrl = socketUrl.replace(/\/$/, '');
@@ -33,7 +33,7 @@ export const SocketProvider = ({ children }) => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('[SOCKET_SYSTEM] Link Established');
+      // console.log('[SOCKET_SYSTEM] Link Established');
       setIsConnected(true);
       // Re-subscribe to all active topics on reconnect
       if (activeSubscriptions.size > 0) {
@@ -82,7 +82,7 @@ export const SocketProvider = ({ children }) => {
   // API: Initialize Private Stream (Balances/Positions)
   const initPrivateStream = (userId, environment) => {
     if (!socketRef.current || !userId) return;
-    console.log(`[SOCKET_SYSTEM] Initializing Private Stream for ${userId}`);
+    // console.log(`[SOCKET_SYSTEM] Initializing Private Stream for ${userId}`);
     socketRef.current.emit('init_private_stream', { userId, environment });
   };
 

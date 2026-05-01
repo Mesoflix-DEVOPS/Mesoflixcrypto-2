@@ -171,104 +171,159 @@ export default function BybitDashboard() {
 
   return (
     <div className="bybit-dashboard-container">
-      <MarketTerminal onSelectSymbol={handleSelectSymbol} />
-      
-      <div className="main-scaffold">
-        <div className="col-left">
-           <CustomTradingChart symbol={activeSymbol} tickerData={tickerData} />
+      {/* 1. TOP MARKET PULSE TICKER */}
+      <div className="market-pulse-ticker">
+         <div className="ticker-inner">
+            {[...positions, ...history.slice(0,5)].map((item, i) => (
+               <div key={i} className={`ticker-item ${parseFloat(item.realizedPnl || 0) >= 0 ? 'up' : 'down'}`}>
+                  <span className="t-symbol">{item.symbol}</span>
+                  <span className="t-price">${parseFloat(item.avgPrice || item.entryPrice || 0).toLocaleString()}</span>
+                  <span className="t-change">{parseFloat(item.realizedPnl || 0) >= 0 ? '+' : ''}{parseFloat(item.realizedPnl || 0).toFixed(2)}</span>
+               </div>
+            ))}
+            {/* Fallback items if empty */}
+            {positions.length === 0 && ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT'].map(s => (
+               <div key={s} className="ticker-item up">
+                  <span className="t-symbol">{s}</span>
+                  <span className="t-price">LIVE FEED</span>
+                  <span className="t-change">+0.00%</span>
+               </div>
+            ))}
+         </div>
+      </div>
 
-           <div className="equity-footer">
-              <div className="flex justify-between items-center">
-                 <div className="flex flex-col">
-                    <span className="f-label mb-1">Node Equity ({tradingMode})</span>
-                    <div className="f-value text-3xl text-white tracking-tight">
-                      {contextBalance ? `$${parseFloat(contextBalance.totalEquity || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
-                    </div>
-                 </div>
-                 <div className="flex gap-8">
-                    <div className="flex flex-col items-end">
-                       <span className="f-label mb-1">Available balance</span>
-                       <span className="f-value text-xl text-emerald-400">
-                         {contextBalance ? `$${parseFloat(contextBalance.totalAvailableBalance || 0).toLocaleString()}` : '$0.00'}
-                       </span>
-                    </div>
-                    <div className="flex flex-col items-end border-l border-[#1f2937] pl-8">
-                       <span className="f-label mb-1">Wallet Total</span>
-                       <span className="f-value text-xl text-slate-400">
-                         {contextBalance ? `$${parseFloat(contextBalance.totalWalletBalance || 0).toLocaleString()}` : '$0.00'}
-                       </span>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
+      <div className="terminal-grid">
+         {/* COLUMN 1: DISCOVERY */}
+         <div className="term-col col-left">
+            <div className="term-panel market-explorer-panel">
+               <div className="panel-header">
+                  <span className="p-title">Institutional Discovery</span>
+                  <Globe size={12} className="p-action" />
+               </div>
+               <MarketTerminal onSelectSymbol={handleSelectSymbol} />
+            </div>
+         </div>
 
-        <div className="col-right">
-           <div className="box-panel trade-panel shadow-2xl">
-              <div className="exec-header">
-                <span className="title">Trade Execution</span>
-              </div>
+         {/* COLUMN 2: EXECUTION FOCUS */}
+         <div className="term-col col-center">
+            <div className="term-panel chart-panel">
+               <div className="panel-header">
+                  <div className="flex items-center gap-3">
+                     <span className="p-title">High-Frequency Feed</span>
+                     <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded uppercase font-black">Stable</span>
+                  </div>
+                  <Maximize2 size={12} className="p-action" />
+               </div>
+               <CustomTradingChart symbol={activeSymbol} tickerData={tickerData} height="100%" />
+            </div>
 
-              <div className="exec-tabs">
-                 <button className={`tab-trigger buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Long</button>
-                 <button className={`tab-trigger sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Short</button>
-              </div>
+            <div className="equity-footer">
+               <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                     <span className="f-label mb-1">Total Vault Equity ({tradingMode})</span>
+                     <div className="f-value text-3xl text-white tracking-tight">
+                        {contextBalance ? `$${parseFloat(contextBalance.totalEquity || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                     </div>
+                  </div>
+                  <div className="flex gap-8">
+                     <div className="flex flex-col items-end">
+                        <span className="f-label mb-1">Available Margin</span>
+                        <span className="f-value text-xl text-emerald-400">
+                           {contextBalance ? `$${parseFloat(contextBalance.totalAvailableBalance || 0).toLocaleString()}` : '$0.00'}
+                        </span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
 
-              {orderStatus && (
-                <div className={`mx-4 mb-4 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-wider ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
-                   {orderStatus.msg}
-                 </div>
-              )}
+         {/* COLUMN 3: CONTROL & RISK */}
+         <div className="term-col col-right">
+            <div className="term-panel order-entry-panel">
+               <div className="panel-header">
+                  <span className="p-title">Order Management</span>
+                  <Zap size={12} className="p-action" />
+               </div>
 
-              <div className="input-row">
-                 <div className="input-item">
-                    <label className="i-label">Order Type</label>
-                    <div className="mode-selector">
-                       <button className={`mode-btn ${orderType === 'Market' ? 'active' : ''}`} onClick={() => setOrderType('Market')}>Market</button>
-                       <button className={`mode-btn ${orderType === 'Limit' ? 'active' : ''}`} onClick={() => setOrderType('Limit')}>Limit</button>
-                    </div>
-                 </div>
+               <div className="exec-tabs">
+                  <button className={`tab-trigger buy ${activeSide === 'BUY' ? 'active' : ''}`} onClick={() => setActiveSide('BUY')}>Buy / Long</button>
+                  <button className={`tab-trigger sell ${activeSide === 'SELL' ? 'active' : ''}`} onClick={() => setActiveSide('SELL')}>Sell / Short</button>
+               </div>
 
-                 <div className="input-item">
-                    <label className="i-label">Position Size</label>
-                    <div className="i-wrap">
-                       <input placeholder="0.000" value={qty} onChange={(e) => setQty(e.target.value)} />
-                       <span className="unit">{activeSymbol.replace('USDT', '')}</span>
-                    </div>
-                 </div>
+               {orderStatus && (
+                 <div className={`mx-4 mb-4 p-4 rounded-xl text-center text-[10px] font-black uppercase tracking-wider ${orderStatus.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                    {orderStatus.msg}
+                  </div>
+               )}
 
-                 <div className="input-item">
-                    <div className="flex justify-between mb-2">
-                       <label className="i-label">Leverage Factor</label>
-                       <span className="text-[11px] font-black text-emerald-400 font-mono">{leverage}x</span>
-                    </div>
-                    <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
-                 </div>
-              </div>
+               <div className="input-row">
+                  <div className="input-item px-4">
+                     <label className="i-label">Execution Type</label>
+                     <div className="mode-selector">
+                        <button className={`mode-btn ${orderType === 'Market' ? 'active' : ''}`} onClick={() => setOrderType('Market')}>Market</button>
+                        <button className={`mode-btn ${orderType === 'Limit' ? 'active' : ''}`} onClick={() => setOrderType('Limit')}>Limit</button>
+                     </div>
+                  </div>
 
-              <button className={`action-btn ${activeSide === 'BUY' ? 'long' : 'short'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
-                 {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                 {orderLoading ? 'EXECUTING...' : `OPEN ${activeSide === 'BUY' ? 'LONG' : 'SHORT'} POSITION`}
-              </button>
+                  <div className="input-item px-4">
+                     <label className="i-label">Order Quantity</label>
+                     <div className="i-wrap">
+                        <input placeholder="0.000" value={qty} onChange={(e) => setQty(e.target.value)} />
+                        <span className="unit">{activeSymbol.replace('USDT', '')}</span>
+                     </div>
+                  </div>
 
-              <div className="exec-engine-footer">
-                 <div className="engine-status">
-                    <div className="dot"></div>
-                    <span className="label">Institutional Engine Active</span>
-                 </div>
-                 <div className="engine-meta">
-                    <div className="meta-row">
-                       <span className="m-label">Environment</span>
-                       <span className="m-val text-white">{tradingMode}</span>
-                    </div>
-                    <div className="meta-row latency">
-                       <span className="m-label">Latency</span>
-                       <span className="m-val">~14ms</span>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
+                  <div className="input-item px-4">
+                     <div className="flex justify-between mb-2">
+                        <label className="i-label">Leverage multiplier</label>
+                        <span className="text-[11px] font-black text-emerald-400 font-mono">{leverage}x</span>
+                     </div>
+                     <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} />
+                  </div>
+               </div>
+
+               <button className={`action-btn ${activeSide === 'BUY' ? 'long' : 'short'} ${orderLoading ? 'opacity-50' : ''}`} onClick={handlePlaceOrder} disabled={orderLoading}>
+                  {orderLoading ? <RefreshCw className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
+                  {orderLoading ? 'EXECUTING...' : `${activeSide === 'BUY' ? 'INSTANT BUY' : 'INSTANT SELL'}`}
+               </button>
+
+               <div className="exec-engine-footer">
+                  <div className="engine-status">
+                     <div className="dot"></div>
+                     <span className="label">Institutional Engine Active</span>
+                  </div>
+               </div>
+            </div>
+
+            <div className="term-panel risk-hud-panel">
+               <div className="panel-header">
+                  <span className="p-title">Risk Intelligence HUD</span>
+                  <Info size={12} className="p-action" />
+               </div>
+               <div className="hud-content">
+                  <div className="hud-metric safety">
+                     <div className="flex justify-between mb-2">
+                        <span className="m-label">Account Safety Buffer</span>
+                        <span className="text-[10px] font-black text-white">94%</span>
+                     </div>
+                     <div className="progress-bg">
+                        <div className="progress-fill" style={{ width: '94%' }}></div>
+                     </div>
+                  </div>
+                  <div className="hud-metric power">
+                     <div className="flex justify-between mb-2">
+                        <span className="m-label">Deployed Buying Power</span>
+                        <span className="text-[10px] font-black text-white">
+                           {contextBalance ? (($((parseFloat(contextBalance.totalUsedMargin || 0) / parseFloat(contextBalance.totalEquity || 1)) * 100)).toFixed(1) + '%') : '0%'}
+                        </span>
+                     </div>
+                     <div className="progress-bg">
+                        <div className="progress-fill" style={{ width: contextBalance ? `${(parseFloat(contextBalance.totalUsedMargin || 0) / parseFloat(contextBalance.totalEquity || 1)) * 100}%` : '0%' }}></div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
       </div>
     </div>
   );
