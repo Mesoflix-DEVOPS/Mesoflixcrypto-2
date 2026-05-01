@@ -233,9 +233,24 @@
         &:hover { transform: translateY(-2px); filter: brightness(1.1); }
     }
 
+    .equity-footer { 
+        padding: 24px 32px; 
+        background: rgba(11, 17, 30, 0.8); 
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(30, 41, 59, 0.7); 
+        border-radius: 16px; 
+        margin-top: auto;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+
+        .f-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
+        .f-value { font-family: 'JetBrains Mono', monospace; font-weight: 900; }
+    }
+
     @media (max-width: 768px) {
         .chart-header { flex-direction: column; gap: 16px; align-items: flex-start; }
         .metrics-grid { width: 100%; overflow-x: auto; padding-bottom: 8px; }
         .chart-section { height: 500px; }
+        .equity-footer { padding: 20px; }
     }
 }
+

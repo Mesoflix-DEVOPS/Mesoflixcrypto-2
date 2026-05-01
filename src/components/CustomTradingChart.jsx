@@ -51,16 +51,26 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
     const init = async () => {
       const LWCharts = await loadScript();
       if (!isMounted || !chartContainerRef.current) return;
-      if (chartInstance.current) { chartInstance.current.remove(); chartInstance.current = null; }
+      
+      // Clean up previous instance explicitly before re-creating
+      if (chartInstance.current) { 
+        try { chartInstance.current.remove(); } catch (e) {}
+        chartInstance.current = null;
+        seriesInstance.current = null;
+      }
+
+      // Small delay to ensure DOM container is clear
+      await new Promise(r => setTimeout(r, 50));
+      if (!isMounted || !chartContainerRef.current) return;
 
       setIsInitializing(true);
       try {
         const chart = LWCharts.createChart(chartContainerRef.current, {
-          layout: { background: { color: '#030712' }, textColor: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono', monospace" },
+          layout: { background: { color: '#02040a' }, textColor: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono', monospace" },
           grid: { vertLines: { color: '#0f172a' }, horzLines: { color: '#0f172a' } },
           crosshair: { mode: 0, vertLine: { color: '#3b82f6', width: 0.5, style: 2 }, horzLine: { color: '#3b82f6', width: 0.5, style: 2 } },
-          rightPriceScale: { borderColor: '#1e293b', scaleMargins: { top: 0.2, bottom: 0.2 }, autoScale: true },
-          timeScale: { borderColor: '#1e293b', barSpacing: 10, timeVisible: true, secondsVisible: false },
+          rightPriceScale: { borderColor: '#1e293b', scaleMargins: { top: 0.1, bottom: 0.1 }, autoScale: true, alignLabels: true },
+          timeScale: { borderColor: '#1e293b', barSpacing: 10, timeVisible: true, secondsVisible: false, shiftVisibleRangeOnNewBar: true },
           handleScroll: true,
           handleScale: true,
         });
@@ -77,7 +87,7 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
         });
         
         volumeSeries.priceScale().applyOptions({
-            scaleMargins: { top: 0.8, bottom: 0 },
+            scaleMargins: { top: 0.7, bottom: 0 },
         });
 
         const ema20 = chart.addLineSeries({ color: '#3b82f6', lineWidth: 1, title: 'EMA 20', visible: showIndicators });
@@ -96,11 +106,12 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
         });
         resizeObserver.current.observe(chartContainerRef.current);
 
+        // FETCHING 500 CANDLES AS REQUESTED
         const response = await fetchWithLogging(getApiUrl(`/api/market/kline/${symbol}?interval=${interval}&limit=500`));
         if (response.ok && isMounted) {
             const res = await response.json();
             const data = res.data;
-            if (data && data.list && seriesInstance.current) {
+            if (data && data.list && seriesInstance.current && chartInstance.current) {
                 const formatted = data.list.map(item => ({
                     time: parseInt(item[0]) / 1000,
                     open: parseFloat(item[1]),
@@ -141,11 +152,12 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
       } catch (err) { console.error('[CHART_INIT_FAIL]', err); } finally { if (isMounted) setIsInitializing(false); }
     };
     init();
-    return () => { isMounted = false; if (resizeObserver.current) resizeObserver.current.disconnect(); if (chartInstance.current) { try { chartInstance.current.remove(); } catch (e) {} } };
+    return () => { isMounted = false; if (resizeObserver.current) resizeObserver.current.disconnect(); if (chartInstance.current) { try { chartInstance.current.remove(); chartInstance.current = null; seriesInstance.current = null; } catch (e) {} } };
   }, [symbol, interval]);
 
   useEffect(() => {
-    if (tickerData && seriesInstance.current && lastCandleRef.current) {
+    // Safety check: Don't update if chart or series is null/disposed
+    if (tickerData && seriesInstance.current && chartInstance.current && lastCandleRef.current) {
       const price = parseFloat(tickerData.lastPrice);
       const lastCandle = lastCandleRef.current;
       
@@ -156,8 +168,12 @@ export default function CustomTradingChart({ symbol, tickerData, height = "600px
         close: price
       };
       
-      seriesInstance.current.update(updatedCandle);
-      lastCandleRef.current = updatedCandle;
+      try {
+        seriesInstance.current.update(updatedCandle);
+        lastCandleRef.current = updatedCandle;
+      } catch (e) {
+        console.warn('[CHART_UPDATE_SKIPPED] Instance likely disposed during re-render');
+      }
     }
   }, [tickerData]);
 

@@ -155,21 +155,21 @@ export default function BybitDashboard() {
            <div className="equity-footer">
               <div className="flex justify-between items-center">
                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-1">Node Equity ({tradingMode})</span>
-                    <div className="text-3xl font-black text-white tracking-tight font-mono">
+                    <span className="f-label mb-1">Node Equity ({tradingMode})</span>
+                    <div className="f-value text-3xl text-white tracking-tight">
                       {contextBalance ? `$${parseFloat(contextBalance.totalEquity || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
                     </div>
                  </div>
                  <div className="flex gap-8">
                     <div className="flex flex-col items-end">
-                       <span className="text-[10px] uppercase font-bold text-slate-600 mb-1">Available balance</span>
-                       <span className="text-xl font-black text-emerald-400 font-mono">
+                       <span className="f-label mb-1">Available balance</span>
+                       <span className="f-value text-xl text-emerald-400">
                          {contextBalance ? `$${parseFloat(contextBalance.totalAvailableBalance || 0).toLocaleString()}` : '$0.00'}
                        </span>
                     </div>
                     <div className="flex flex-col items-end border-l border-[#1f2937] pl-8">
-                       <span className="text-[10px] uppercase font-bold text-slate-600 mb-1">Wallet Total</span>
-                       <span className="text-xl font-black text-slate-400 font-mono">
+                       <span className="f-label mb-1">Wallet Total</span>
+                       <span className="f-value text-xl text-slate-400">
                          {contextBalance ? `$${parseFloat(contextBalance.totalWalletBalance || 0).toLocaleString()}` : '$0.00'}
                        </span>
                     </div>
