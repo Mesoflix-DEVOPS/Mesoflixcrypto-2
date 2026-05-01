@@ -219,7 +219,7 @@ export default function BybitDashboard() {
       } else {
         // Extract string message from error object to prevent React crash
         const errorMsg = typeof data.error === 'object' 
-          ? (data.error.message || JSON.stringify(data.error)) 
+          ? (data.error.message + (data.error.details ? `: ${data.error.details}` : '') || JSON.stringify(data.error)) 
           : (data.error || 'Execution Fail');
         setOrderStatus({ success: false, msg: errorMsg });
       }

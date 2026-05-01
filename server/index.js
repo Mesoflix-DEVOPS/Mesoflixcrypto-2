@@ -1600,7 +1600,8 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
 
     // 3. Set Leverage (Defensive - if it fails, we still try to place the order)
     try {
-      if (leverage && typeof bybitRequest === 'function') {
+      if (leverage && !isNaN(leverage)) {
+        console.log(`[ORDER_LEVERAGE] Setting leverage to ${leverage} for ${symbol}`);
         await bybitRequest('POST', '/v5/position/set-leverage', {
           category: 'linear', 
           symbol, 
@@ -1613,16 +1614,25 @@ app.post('/api/bybit/order', authenticateToken, async (req, res) => {
     }
 
     // 4. Create Order
+    if (!qty || isNaN(qty)) {
+      return sendResponse(res, 400, null, { message: 'Invalid quantity provided', code: 'INVALID_QTY' });
+    }
+
     const result = await createOrder(orderParams, config);
     if (result.retCode === 0) {
       sendResponse(res, 200, result.result, null, { source: 'bybit' });
     } else {
+      console.error('[BYBIT_EXECUTION_ERROR]', result);
       sendResponse(res, 400, null, { message: result.retMsg, code: 'BYBIT_ERROR', details: result });
     }
 
   } catch (err) {
     console.error('[ORDER_CRITICAL_500]', err);
-    sendResponse(res, 500, null, { message: 'Failed to place order', details: err.message });
+    sendResponse(res, 500, null, { 
+      message: 'Critical Order Engine Failure', 
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
